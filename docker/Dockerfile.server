@@ -69,9 +69,8 @@ RUN groupadd -f --system --gid ${ZIMAGI_USER_UID} zimagi \
   --shell /bin/bash \
   --uid ${ZIMAGI_USER_UID} \
   --gid zimagi \
-  --groups sudo \
   zimagi \
-  && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+  && echo 'zimagi ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 #
 #====================================================================
 # Application configuration
@@ -108,6 +107,10 @@ RUN cd ${PACKAGE_DIR} \
   && python3 setup.py sdist bdist_wheel --universal \
   && pip3 install "dist/zimagi-`cat VERSION`-py2.py3-none-any.whl" --no-cache-dir \
   && rm -f "${VIRTUAL_ENV_DIR}/bin/zimagi"
+#
+# Python virtual environment directory
+#
+RUN chown -R zimagi:zimagi ${VIRTUAL_ENV_DIR}
 #
 # Application directory
 #
