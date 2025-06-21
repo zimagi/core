@@ -86,6 +86,10 @@ ZIMAGI_HOST_LIB_DIR=${ZIMAGI_HOST_LIB_DIR}
 
 # Database environment
 ZIMAGI_DOCKER_NETWORK=zimagi-net
+ZIMAGI_POSTGRES_HOST=localhost
+ZIMAGI_POSTGRES_PORT=5432
+ZIMAGI_REDIS_HOST=localhost
+ZIMAGI_REDIS_PORT=6379
 
 # API connectivity environment
 ZIMAGI_COMMAND_HOST=localhost
@@ -112,7 +116,7 @@ fi
 #
 # 4. Build Zimagi client Docker image
 #
-"${__zimagi_docker_dir}/build_client_image.sh"
+"${__zimagi_docker_dir}/build_client_image.sh" "${COMPOSE_ENVIRONMENT}"
 
 #
 # 5. Build Docker Compose images and start services
