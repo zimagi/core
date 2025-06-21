@@ -19,10 +19,12 @@ class CommandAPIRouter(routers.BaseRouter):
 
                 elif isinstance(subcommand, exec.ExecCommand) and subcommand.api_enabled():
                     if settings.WSGI_EXEC:
+                        subcommand.data("Parsing command", subcommand.get_full_name())
                         subcommand.parse_base()
 
                     name = subcommand.get_full_name()
                     urls.append(path(re.sub(r"\s+", "/", name), views.Command.as_view(name=name, command=subcommand)))
 
         add_commands(settings.MANAGER.index.command_tree)
+        settings.MANAGER.index.command_tree.info("All commands have been parsed")
         return urls
