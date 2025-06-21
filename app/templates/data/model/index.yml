@@ -77,8 +77,8 @@ variables:
         default: null
 
 map:
-    data.yml: spec/data/<{ name }>.yml
-    command.yml: spec/commands/<{ name }>.yml
+    data.yml: spec/auto/data/<{ name }>.yml
+    command.yml: spec/auto/commands/<{ name }>.yml
     plugin.yml:
-        target: spec/plugins/<{ name }>.yml
+        target: spec/auto/plugins/<{ name }>.yml
         when: <{ plugin }>
