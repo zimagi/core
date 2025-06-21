@@ -75,22 +75,6 @@ class CLI(TerminalMixin):
         if "--no-color" in extra:
             settings.MANAGER.runtime.color(False)
 
-        if not settings.NO_MIGRATE and args and args[0] not in ("check", "migrate", "makemigrations"):
-            verbosity = 3 if settings.MANAGER.runtime.debug() else 0
-            start_time = time.time()
-            current_time = start_time
-
-            while (current_time - start_time) <= settings.AUTO_MIGRATE_TIMEOUT:
-                try:
-                    call_command("migrate", interactive=False, verbosity=verbosity)
-                    break
-                except Exception as error:
-                    self.print(str(error))
-                    pass
-
-                time.sleep(settings.AUTO_MIGRATE_INTERVAL)
-                current_time = time.time()
-
         return args
 
     def execute(self):

@@ -17,7 +17,6 @@ fi
 # Service initialization mode
 export ZIMAGI_SERVICE_INIT=True
 export "ZIMAGI_${SERVICE_TYPE^^}_INIT"=True
-export ZIMAGI_NO_MIGRATE=True
 export ZIMAGI_SERVICE="$SERVICE_SETTINGS"
 #-------------------------------------------------------------------------------
 
