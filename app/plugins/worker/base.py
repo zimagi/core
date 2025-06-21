@@ -101,7 +101,6 @@ class BaseProvider(RedisConnectionMixin, BasePlugin("worker")):
             "worker_max_created": worker_max_created,
             "workers_created": workers_created,
         }
-        print(worker_metrics)
         self.command.send("worker:scaling", worker_metrics)
         return workers_created
 
