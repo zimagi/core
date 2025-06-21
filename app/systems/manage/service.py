@@ -33,7 +33,7 @@ class ManagerServiceMixin:
             try:
                 self.client = docker.from_env()
             except Exception as error:
-                self.print(f"Docker: {str(error)}")
+                pass
 
     @property
     def container_id(self):
