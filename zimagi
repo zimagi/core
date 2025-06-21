@@ -16,9 +16,9 @@ source "${__script_dir}/reactor/initialize.sh" zimagi "${__script_dir}"
 # Execution
 #
 export ZIMAGI_VERSION=$(cat "${__zimagi_app_dir}/VERSION")
-export ZIMAGI_RUNTIME_IMAGE="zimagi/cli:${ZIMAGI_VERSION}"
+export ZIMAGI_ENVIRONMENT="${COMPOSE_ENVIRONMENT:-local}"
 
-ZIMAGI_ARGS=(
+ZIMAGI_COMMON_ARGS=(
   "--rm"
   "--interactive"
   "--tty"
@@ -31,12 +31,18 @@ ZIMAGI_ARGS=(
   "--env-file" "${__script_dir}/.env"
 )
 while IFS= read -r variable; do
-  ZIMAGI_ARGS=("${ZIMAGI_ARGS[@]}" "--env" "$variable")
+  ZIMAGI_COMMON_ARGS=("${ZIMAGI_COMMON_ARGS[@]}" "--env" "$variable")
 done <<< "$(env | grep -o "ZIMAGI_[_A-Z0-9]*")"
 
-ZIMAGI_ARGS=("${ZIMAGI_ARGS[@]}" "$ZIMAGI_RUNTIME_IMAGE" "${@}")
+if [[ "${*}" == "build" ]] || [[ "${*}" == "makemigrations" ]] || [[ "${*}" == "migrate" ]]; then
+  ZIMAGI_SERVER_IMAGE="zimagi/server:${ZIMAGI_ENVIRONMENT}"
+  ZIMAGI_ARGS=("${ZIMAGI_COMMON_ARGS[@]}" "$ZIMAGI_SERVER_IMAGE" "${@}")
+else
+  ZIMAGI_CLIENT_IMAGE="zimagi/cli:${ZIMAGI_VERSION}"
+  ZIMAGI_ARGS=("${ZIMAGI_COMMON_ARGS[@]}" "$ZIMAGI_CLIENT_IMAGE" "${@}")
 
-if ! docker inspect "$ZIMAGI_RUNTIME_IMAGE" >/dev/null 2>&1; then
-  "${__zimagi_docker_dir}/build_client_image.sh"
+  if ! docker inspect "$ZIMAGI_CLIENT_IMAGE" >/dev/null 2>&1; then
+    "${__zimagi_docker_dir}/build_client_image.sh" "${ZIMAGI_ENVIRONMENT}"
+  fi
 fi
 docker run "${ZIMAGI_ARGS[@]}"
