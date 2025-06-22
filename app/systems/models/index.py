@@ -15,6 +15,7 @@ from django.db import models as django
 from systems.models import fields
 from utility.data import ensure_list
 from utility.python import PythonParser
+from utility.filesystem import save_file
 
 logger = logging.getLogger(__name__)
 
@@ -337,6 +338,10 @@ class ModelGenerator:
 
     def ensure_model_files(self):
         if self.key == "data":
+            settings.MANAGER.load_templates()
+            template = settings.MANAGER.template_engine.get_template("model/default/models.py")
+            template_fields = {"spec_name": self.name, "class_name": self.class_name, "facade_name": self.facade_name}
+
             data_info = settings.MANAGER.index.module_map["data"][self.app_name]
             model_dir = os.path.join(data_info.path, "data", self.app_name)
             migration_dir = os.path.join(model_dir, "migrations")
@@ -345,7 +350,7 @@ class ModelGenerator:
 
             model_file = os.path.join(model_dir, "models.py")
             if not os.path.isfile(model_file):
-                pathlib.Path(model_file).touch()
+                save_file(model_file, template.render(**template_fields))
 
             migration_init_file = os.path.join(migration_dir, "__init__.py")
             if not os.path.isfile(migration_init_file):
