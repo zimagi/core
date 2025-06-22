@@ -79,6 +79,8 @@ class CLI(TerminalMixin):
 
     def execute(self):
         try:
+            os.environ["ZIMAGI_ARGS"] = " ".join(self.argv[1:])
+
             django.setup()
 
             if settings.INIT_PROFILE or settings.COMMAND_PROFILE:

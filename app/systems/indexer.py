@@ -45,6 +45,7 @@ class Indexer(module.IndexerModuleMixin, django.IndexerDjangoMixin, component.In
     @property
     def spec(self):
         if not self._spec:
+            _command_args = os.environ["ZIMAGI_ARGS"].split(" ")
 
             def set_command_module(module_name, spec):
                 if "base" in spec:
@@ -61,6 +62,9 @@ class Indexer(module.IndexerModuleMixin, django.IndexerDjangoMixin, component.In
                 else:
                     module = base_path.replace(self.manager.module_path + "/", "").split("/")[0]
                     module_path = os.path.join(self.manager.module_path, module)
+
+                    if _command_args[0] == "build":
+                        return
 
                 module_info = Collection(module=module, path=self._get_module_lib_dir(module_path))
 
