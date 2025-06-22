@@ -15,7 +15,6 @@ x-zimagi-build-args: &zimagi-build-args
 x-zimagi-env: &zimagi-env
   <<: *zimagi-build-args
 
-  ZIMAGI_AUTO_UPDATE: true
   ZIMAGI_DISABLE_MODULE_INIT: true
   ZIMAGI_DISABLE_MODULE_SYNC: true
   ZIMAGI_RESTART_SERVICES: false
