@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.apps import apps
 from django.core.management import call_command
 from systems.commands.index import Command
 from systems.commands import exec, router
@@ -41,10 +43,20 @@ class Build(Command("build")):
             self.success(f"Specifications for {module.config.name} built successfully")
 
         self.info("Loading module specifications")
-        self.manager.index.reset_spec()
+        self.manager.index.reset()
+
+        self.manager.index.get_installed_apps.cache_clear()
         self.manager.index.get_models.cache_clear()
         self.manager.index.get_facade_index.cache_clear()
         self.manager.index.get_plugin_providers.cache_clear()
+
+        settings.INSTALLED_APPS = self.manager.index.get_installed_apps() + settings.INSTALLED_APPS_BASE
+
+        apps.ready = False
+        apps.loading = False
+        apps.app_configs = {}
+        apps.populate(settings.INSTALLED_APPS)
+
         self.manager.index.generate()
 
         for command in ["makemigrations", "migrate"]:
