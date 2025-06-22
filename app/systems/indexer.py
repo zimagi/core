@@ -23,7 +23,7 @@ class Indexer(module.IndexerModuleMixin, django.IndexerDjangoMixin, component.In
         self.manager = manager
 
         self._spec = OrderedDict()
-        self._spec_reset = False
+        self._reset = False
 
         self._roles = {}
         self._locks = {}
@@ -44,10 +44,13 @@ class Indexer(module.IndexerModuleMixin, django.IndexerDjangoMixin, component.In
 
         super().__init__()
 
+    def reset(self):
+        self._spec = OrderedDict()
+        self._reset = True
+
     @property
     def spec(self):
         if not self._spec:
-            _command_args = os.environ.get("ZIMAGI_ARGS", "").split(" ")
 
             def set_command_module(module_name, spec):
                 if "base" in spec:
@@ -65,7 +68,7 @@ class Indexer(module.IndexerModuleMixin, django.IndexerDjangoMixin, component.In
                     module = base_path.replace(self.manager.module_path + "/", "").split("/")[0]
                     module_path = os.path.join(self.manager.module_path, module)
 
-                    if not self._spec_reset and _command_args[0] == "build":
+                    if not self._reset and self.manager.command_args[0] == "build":
                         return
 
                 module_info = Collection(module=module, path=self._get_module_lib_dir(module_path))
@@ -110,10 +113,6 @@ class Indexer(module.IndexerModuleMixin, django.IndexerDjangoMixin, component.In
             self._expand_spec_aliases(self._spec)
 
         return self._spec
-
-    def reset_spec(self):
-        self._spec = OrderedDict()
-        self._spec_reset = True
 
     def _expand_spec_aliases(self, spec):
         for key, info in spec.items():
