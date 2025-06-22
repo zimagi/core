@@ -8,7 +8,6 @@ command:
   build:
     base: platform
     api_enabled: false
-    require_db: false
     priority: -3
   test:
     base: platform
