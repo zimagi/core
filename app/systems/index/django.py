@@ -24,7 +24,7 @@ class IndexerDjangoMixin:
         for module_dir in self.get_module_dirs(None, False):
             settings_file = os.path.join(module_dir, "django.py")
 
-            if os.path.isfile(settings_file) and (self._reset or self.manager.command_args[0] != "build"):
+            if os.path.isfile(settings_file):
                 spec = importlib.util.spec_from_file_location("module.name", settings_file)
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
