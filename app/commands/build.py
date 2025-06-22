@@ -65,7 +65,7 @@ class Build(Command("build")):
                 if isinstance(subcommand, router.RouterCommand):
                     check_commands(subcommand)
 
-                elif isinstance(subcommand, exec.ExecCommand) and subcommand.api_enabled():
+                elif isinstance(subcommand, exec.ExecCommand):
                     subcommand.data("Parsing command", subcommand.get_full_name())
                     subcommand.parse_base()
 
