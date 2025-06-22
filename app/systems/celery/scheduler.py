@@ -2,14 +2,17 @@ import copy
 import logging
 import sys
 
+from datetime import datetime
 from celery import beat, current_app, exceptions, schedules
-from data.schedule.models import ScheduledTask, ScheduledTaskChanges, TaskCrontab, TaskDatetime, TaskInterval
 from django.conf import settings
 from django.db.models import Case, F, IntegerField, Q, When
 from django.db.models.functions import Cast
 from django_celery_beat.clockedschedule import clocked
 from django_celery_beat.schedulers import DatabaseScheduler, ModelEntry
 from django_celery_beat.utils import aware_now
+
+from data.schedule.models import ScheduledTask, ScheduledTaskChanges, TaskCrontab, TaskDatetime, TaskInterval
+from utility.filesystem import save_file
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +97,7 @@ class CeleryScheduler(DatabaseScheduler):
 
     def install_default_entries(self, data):
         self.update_from_dict({})
+        save_file(f"{settings.DATA_DIR}/scheduler", datetime.now().strftime("%Y-%m-%d_%H:%M:%S"))
 
     def apply_async(self, entry, producer=None, advance=True, **kwargs):
         entry = self.reserve(entry) if advance else entry
