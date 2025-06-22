@@ -9,6 +9,16 @@ command:
     base: platform
     api_enabled: false
     priority: -3
+    parameters:
+      build_modules:
+        parser: variables
+        type: str
+        optional: true
+        help: 'module names'
+        value_label: MODULE_NAME
+        tags: [module]
+    parse:
+      - build_modules
   test:
     base: platform
     priority: -2
