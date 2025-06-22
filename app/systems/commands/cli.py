@@ -25,21 +25,22 @@ class CLI(TerminalMixin):
         self.argv = argv if argv else []
 
     def handle_error(self, error):
-        if not isinstance(error, CommandError) and error.args:
-            self.print("** " + self.error_color(error.args[0]), sys.stderr)
-        else:
-            self.print("** " + self.error_color(error), sys.stderr)
+        if not isinstance(error, CommandError):
+            if error.args:
+                self.print("** " + self.error_color(error.args[0]), sys.stderr)
+            else:
+                self.print("** " + self.error_color(error), sys.stderr)
 
-        try:
-            debug = settings.MANAGER.runtime.debug()
-        except AttributeError:
-            debug = True
+            try:
+                debug = settings.MANAGER.runtime.debug()
+            except AttributeError:
+                debug = True
 
-        if debug:
-            self.print(
-                "> " + self.traceback_color("\n".join([item.strip() for item in format_exception_info()])),
-                stream=sys.stderr,
-            )
+            if debug:
+                self.print(
+                    "> " + self.traceback_color("\n".join([item.strip() for item in format_exception_info()])),
+                    stream=sys.stderr,
+                )
 
     def exclusive_wrapper(self, exec_method, lock_id):
         def wrapper(*args, **kwargs):
