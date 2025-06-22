@@ -65,9 +65,9 @@ services:
       - '5123:5000'
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:5000/status']
-      interval: 30s
-      timeout: 30s
-      retries: 4
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   data-api:
     <<: *zimagi-service
@@ -76,13 +76,18 @@ services:
       - '5323:5000'
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:5000/status']
-      interval: 30s
-      timeout: 30s
-      retries: 4
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   controller:
     <<: *zimagi-service
     entrypoint: zimagi-controller
+    healthcheck:
+      test: ['CMD-SHELL', 'test -f /var/local/zimagi/controller || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   scheduler:
     <<: *zimagi-service
@@ -91,6 +96,11 @@ services:
       <<: *zimagi-env
       ZIMAGI_AUTO_UPDATE: false
       ZIMAGI_DISABLE_MODULE_INIT: false
+    healthcheck:
+      test: ['CMD-SHELL', 'test -f /var/local/zimagi/scheduler || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   tasks:
     <<: *zimagi-service
@@ -99,6 +109,6 @@ services:
       - '5124:5000'
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:5000']
-      interval: 30s
-      timeout: 30s
-      retries: 4
+      interval: 5s
+      timeout: 5s
+      retries: 10
