@@ -327,6 +327,7 @@ class ExecCommand(
 
         options = command.format_fields(copy.deepcopy(options))
         options.setdefault("debug", self.debug)
+        options.setdefault("verbosity", self.verbosity)
         options.setdefault("no_parallel", self.no_parallel)
         options.setdefault("no_color", self.no_color)
         options.setdefault("display_width", self.display_width)
