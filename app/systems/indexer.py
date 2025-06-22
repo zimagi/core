@@ -47,7 +47,7 @@ class Indexer(module.IndexerModuleMixin, django.IndexerDjangoMixin, component.In
     @property
     def spec(self):
         if not self._spec:
-            _command_args = os.environ["ZIMAGI_ARGS"].split(" ")
+            _command_args = os.environ.get("ZIMAGI_ARGS", "").split(" ")
 
             def set_command_module(module_name, spec):
                 if "base" in spec:
