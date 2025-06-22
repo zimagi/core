@@ -32,7 +32,7 @@ except Exception:
 #
 # Applications and libraries
 #
-INSTALLED_APPS = MANAGER.index.get_installed_apps() + [
+INSTALLED_APPS_BASE = [
     "django.contrib.contenttypes",
     "django_dbconn_retry",
     "django.contrib.postgres",
@@ -41,17 +41,17 @@ INSTALLED_APPS = MANAGER.index.get_installed_apps() + [
     "corsheaders",
     "settings.app.AppInit",
 ]
+INSTALLED_APPS = MANAGER.index.get_installed_apps() + INSTALLED_APPS_BASE
 
-MIDDLEWARE = (
-    [
-        "django.middleware.security.SecurityMiddleware",
-        "corsheaders.middleware.CorsMiddleware",
-        "django.middleware.common.CommonMiddleware",
-        "systems.cache.middleware.UpdateCacheMiddleware",
-    ]
-    + MANAGER.index.get_installed_middleware()
-    + ["systems.cache.middleware.FetchCacheMiddleware"]
-)
+MIDDLEWARE_START = [
+    "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "systems.cache.middleware.UpdateCacheMiddleware",
+]
+MIDDLEWARE_LAST = ["systems.cache.middleware.FetchCacheMiddleware"]
+
+MIDDLEWARE = MIDDLEWARE_START + MANAGER.index.get_installed_middleware() + MIDDLEWARE_LAST
 
 #
 # Template settings
