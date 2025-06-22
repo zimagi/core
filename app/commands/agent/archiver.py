@@ -1,14 +1,11 @@
-from datetime import datetime
 from systems.commands.index import Agent
 from utility.data import Collection
-from utility.filesystem import save_file
 
 
 class Archiver(Agent("archiver")):
     processes = ("record_scaling_event",)
 
     def record_scaling_event(self):
-        save_file(f"{settings.DATA_DIR}/scaling-event", datetime.now().strftime("%Y-%m-%d_%H:%M:%S"))
         for package in self.listen("worker:scaling", state_key="core_archiver"):
             message = Collection(**package.message)
             self.save_instance(
