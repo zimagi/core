@@ -1,4 +1,6 @@
+from django.core.management import call_command
 from systems.commands.index import Command
+from systems.commands import exec, router
 from utility.data import RecursiveCollection
 
 import os
@@ -11,10 +13,12 @@ class Build(Command("build")):
         for module in self._list_modules():
             auto_spec_path = os.path.join(module.path, "spec", "auto")
             if os.path.exists(auto_spec_path):
+                self.data("Removing specifications", module.config.name)
                 shutil.rmtree(auto_spec_path)
 
         self.info("Building module specifications")
         for module in self._list_modules():
+            self.data("Building specifications", module.config.name)
             self.exec_local(
                 "run",
                 {
@@ -22,9 +26,30 @@ class Build(Command("build")):
                     "profile_key": "build",
                     "ignore_missing": True,
                     "worker_type": "none",
+                    "verbosity": 0,
                     "local": True,
                 },
             )
+            self.success(f"Specifications for {module.config.name} built successfully")
+
+        self.info("Loading module specifications")
+        self.manager.index.reset_spec()
+        self.manager.index.get_models.cache_clear()
+        self.manager.index.get_facade_index.cache_clear()
+        self.manager.index.get_plugin_providers.cache_clear()
+        self.manager.index.generate()
+
+        for command in ["makemigrations", "migrate"]:
+            try:
+                self.data("Running command", command)
+                call_command(command, interactive=False, verbosity=self.verbosity)
+                self.success(f"Command {command} completed successfully")
+            except Exception as error:
+                self.error(f"Error running {command}: {error}")
+
+        self.info("Checking Command API endpoints")
+        self._check_commands()
+        self.success("Command check completed successfully")
 
     def _list_modules(self):
         for path, config in self.manager.index.get_ordered_modules().items():
@@ -33,3 +58,15 @@ class Build(Command("build")):
                     path=path,
                     config=config,
                 )
+
+    def _check_commands(self):
+        def check_commands(command):
+            for subcommand in command.get_subcommands():
+                if isinstance(subcommand, router.RouterCommand):
+                    check_commands(subcommand)
+
+                elif isinstance(subcommand, exec.ExecCommand) and subcommand.api_enabled():
+                    subcommand.data("Parsing command", subcommand.get_full_name())
+                    subcommand.parse_base()
+
+        check_commands(self.manager.index.command_tree)
