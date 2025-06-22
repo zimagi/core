@@ -75,6 +75,14 @@ class CLI(TerminalMixin):
         if "--no-color" in extra:
             settings.MANAGER.runtime.color(False)
 
+        if args[0] == "build":
+            verbosity = 3 if settings.MANAGER.runtime.debug() else 0
+            try:
+                call_command("migrate", interactive=False, verbosity=verbosity)
+            except Exception as error:
+                self.handle_error(error)
+                self.exit(1)
+
         return args
 
     def execute(self):
