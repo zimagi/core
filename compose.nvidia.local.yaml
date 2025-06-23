@@ -43,7 +43,6 @@ x-zimagi-service-shared: &zimagi-service-shared
     - /var/run/docker.sock:/var/run/docker.sock
     - ./app:/usr/local/share/zimagi
     - ./package:/usr/local/share/zimagi-client
-    - ./data:/var/local/zimagi
     - ./lib:/usr/local/lib/zimagi
   depends_on:
     - postgresql
@@ -88,7 +87,7 @@ services:
       test: ['CMD', 'curl', '-f', 'http://localhost:5000/status']
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
 
   data-api:
     <<: *zimagi-service
@@ -99,7 +98,7 @@ services:
       test: ['CMD', 'curl', '-f', 'http://localhost:5000/status']
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
 
   controller:
     <<: *zimagi-service
@@ -108,7 +107,7 @@ services:
       test: ['CMD-SHELL', 'test -f /var/local/zimagi/controller || exit 1']
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
 
   scheduler:
     <<: *zimagi-service
@@ -121,7 +120,7 @@ services:
       test: ['CMD-SHELL', 'test -f /var/local/zimagi/scheduler || exit 1']
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
 
   tasks:
     <<: *zimagi-service
@@ -132,4 +131,4 @@ services:
       test: ['CMD', 'curl', '-f', 'http://localhost:5000']
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
