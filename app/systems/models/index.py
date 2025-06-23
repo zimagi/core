@@ -9,6 +9,7 @@ import types
 
 import inflect
 import oyaml
+from jinja2 import Environment, FileSystemLoader
 from django.conf import settings
 from django.contrib.postgres import fields as postgresql
 from django.db import models as django
@@ -336,10 +337,23 @@ class ModelGenerator:
 
         return facade
 
+    @property
+    def template_engine(self):
+        if not getattr(self, "_template_engine", None):
+            self._template_engine = Environment(
+                loader=FileSystemLoader(os.path.join(settings.APP_DIR, "systems/models")),
+                autoescape=False,
+                trim_blocks=False,
+                block_start_string="#%",
+                block_end_string="%#",
+                variable_start_string="<{",
+                variable_end_string="}>",
+            )
+        return self._template_engine
+
     def ensure_model_files(self):
         if self.key == "data":
-            settings.MANAGER.load_templates()
-            template = settings.MANAGER.template_engine.get_template("model/default/models.py")
+            template = self.template_engine.get_template("template.py.tpl")
             template_fields = {"spec_name": self.name, "class_name": self.class_name, "facade_name": self.facade_name}
 
             data_info = settings.MANAGER.index.module_map["data"][self.app_name]
