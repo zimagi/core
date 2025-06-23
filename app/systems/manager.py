@@ -93,8 +93,8 @@ class Manager(
 
         return copy.deepcopy(spec)
 
-    def reset_spec(self):
-        self.index.reset_spec()
+    def reset(self):
+        self.index.reset()
 
     def interpolate_spec(self, location=None, environment=None):
         if environment is None:

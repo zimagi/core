@@ -7,7 +7,7 @@ from utility.filesystem import save_file
 
 class Controller(Agent("controller")):
     def exec(self):
-        self.manager.reset_spec()
+        self.manager.reset()
 
         for agent in self.manager.collect_agents():
             worker = self.get_provider(
