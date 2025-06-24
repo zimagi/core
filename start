@@ -55,7 +55,13 @@ if [ ! -f "${__zimagi_env_dir}/generated" ]; then
   echo """
 export ZIMAGI_USER_UID=$(id -u)
 export ZIMAGI_DOCKER_GID=$(stat -c '%g' /var/run/docker.sock)
+
+export ZIMAGI_ADMIN_DEFAULT_TOKEN=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 32; echo)
 export ZIMAGI_ADMIN_API_KEY=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 32; echo)
+
+export ZIMAGI_POSTGRES_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 15; echo)
+export ZIMAGI_REDIS_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 15; echo)
+export ZIMAGI_QDRANT_TOKEN=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 15; echo)
 """ >"${__zimagi_env_dir}/generated"
 fi
 source "${__zimagi_env_dir}/generated"
@@ -76,6 +82,7 @@ ZIMAGI_PROFILE=${COMPOSE_PROFILE}
 # User environment
 ZIMAGI_USER_UID=${ZIMAGI_USER_UID}
 ZIMAGI_DOCKER_GID=${ZIMAGI_DOCKER_GID}
+ZIMAGI_DEFAULT_ADMIN_TOKEN=${ZIMAGI_ADMIN_DEFAULT_TOKEN}
 ZIMAGI_ADMIN_API_KEY=${ZIMAGI_ADMIN_API_KEY}
 
 # Host directory environment
@@ -90,6 +97,10 @@ ZIMAGI_POSTGRES_HOST=localhost
 ZIMAGI_POSTGRES_PORT=5432
 ZIMAGI_REDIS_HOST=localhost
 ZIMAGI_REDIS_PORT=6379
+
+ZIMAGI_POSTGRES_PASSWORD=${ZIMAGI_POSTGRES_PASSWORD}
+ZIMAGI_REDIS_PASSWORD=${ZIMAGI_REDIS_PASSWORD}
+ZIMAGI_QDRANT_TOKEN=${ZIMAGI_QDRANT_TOKEN}
 
 # API connectivity environment
 ZIMAGI_COMMAND_HOST=localhost
