@@ -121,6 +121,9 @@ class Git:
         for name, value in auth_options.items():
             self.auth_options[name] = value
 
+    def create_branch(self, branch):
+        self.repository.checkout(self.repository.create_branch(branch))
+
     def checkout(self, branch):
         self.repository.checkout(self.repository.lookup_branch(branch))
 
