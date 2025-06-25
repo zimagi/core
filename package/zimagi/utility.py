@@ -143,6 +143,7 @@ def format_list(data, prefix=None, row_labels=False, width=None):
             if len(values) > 0 and "\n" in str(values[0]):
                 values[0] = f"\n{values[0]}"
 
+            values = [str(value) for value in values]
             text.append(" * {}: {}".format(item[0].replace("\n", " "), "\n".join(values)))
         else:
             text.append("-" * width)
