@@ -27,6 +27,7 @@ plugin:
       values:
       value:
       prefix:
+      csv:
       join:
       split:
       lstrip:
