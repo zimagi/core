@@ -17,6 +17,7 @@ source "${__script_dir}/reactor/initialize.sh" zimagi "${__script_dir}"
 #
 export ZIMAGI_VERSION=$(cat "${__zimagi_app_dir}/VERSION")
 export ZIMAGI_ENVIRONMENT="${COMPOSE_ENVIRONMENT:-local}"
+export ZIMAGI_ENV_PROFILE="${COMPOSE_PROFILE:-default}"
 
 ZIMAGI_COMMON_ARGS=(
   "--rm"
@@ -28,6 +29,7 @@ ZIMAGI_COMMON_ARGS=(
   "--volume" "${__zimagi_package_dir}:/usr/local/share/zimagi-client"
   "--volume" "${__zimagi_data_dir}:/var/local/zimagi"
   "--volume" "${__zimagi_lib_dir}:/usr/local/lib/zimagi"
+  "--env-file" "${__zimagi_env_dir}/public.${ZIMAGI_ENV_PROFILE}"
   "--env-file" "${__zimagi_env_dir}/secret"
   "--env-file" "${__script_dir}/.env"
 )
