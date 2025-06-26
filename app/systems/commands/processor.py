@@ -6,11 +6,13 @@ from utility.time import Time
 
 
 class Processor:
-    def __init__(self, command, spec_key, plugin_key=None, display_only=False):
+
+    def __init__(self, command, spec_key, plugin_key=None, display_only=False, disable_save=False):
         self.command = command
         self.spec_key = spec_key
         self.plugin_key = plugin_key if plugin_key else self.spec_key
         self.display_only = display_only
+        self.disable_save = disable_save
 
         self.parser = PythonParser({"time": Time(), "settings": settings})
         self.processor_spec = self._parse_values(settings.MANAGER.get_spec(self.spec_key))
@@ -55,7 +57,7 @@ class Processor:
                 self.command.notice(
                     "Running {}: {}\n{}{}".format(self.spec_key, name, "-" * self.command.display_width, param_display)
                 )
-                self.provider_process(name, spec)
+                self.provider_process(name, {"disable_save": self.disable_save, **spec})
                 self.command.success(
                     "Completed {}: {}\n{}{}".format(self.spec_key, name, "-" * self.command.display_width, param_display)
                 )

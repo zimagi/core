@@ -32,9 +32,15 @@ command:
         flag: '--show'
         help: 'display selected import specifications'
         tags: [import, test]
+      disable_save:
+        parser: flag
+        flag: '--disable-save'
+        help: 'show instead of saving import specifications'
+        tags: [import, test]
     parse:
       field_values:
       import_names:
       tags:
       ignore_requirements:
       show_spec:
+      disable_save:
