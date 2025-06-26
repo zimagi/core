@@ -1,4 +1,5 @@
 from systems.models.index import ModelMixin, ModelMixinFacade
+from systems.models.errors import ProviderError
 
 
 class ProviderMixinFacade(ModelMixinFacade("provider")):
@@ -18,3 +19,7 @@ class ProviderMixin(ModelMixin("provider")):
         if provider_name:
             self.provider = command.get_provider(provider_name, self.provider_type, instance=self, facade=facade)
         return True
+
+    def check_provider(self):
+        if not getattr(self, "provider", None):
+            raise ProviderError("Provider has not been initialized.  Please run: instance.initialize(command)")
