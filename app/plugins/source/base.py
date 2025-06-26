@@ -111,9 +111,16 @@ class BaseProvider(BasePlugin("source")):
                     if isinstance(item, dict):
                         series[index] = [item[column] for column in columns if column in item]
 
+                    if self.command.debug:
+                        self.command.data(f"Load record [ {index} ]", item)
+
                 series = self.get_dataframe(series, columns)
 
             saved_data = self.validate(name, series)
+            if self.command.debug:
+                for index, item in enumerate(saved_data):
+                    self.command.data(f"Save record [ {index} ]", item)
+
             logger.debug(f"Importing {name}: {saved_data}")
 
             if not self.field_disable_save:
