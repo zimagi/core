@@ -24,11 +24,6 @@ class QueryMixin:
 
         return self._facade_cache[name] if use_cache else result
 
-    def load(self, pluggable_model_iterator):
-        for instance in pluggable_model_iterator:
-            instance.initialize(self)
-            yield instance
-
     def _init_instance_cache(self, facade):
         cache_variable = f"_data_{facade.name}_cache"
 
