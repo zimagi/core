@@ -194,7 +194,6 @@ class BasePlugin(base.BasePlugin):
 
                 for sub_instance in sub_facade.filter(**{f"{field.name}_id": instance_id}):
                     if getattr(sub_facade, "provider_name", None):
-                        sub_instance.initialize(self.command)
                         sub_instance.provider.delete(force)
                     else:
                         sub_facade.clear(**{sub_facade.pk: getattr(sub_instance, sub_facade.pk)})
