@@ -67,6 +67,17 @@ services:
       timeout: 5s
       retries: 20
 
+  mcp-api:
+    <<: *zimagi-service
+    entrypoint: zimagi-mcp
+    ports:
+      - '6123:5000'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:5000/status']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   data-api:
     <<: *zimagi-service
     entrypoint: zimagi-data
