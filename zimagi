@@ -37,7 +37,7 @@ while IFS= read -r variable; do
   ZIMAGI_COMMON_ARGS=("${ZIMAGI_COMMON_ARGS[@]}" "--env" "$variable")
 done <<< "$(env | grep -o "ZIMAGI_[_A-Z0-9]*")"
 
-if [[ "${*}" == "build" ]] || [[ "${*}" == "build "* ]]; then
+if [[ "${ZIMAGI_LOCAL_MODE:-}" ]] || [[ "${*}" == "build" ]] || [[ "${*}" == "build "* ]] || [[ "${*}" == "agent "* ]]; then
   ZIMAGI_SERVER_IMAGE="zimagi/server:${ZIMAGI_ENVIRONMENT}"
   ZIMAGI_ARGS=("${ZIMAGI_COMMON_ARGS[@]}" "--env" "ZIMAGI_CLI_EXEC=True" "$ZIMAGI_SERVER_IMAGE" "${@}")
 else
