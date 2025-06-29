@@ -8,14 +8,15 @@ from django.utils.timezone import now
 import mcp.types as types
 from mcp import ClientSession
 from mcp.client.sse import sse_client
+from mcp.client.streamable_http import streamablehttp_client
 
 from utility.data import create_token
 
 
 @asynccontextmanager
 async def connect(url, token):
-    async with sse_client(url=url, headers={"Authorization": f"Bearer {token}"}) as streams:
-        async with ClientSession(*streams) as session:
+    async with streamablehttp_client(url=url, headers={"Authorization": f"Bearer {token}"}) as streams:
+        async with ClientSession(streams[0], streams[1]) as session:
             await session.initialize()
             yield session
 
@@ -79,6 +80,8 @@ class MCPClient(object):
             self.servers[settings.MCP_LOCAL_SERVER_NAME] = MCPLocalServer(
                 self, f"http://{settings.MCP_SERVICE_NAME}.{settings.KUBERNETES_NAMESPACE}"
             )
+        elif settings.MCP_SERVICE_NAME:
+            self.servers[settings.MCP_LOCAL_SERVER_NAME] = MCPLocalServer(self, f"http://{settings.MCP_SERVICE_NAME}:5000")
 
     def add_server(self, name, url, token):
         self.servers[name] = MCPServer(self, name, url, token)
