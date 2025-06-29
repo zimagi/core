@@ -54,7 +54,7 @@ def index_tools(user, server):
 
                         tools.append(
                             types.Tool(
-                                name=name,
+                                name=":".join(name.split(" ")),
                                 description=subcommand.get_description(),
                                 inputSchema={
                                     "type": "object",
@@ -69,7 +69,7 @@ def index_tools(user, server):
 
     async def tool_call_handler(request):
         try:
-            command = find_command(request.params.name)
+            command = find_command(" ".join(request.params.name.split(":")))
             has_errors = False
             output = []
             options = {}
