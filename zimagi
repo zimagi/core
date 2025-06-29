@@ -23,7 +23,7 @@ ZIMAGI_COMMON_ARGS=(
   "--rm"
   "--interactive"
   "--tty"
-  "--network" "host"
+  "--network" "zimagi-net"
   "--user" "$(id -u):zimagi"
   "--volume" "${__zimagi_app_dir}:/usr/local/share/zimagi"
   "--volume" "${__zimagi_package_dir}:/usr/local/share/zimagi-client"
