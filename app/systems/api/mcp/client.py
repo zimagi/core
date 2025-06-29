@@ -7,7 +7,6 @@ from django.utils.timezone import now
 
 import mcp.types as types
 from mcp import ClientSession
-from mcp.client.sse import sse_client
 from mcp.client.streamable_http import streamablehttp_client
 
 from utility.data import create_token
