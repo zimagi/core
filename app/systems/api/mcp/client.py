@@ -9,7 +9,7 @@ import mcp.types as types
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 
-from utility.data import create_token
+from utility.data import create_token, flatten
 
 
 @asynccontextmanager
@@ -85,16 +85,16 @@ class MCPClient(object):
     def add_server(self, name, url, token):
         self.servers[name] = MCPServer(self, name, url, token)
 
-    def list_tools(self):
-        return "\n\n".join([server.list_tools() for server in self.servers.values()])
+    def list_tools(self, allowed_tools=None):
+        return flatten([server.list_tools(allowed_tools) for server in self.servers.values()])
 
     def exec_tool(self, name, arguments=None):
         (tool_name, server_name) = self._get_name(name)
         self._verify_server(server_name)
         return self.servers[server_name].exec_tool(tool_name, arguments)
 
-    def list_prompts(self):
-        return "\n\n".join([server.list_prompts() for server in self.servers.values()])
+    def list_prompts(self, allowed_prompts=None):
+        return flatten([server.list_prompts(allowed_prompts) for server in self.servers.values()])
 
     def get_prompt(self, name, arguments=None):
         (prompt_name, server_name) = self._get_name(name)
@@ -155,9 +155,13 @@ class MCPServer(object):
         self.initialize(reload_index)
         return deepcopy(self.index)
 
-    def list_tools(self):
+    def list_tools(self, allowed_tools=None):
         self.initialize()
-        return "\n".join([format_tool_schema(self.name, tool) for tool in self.index["tools"].values()])
+        return [
+            format_tool_schema(self.name, tool)
+            for tool in self.index["tools"].values()
+            if allowed_tools is None or f"{tool.name}@{self.name}" in allowed_tools
+        ]
 
     def exec_tool(self, name, arguments=None):
         tool_name = name.split("@")[0]
@@ -189,9 +193,13 @@ class MCPServer(object):
         else:
             return _exec_tool()
 
-    def list_prompts(self):
+    def list_prompts(self, allowed_prompts=None):
         self.initialize()
-        return "\n".join([format_prompt_schema(self.name, prompt) for prompt in self.index["prompts"].values()])
+        return [
+            format_prompt_schema(self.name, prompt)
+            for prompt in self.index["prompts"].values()
+            if allowed_prompts is None or f"{prompt.name}@{self.name}" in allowed_prompts
+        ]
 
     def get_prompt(self, name, arguments=None):
         prompt_name = name.split("@")[0]
