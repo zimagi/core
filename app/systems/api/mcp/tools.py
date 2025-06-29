@@ -80,6 +80,7 @@ def index_tools(user, server):
             if request.params.arguments:
                 options = command.format_fields(request.params.arguments)
 
+            command.bootstrap(options)
             for response in command.handle_api(options, package=False):
                 if not response.system and not response.silent:
                     if (
