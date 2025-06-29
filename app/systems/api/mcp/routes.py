@@ -1,3 +1,4 @@
+import contextlib
 import logging
 
 from starlette.requests import Request
@@ -14,45 +15,40 @@ async def handle_status(request):
     return JSONResponse({"status": "OK"}, status_code=200)
 
 
-def _initialize_connection(sessions, request, create=False):
+def _initialize_connection(server, request):
     if not request.user.is_authenticated:
         raise ServerError("Access Denied", 401)
 
     try:
-        if create:
-            mcp = sessions.create(request.user.zimagi, "mcp-server")
-        else:
-            mcp = sessions.get(request.user.zimagi)
-
-        index_tools(request.user.zimagi, mcp)
+        index_tools(request.user.zimagi, server)
 
     except Exception as error:
         logger.error(error)
         raise ServerError(f"Initialization failure: {error}")
 
-    return mcp
 
-
-def create_connection_handler(sse, sessions):
-    async def handle_connection(request):
+def get_connection_handler(server, session_manager):
+    async def handle_connection(scope, receive, send):
+        request = Request(scope, receive=receive)
         try:
-            mcp = _initialize_connection(sessions, request, True)
+            _initialize_connection(server, request)
         except ServerError as error:
             return JSONResponse({"error": str(error)}, status_code=error.code)
 
-        async with sse.connect_sse(request.scope, request.receive, request._send) as streams:
-            await mcp.run(streams[0], streams[1], mcp.create_initialization_options())
+        await session_manager.handle_request(scope, receive, send)
 
     return handle_connection
 
 
-def create_message_handler(sse, sessions):
-    async def handle_message(scope, receive, send):
-        try:
-            mcp = _initialize_connection(sessions, Request(scope, receive))
-        except ServerError as error:
-            return JSONResponse({"error": str(error)}, status_code=error.code)
+def get_connection_lifespan(session_manager):
 
-        return await sse.handle_post_message(scope, receive, send)
+    @contextlib.asynccontextmanager
+    async def lifespan(app):
+        async with session_manager.run():
+            logger.info("Application started with StreamableHTTP session manager!")
+            try:
+                yield
+            finally:
+                logger.info("Application shutting down...")
 
-    return handle_message
+    return lifespan

@@ -1,26 +1,27 @@
+import mcp.types as types
+
 from django.conf import settings
 from django.core.management.base import CommandError
-import mcp.types as types
 
 
 def get_type(type):
-    if type == "charfield":
+    if type == "str":
         return "string"
-    elif type == "integerfield":
+    elif type == "int":
         return "integer"
-    elif type == "floatfield":
+    elif type == "float":
         return "number"
-    elif type == "booleanfield":
+    elif type == "bool":
         return "boolean"
-    elif type == "listfield":
+    elif type == "list":
         return "array"
-    elif type == "dictfield":
+    elif type == "dict":
         return "object"
     else:
         raise CommandError(f"Unsupported MCP field type: {type}")
 
 
-def index_tools(user, mcp):
+def index_tools(user, server):
     from systems.commands.index import find_command
     from systems.commands import action, router, messages
     from utility.data import dump_json
@@ -46,7 +47,7 @@ def index_tools(user, mcp):
                                 field_type = get_type(field.type)
                                 command_fields[field_name] = {
                                     "type": field_type,
-                                    "description": f"<TYPE {field_type}>: {field.schema.description[0].upper()}{field.schema.description[1:]}",
+                                    "description": f"<TYPE {field_type}>: {field.description[0].upper()}{field.description[1:]}",
                                 }
                                 if field.required:
                                     required_fields.append(field_name)
@@ -122,5 +123,5 @@ def index_tools(user, mcp):
                 )
             )
 
-    mcp.request_handlers[types.ListToolsRequest] = tools_list_handler
-    mcp.request_handlers[types.CallToolRequest] = tool_call_handler
+    server.request_handlers[types.ListToolsRequest] = tools_list_handler
+    server.request_handlers[types.CallToolRequest] = tool_call_handler
