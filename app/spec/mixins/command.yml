@@ -147,6 +147,98 @@ command_mixins:
         help: 'pause in seconds after execution cycle'
         value_label: SEC
         tags: [agent, cycle]
+  cell:
+    class: CellMixin
+    parameters:
+      goal:
+        parser: variable
+        type: str
+        optional: false
+        help: 'cell goal'
+        value_label: TEXT
+        tags: [agent, instruction]
+      rules:
+        parser: variable
+        type: str
+        optional: false
+        help: 'cell rules'
+        value_label: TEXT
+        tags: [agent, instruction]
+      system_template:
+        parser: variable
+        type: str
+        optional: '--system-template'
+        default: system
+        help: 'cell instruction system prompt template'
+        value_label: NAME
+        tags: [agent, template]
+      tools_template:
+        parser: variable
+        type: str
+        optional: '--tools-template'
+        default: tools
+        help: 'cell instruction tools prompt template'
+        value_label: NAME
+        tags: [agent, template]
+      template:
+        parser: variable
+        type: str
+        optional: '--template'
+        default: default
+        help: 'cell instruction prompt template'
+        value_label: NAME
+        tags: [agent, template]
+      channel:
+        parser: variable
+        type: str
+        optional: false
+        help: 'cell output communication channel'
+        value_label: CHANNEL
+        tags: [agent, communication]
+      sensor:
+        parser: variable
+        type: str
+        optional: false
+        help: 'cell sensory communication channel'
+        value_label: CHANNEL
+        tags: [agent, communication]
+      sensor_key:
+        parser: variable
+        type: str
+        optional: '--sensor-key'
+        help: 'cell sensory communication channel state key (defaults to channel)'
+        value_label: IDENTIFIER
+        tags: [agent, communication]
+      sensor_filters:
+        parser: fields
+        optional: true
+        tags: [agent, communication]
+      message_fields:
+        parser: variables
+        type: str
+        optional: false
+        help: 'one or more data fields to pass to the model'
+        value_label: NAME
+        tags: [agent, communication]
+      model_provider:
+        parser: variable
+        type: str
+        default: openrouter/deepseek-r1
+        optional: '--model-provider'
+        help: 'cell model plugin provider'
+        value_label: NAME
+        tags: [agent, model]
+      model_options:
+        parser: fields
+        optional: true
+        tags: [agent, model]
+      tools:
+        parser: variables
+        type: str
+        optional: false
+        help: 'one or more MCP tool names'
+        value_label: NAME
+        tags: [agent, action]
   group:
     class: GroupMixin
     meta:

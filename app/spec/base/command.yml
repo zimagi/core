@@ -46,14 +46,6 @@ command_base:
     mixins: [service]
     groups_allowed: [admin]
     background: false
-  agent:
-    # base command for service agents (run by controller)
-    mixins: [agent]
-    groups_allowed: [admin]
-    background: false
-    parse:
-      - lifetime
-      - pause
   db:
     mixins: [db]
     groups_allowed: [db-admin]
@@ -88,3 +80,32 @@ command_base:
     remote_exec: false
     groups_allowed: [chat-user]
     background: false
+  agent:
+    # base command for service agents (run by controller)
+    mixins: [agent]
+    groups_allowed: [admin]
+    background: false
+    parse:
+      - lifetime
+      - pause
+  cell:
+    base: agent
+    mixins: [cell, chat]
+    groups_allowed: [admin, chat-user, ai-user]
+    background: false
+    parse:
+      - lifetime
+      - pause
+      - sensor
+      - sensor_key
+      - sensor_filters
+      - message_fields
+      - goal
+      - rules
+      - system_template
+      - tools_template
+      - template
+      - model_provider
+      - model_options
+      - channel
+      - tools
