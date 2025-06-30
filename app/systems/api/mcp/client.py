@@ -9,7 +9,7 @@ import mcp.types as types
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 
-from utility.data import create_token, flatten
+from utility.data import Collection, create_token, flatten
 
 
 @asynccontextmanager
@@ -20,43 +20,24 @@ async def connect(url, token):
             yield session
 
 
-def format_tool_schema(server_name, tool):
-    argument_descriptions = []
-    if "properties" in tool.inputSchema:
-        for param_name, param_info in tool.inputSchema["properties"].items():
-            description = f"- {param_name}: {param_info.get('description', 'No description')}"
-            if param_name in tool.inputSchema.get("required", []):
-                description += " <REQUIRED>"
-            argument_descriptions.append(description)
+# def format_tool_schema(server_name, tool):
+#     argument_descriptions = []
+#     if "properties" in tool.inputSchema:
+#         for param_name, param_info in tool.inputSchema["properties"].items():
+#             description = f"- {param_name}: {param_info.get('description', 'No description')}"
+#             if param_name in tool.inputSchema.get("required", []):
+#                 description += " <REQUIRED>"
+#             argument_descriptions.append(description)
 
-    tool_description = f"""
-Tool: {tool.name}@{server_name}
-Description: {tool.description}
-"""
-    if argument_descriptions:
-        tool_description += f"""Arguments:
-{chr(10).join(argument_descriptions)}
-"""
-    return tool_description
-
-
-def format_prompt_schema(server_name, prompt):
-    argument_descriptions = []
-    for argument in prompt.arguments:
-        description = f"- {argument.name}: {argument.description}"
-        if argument.required:
-            description += " <REQUIRED>"
-        argument_descriptions.append(description)
-
-    prompt_description = f"""
-Prompt: {prompt.name}@{server_name}
-Description: {prompt.description}
-"""
-    if argument_descriptions:
-        prompt_description += f"""Arguments:
-{chr(10).join(argument_descriptions)}
-"""
-    return prompt_description
+#     tool_description = f"""
+# Tool: {tool.name}@{server_name}
+# Description: {tool.description}
+# """
+#     if argument_descriptions:
+#         tool_description += f"""Arguments:
+# {chr(10).join(argument_descriptions)}
+# """
+#     return tool_description
 
 
 def format_tool_message(message):
@@ -88,18 +69,20 @@ class MCPClient(object):
     def list_tools(self, allowed_tools=None):
         return flatten([server.list_tools(allowed_tools) for server in self.servers.values()])
 
+    def get_tool_fields(self, name):
+        (tool_name, server_name) = self.mcp._get_name(name)
+        tool = self.servers[server_name].index[tool_name]
+        return Collection(
+            index=(
+                tool.inputSchema["properties"] if "properties" in tool.inputSchema and tool.inputSchema["properties"] else {}
+            ),
+            required=tool.inputSchema.get("required", []),
+        )
+
     def exec_tool(self, name, arguments=None):
         (tool_name, server_name) = self._get_name(name)
         self._verify_server(server_name)
         return self.servers[server_name].exec_tool(tool_name, arguments)
-
-    def list_prompts(self, allowed_prompts=None):
-        return flatten([server.list_prompts(allowed_prompts) for server in self.servers.values()])
-
-    def get_prompt(self, name, arguments=None):
-        (prompt_name, server_name) = self._get_name(name)
-        self._verify_server(server_name)
-        return self.servers[server_name].get_prompt(prompt_name, arguments)
 
     def _verify_server(self, server_name):
         if server_name not in self.servers:
@@ -128,15 +111,10 @@ class MCPServer(object):
             async def _run_operation():
                 async with connect(self.url, self.token) as session:
                     self.index["tools"] = {}
-                    # self.index["prompts"] = {}
 
                     tools = await session.list_tools()
                     for tool in tools.tools:
                         self.index["tools"][tool.name] = tool
-
-                    # prompts = await session.list_prompts()
-                    # for prompt in prompts.prompts:
-                    #     self.index["prompts"][prompt.name] = prompt
 
             self._preconnect()
             asyncio.run(_run_operation())
@@ -158,7 +136,7 @@ class MCPServer(object):
     def list_tools(self, allowed_tools=None):
         self.initialize()
         return [
-            format_tool_schema(self.name, tool)
+            Collection(server=self.name, schema=tool)
             for tool in self.index["tools"].values()
             if allowed_tools is None or f"{tool.name}@{self.name}" in allowed_tools
         ]
@@ -192,39 +170,6 @@ class MCPServer(object):
             return self.client.command.run_exclusive("mcp_request", _exec_tool)
         else:
             return _exec_tool()
-
-    def list_prompts(self, allowed_prompts=None):
-        self.initialize()
-        return [
-            format_prompt_schema(self.name, prompt)
-            for prompt in self.index["prompts"].values()
-            if allowed_prompts is None or f"{prompt.name}@{self.name}" in allowed_prompts
-        ]
-
-    def get_prompt(self, name, arguments=None):
-        prompt_name = name.split("@")[0]
-
-        if arguments is None:
-            arguments = {}
-
-        self.initialize()
-
-        if prompt_name not in self.index["prompts"]:
-            raise RuntimeError(f"Prompt {prompt_name} not found in MCP server {self.name}")
-
-        def _get_prompt():
-            async def _run_operation():
-                async with connect(self.url, self.token) as session:
-                    prompt = await session.get_prompt(prompt_name, arguments=arguments)
-                    return prompt.messages
-
-            self._preconnect()
-            return asyncio.run(_run_operation())
-
-        if self.name == settings.MCP_LOCAL_SERVER_NAME:
-            return self.client.command.run_exclusive("mcp_request", _get_prompt)
-        else:
-            return _get_prompt()
 
 
 class MCPLocalServer(MCPServer):
