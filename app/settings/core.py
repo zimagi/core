@@ -278,6 +278,7 @@ PDF_OCR_DPI = Config.integer("ZIMAGI_PDF_OCR_DPI", 200)
 #
 # GitHub configuration
 #
+GITHUB_USER = Config.value("ZIMAGI_GITHUB_USER", None)
 GITHUB_TOKEN = Config.value("ZIMAGI_GITHUB_TOKEN", None)
 GITHUB_ORG = Config.value("ZIMAGI_GITHUB_ORG", None)
 
