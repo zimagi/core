@@ -1,18 +1,23 @@
 plugin:
-    encoder:
-        base: base
-        interface:
-            get_dimension:
-                returns: int
-            encode:
-                params:
-                    sentences: list
-                returns: list
-        option:
-            device:
-                type: str
-                help: "Device to run encoding process"
-                default: "cuda:0"
+  encoder:
+    base: base
+    interface:
+      encode:
+        params:
+          text: list
+        returns: list
 
-        providers:
-            transformer:
+    requirement:
+      model:
+        type: str
+        help: 'Encoder model name'
+
+    providers:
+      transformer:
+        option:
+          device:
+            type: str
+            help: 'Device to run encoding process'
+            default: 'cuda:0'
+      litellm:
+      deepinfra:
