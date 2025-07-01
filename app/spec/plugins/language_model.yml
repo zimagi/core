@@ -1,0 +1,49 @@
+plugin:
+  language_model:
+    base: base
+    interface:
+      get_context_length:
+        returns: int
+      get_max_new_tokens:
+        returns: int
+      get_max_tokens:
+        returns: int
+      get_token_count:
+        params:
+          messages: list|str
+        returns: int
+      exec:
+        params:
+          messages: list
+        returns: LanguageModelResult
+
+    requirement:
+      model:
+        type: str
+        help: 'Language model name'
+    option:
+      max_token_percent:
+        type: float
+        help: 'Percentage of total context window allocated to output tokens'
+        default: 0.3
+
+    providers:
+      transformer:
+        option:
+          device:
+            type: str
+            help: 'Device to run inference process'
+            default: 'cuda:0'
+          temperature:
+            type: float
+            help: 'Model inference temperature'
+            default: 0.1
+          top_k:
+            type: float
+            help: 'Model inference top K'
+            default: 5
+          top_p:
+            type: float
+            help: 'Model inference top P'
+            default: 0.9
+      litellm:
