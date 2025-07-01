@@ -79,7 +79,7 @@ class BaseCommand(
 
     @property
     def service_id(self):
-        return settings.SERVICE_ID
+        return f"{":".join(self.get_full_name().split(" "))}{settings.SERVICE_ID}"
 
     def _signal_handler(self, sig, stack_frame):
         for lock_id in settings.MANAGER.index.get_locks():
@@ -892,25 +892,26 @@ class BaseCommand(
         parser = self.create_parser()
         args = argv[(len(self.get_full_name().split(" ")) + 1) :]
 
-        if not self.parse_passthrough():
-            if "-h" in argv or "--help" in argv:
-                return self.print_help(True)
-
-        if options is None:
-            options = vars(parser.parse_args(args))
-
-        if "json_options" in options and options["json_options"] != "{}":
-            options = load_json(options["json_options"])
-            args = options.get("args", [])
-
-        if not self.parse_passthrough():
-            if "--version" in argv:
-                return self.manager.index.find_command("version").run_from_argv([])
-        else:
-            options = {"args": args}
-
         try:
+            if options is None:
+                if "-h" in argv or "--help" in argv:
+                    return self.print_help(True)
+                options = vars(parser.parse_args(args))
+
+            if "json_options" in options and options["json_options"] != "{}":
+                options = load_json(options["json_options"])
+                args = options.get("args", [])
+
             self.bootstrap(options)
+
+            if not self.parse_passthrough():
+                if "-h" in argv or "--help" in argv:
+                    return self.print_help(True)
+                if "--version" in argv:
+                    return self.manager.index.find_command("version").run_from_argv([])
+            else:
+                options = {"args": args}
+
             self.handle(options, primary=True)
         finally:
             try:

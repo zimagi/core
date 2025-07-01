@@ -98,6 +98,8 @@ command_base:
       - pause
       - sensor
       - sensor_key
+      - sensor_data
+      - sensor_data_id
       - sensor_filters
       - message_fields
       - goal
@@ -105,6 +107,7 @@ command_base:
       - system_template
       - tools_template
       - template
+      - chat_key
       - model_provider
       - model_options
       - channel

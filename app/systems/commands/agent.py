@@ -9,6 +9,7 @@ from systems.commands import exec
 from utility.data import dump_json, load_json
 from utility.display import format_exception_info
 from utility.parallel import Parallel
+from utility.text import wrap_page
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,21 @@ class AgentCommand(exec.ExecCommand):
 
     def run_from_argv(self, argv, options=None):
         return super().run_from_argv(argv, self.spec.get("options", {}))
+
+    def print_help(self, set_option_defaults=False):
+        if set_option_defaults:
+            self.set_option_defaults(False)
+
+        self.data("Agent", self.get_full_name().removeprefix("agent "))
+        self.data(
+            "Description",
+            "\n".join(wrap_page(self.get_description(False), init_indent=" ", indent="  ")),
+        )
+        self.data("Agent Attributes", {key: value for key, value in self.options.export().items() if key != "json_options"})
+
+        epilog = self.get_epilog()
+        if epilog:
+            self.data("Notes", "\n".join(wrap_page(epilog)))
 
     def _exec_local_handler(self, log_key, primary=True):
         profiler_name = "exec.agent.local.primary" if primary else "exec.agent.local"

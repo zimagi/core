@@ -135,7 +135,7 @@ command_mixins:
         parser: variable
         type: int
         default: '@settings.AGENT_MAX_LIFETIME'
-        optional: '--lifetime'
+        optional: true
         help: 'agent lifetime'
         value_label: SEC
         tags: [agent, cycle]
@@ -143,7 +143,7 @@ command_mixins:
         parser: variable
         type: int
         default: 1
-        optional: '--pause'
+        optional: true
         help: 'pause in seconds after execution cycle'
         value_label: SEC
         tags: [agent, cycle]
@@ -167,7 +167,7 @@ command_mixins:
       system_template:
         parser: variable
         type: str
-        optional: '--system-template'
+        optional: true
         default: system
         help: 'cell instruction system prompt template'
         value_label: NAME
@@ -175,7 +175,7 @@ command_mixins:
       tools_template:
         parser: variable
         type: str
-        optional: '--tools-template'
+        optional: true
         default: tools
         help: 'cell instruction tools prompt template'
         value_label: NAME
@@ -183,11 +183,19 @@ command_mixins:
       template:
         parser: variable
         type: str
-        optional: '--template'
+        optional: true
         default: default
         help: 'cell instruction prompt template'
         value_label: NAME
         tags: [agent, template]
+      chat_key:
+        parser: variable
+        type: str
+        default: global
+        optional: true
+        help: 'cell chat key'
+        value_label: IDENTIFIER
+        tags: [agent, experience]
       channel:
         parser: variable
         type: str
@@ -205,9 +213,24 @@ command_mixins:
       sensor_key:
         parser: variable
         type: str
-        optional: '--sensor-key'
+        optional: true
         help: 'cell sensory communication channel state key (defaults to channel)'
         value_label: IDENTIFIER
+        tags: [agent, communication]
+      sensor_data:
+        parser: variable
+        type: str
+        optional: true
+        help: 'cell sensory data type (if sensor instance and not data:save:* channel)'
+        value_label: TYPE
+        tags: [agent, communication]
+      sensor_data_id:
+        parser: variable
+        type: str
+        default: id
+        optional: true
+        help: 'cell sensory data type id field (if sensor data and multi-field message)'
+        value_label: TYPE
         tags: [agent, communication]
       sensor_filters:
         parser: fields
@@ -224,7 +247,7 @@ command_mixins:
         parser: variable
         type: str
         default: openrouter/deepseek-r1
-        optional: '--model-provider'
+        optional: true
         help: 'cell model plugin provider'
         value_label: NAME
         tags: [agent, model]

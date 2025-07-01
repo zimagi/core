@@ -2,7 +2,11 @@ import re
 import copy
 
 from systems.commands.index import BaseCommand
-from utility.data import Collection, normalize_value, load_json, dump_json
+from utility.data import normalize_value, load_json
+
+
+class CellError(Exception):
+    pass
 
 
 class Cell(BaseCommand("cell")):
@@ -29,14 +33,17 @@ class Cell(BaseCommand("cell")):
             raise error
 
         self.send(
-            self.channel,
-            {
-                "sender": package.sender,
-                "message": message,
-                "response": response.result,
-                "time": response.time,
-                "memory": response.memory,
-            },
+            package.sender if self.channel == "sender" else self.channel,
+            self.format_message(
+                {
+                    "sensor": self.sensor,
+                    "sender": package.sender,
+                    "message": message,
+                    "response": response.result,
+                    "time": response.time,
+                    "memory": response.memory,
+                }
+            ),
         )
 
     def _process_message(self, message, state):
@@ -48,7 +55,7 @@ class Cell(BaseCommand("cell")):
             response = model.exec(
                 [
                     {"role": "system", "message": prompts["system"]},
-                    *self.load_memories(message, prompts["request"]),
+                    *self.load_memories(message),
                     {"role": "user", "message": request},
                 ]
             )
@@ -57,9 +64,19 @@ class Cell(BaseCommand("cell")):
             if tool_call:
                 tool_data = load_json(tool_call.group(1).strip())
                 if self.validate_exec(tool_data):
-                    response = self.mcp.exec_tool(tool_data["tool"], tool_data["parameters"])
+                    result = self.mcp.exec_tool(tool_data["tool"], tool_data["parameters"])
+                    self.save_memories(
+                        message,
+                        {"role": "assistant", "message": response.text},
+                        {"role": "assistant", "message": result},
+                    )
             else:
+                self.save_memories(
+                    message, {"role": "user", "message": prompts["request"]}, {"role": "assistant", "message": response.text}
+                )
                 return {"comment": response.text}
+
+        raise CellError("Maximum amount of retries")
 
     def refine_state(self, package, message, state):
         return state
@@ -68,22 +85,45 @@ class Cell(BaseCommand("cell")):
         return self.sensor_key if self.sensor_key else self.channel
 
     def load_message(self, message):
+        self._sensor_data_type = None
+
         if self.sensor.startswith("data:save:"):
-            data_type = self.sensor.split(":")[2]
-            return self.facade(data_type).values(*self.message_fields, id=message)[0]
+            self._sensor_data_type = self.sensor.split(":")[2]
+        elif self.sensor_data:
+            self._sensor_data_type = self.sensor_data
+
+        if self._sensor_data_type:
+            facade = self.facade(self._sensor_data_type)
+            if isinstance(message, (str, int)):
+                instances = facade.values(*self.message_fields, id=message, **self.sensor_filters)
+                return instances[0] if len(instances) > 0 else None
+            else:
+                instances = facade.values(*self.message_fields, id=message[self.sensor_data_id], **self.sensor_filters)
+                return instances[0] if len(instances) > 0 else None
+
         elif isinstance(message, dict):
             return {name: value for name, value in message.items() if not self.message_fields or name in self.message_fields}
+
+        return message
+
+    def format_message(self, message):
+        # Override in subclasses if needed
         return message
 
     def _check_message(self, message):
-        for field, value in self.sensor_filters.items():
-            value = normalize_value(value)
-            # Filter field doesn't exist
-            if field not in message:
-                return False
-            # Scalar message and filter values do not match
-            elif normalize_value(message[field]) != value:
-                return False
+        if not message:
+            return False
+
+        if not self._sensor_data_type:
+            for field, value in self.sensor_filters.items():
+                value = normalize_value(value)
+                # Filter field doesn't exist
+                if field not in message:
+                    return False
+                # Scalar message and filter values do not match
+                elif normalize_value(message[field]) != value:
+                    return False
+
         return self.validate_message(message)
 
     def validate_message(self, message):
@@ -95,18 +135,47 @@ class Cell(BaseCommand("cell")):
         for name, prompt_file in prompts.items():
             template = self.manager.template_engine.get_template(prompt_file)
             prompts[name] = template.render(**state)
-
         return prompts
 
     def get_prompts(self):
+        prompt_base = "cell/prompt"
         return {
-            "system": f"cell/prompt/{self.system_template}.md",
-            "tools": f"cell/prompt/{self.tools_template}.md",
-            "request": f"cell/prompt/{self.template}.md",
+            "system": f"{prompt_base}/{self.system_template}.md",
+            "tools": f"{prompt_base}/{self.tools_template}.md",
+            "request": f"{prompt_base}/{self.template}.md",
         }
 
-    def load_memories(self, message, request_prompt):
-        return []
+    def get_memory_index(self, message):
+        try:
+            if self.chat_key == "global":
+                return self.sensor_key
+            return f"{self.sensor_key}:{message[self.chat_key]}"
+        except KeyError:
+            raise CellError(f"Memory index chat key {self.chat_key} is not global and does not exist in message: {message}")
+
+    def get_chat(self, message):
+        if not getattr(self, "_chat_index", None):
+            self._chat_index = {}
+
+        memory_index = self.get_memory_index(message)
+        if memory_index not in self._chat_index:
+            self._chat_index[memory_index] = self._chat.retrieve(None, user=self.active_user, name=memory_index)
+
+        return self._chat_index[memory_index]
+
+    def load_memories(self, message):
+        return self._chat_message.set_order("created").values("role", "content", chat=self.get_chat(message))
+
+    def save_memories(self, message, *memories):
+        for memory in memories:
+            self.save_memory(message, memory)
+
+    def save_memory(self, message, memory):
+        self.save_instance(
+            self._chat_message,
+            None,
+            fields={**memory, "chat": self.get_chat(message)},
+        )
 
     def validate_tool(self, exec_data):
         if not exec_data or "tool" not in exec_data or not exec_data["tool"]:
