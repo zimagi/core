@@ -1,5 +1,5 @@
 plugin:
-  sentence_parser:
+  text_splitter:
     base: base
     interface:
       split:
@@ -18,7 +18,7 @@ plugin:
         option:
           model:
             type: str
-            help: 'Sentence parser model name'
+            help: 'Text splitter model name'
             default: en_core_web_lg
           validate:
             type: bool

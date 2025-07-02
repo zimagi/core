@@ -1,7 +1,7 @@
 from systems.plugins.index import BasePlugin
 
 
-class BaseProvider(BasePlugin("sentence_parser")):
+class BaseProvider(BasePlugin("text_splitter")):
 
     def __init__(self, type, name, command, **options):
         super().__init__(type, name, command)
@@ -13,4 +13,4 @@ class BaseProvider(BasePlugin("sentence_parser")):
         pass
 
     def split(self, text):
-        raise NotImplementedError("Sentence Parser providers must implement split method")
+        raise NotImplementedError("Text Splitter providers must implement split method")

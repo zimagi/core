@@ -1,16 +1,18 @@
-from django.conf import settings
-
 from systems.plugins.index import BaseProvider
-from utility.data import get_identifier
+from utility.filesystem import save_file
 
 import spacy
 import re
+import os
 
 
-class Provider(BaseProvider("sentence_parser", "spacy")):
+class Provider(BaseProvider("text_splitter", "spacy")):
 
     def initialize_model(self):
-        spacy.cli.download(self.field_model)
+        model_state_file = f"/tmp/{self.field_model}.downloaded"
+        if not os.path.exists(model_state_file):
+            spacy.cli.download(self.field_model)
+            save_file(model_state_file, self.command.time.now_string)
 
     @property
     def model(self):
