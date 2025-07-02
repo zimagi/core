@@ -47,7 +47,7 @@ def index_tools(user, server):
                                 field_type = get_type(field.type)
                                 command_fields[field_name] = {
                                     "type": field_type,
-                                    "description": f"<TYPE {field_type}>: {field.description[0].upper()}{field.description[1:]}",
+                                    "description": f"{field.description[0].upper()}{field.description[1:]}",
                                 }
                                 if field.required:
                                     required_fields.append(field_name)
