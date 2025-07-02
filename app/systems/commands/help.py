@@ -46,7 +46,7 @@ class CommandDescriptions:
                 if index + 1 == component_length:  # last component
                     text = scope[component].get("overview", " ")
                     if not overview:
-                        text += "\n" + scope[component].get("description", " ")
+                        text += "\n\n" + scope[component].get("description", " ")
                     return text
                 else:
                     scope = scope[component]
