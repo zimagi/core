@@ -32,6 +32,9 @@ class BaseProvider(BasePlugin("language_model")):
         self.import_config(options)
         self.initialize_model()
 
+    def __str__(self):
+        return f"{self.name}:{self.field_model}"
+
     def initialize_model(self):
         # Implement in subclasses if needed
         pass
