@@ -21,14 +21,22 @@ Always encapsulate the tool data in a Markdown ```json section with ending ```.
 
 ### Tool Reference
 
+The following tool list is available in YAML format...
+
+```yaml
+tools:
 #%- for tool in tools %#
-tool: {tool.schema.name}@{tool.server}
-description: {tool.schema.description}
+  - name: <{tool.schema.name}>@<{tool.server}>
+    description: |-
+      <{tool.schema.description | indent(6)}>
 #%- if "properties" in tool.schema.inputSchema and tool.schema.inputSchema["properties"] %#
-parameters:
+    parameters:
 #%- for param_name, param_info in tool.schema.inputSchema["properties"].items() %#
- - <{param_name}>: <{param_info.get("description", "No description")}>
-#%- if param_name in tool.schema.inputSchema.get("required", []) %#  <REQUIRED>#%- endif %#
+      <{param_name}>:
+        description: <{param_info.get("description", "No description")}>
+        type: <{param_info.get("type", "unknown")}>
+        required: #%- if param_name in tool.schema.inputSchema.get("required", []) %# true#%- else %# false#%- endif %#
 #%- endfor %#
 #%- endif %#
-#%- endfor %#
+#% endfor %#
+```
