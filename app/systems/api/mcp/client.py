@@ -20,26 +20,6 @@ async def connect(url, token):
             yield session
 
 
-# def format_tool_schema(server_name, tool):
-#     argument_descriptions = []
-#     if "properties" in tool.inputSchema:
-#         for param_name, param_info in tool.inputSchema["properties"].items():
-#             description = f"- {param_name}: {param_info.get('description', 'No description')}"
-#             if param_name in tool.inputSchema.get("required", []):
-#                 description += " <REQUIRED>"
-#             argument_descriptions.append(description)
-
-#     tool_description = f"""
-# Tool: {tool.name}@{server_name}
-# Description: {tool.description}
-# """
-#     if argument_descriptions:
-#         tool_description += f"""Arguments:
-# {chr(10).join(argument_descriptions)}
-# """
-#     return tool_description
-
-
 def format_tool_message(message):
     if isinstance(message, types.TextContent):
         return message.text
