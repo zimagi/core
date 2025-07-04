@@ -1,4 +1,4 @@
-# Request Instructions
+# Chat Instructions
 
 ## Goals
 
