@@ -1,10 +1,9 @@
 data:
   chat:
-    class: Chat
     base: id_resource
     disable_ops: [update]
     roles:
-      edit: [chat-admin]
+      edit: [chat-user]
       view: [chat-user]
     packages: []
     key: id
@@ -22,7 +21,6 @@ data:
 
   chat_message:
     app: chat
-    class: ChatMessage
     base: id_resource
     disable_ops: [update]
     roles:
@@ -44,6 +42,11 @@ data:
         options:
           default: user
           max_length: 32
+      sender:
+        type: '@django.CharField'
+        options:
+          'null': true
+          max_length: 256
       content:
         type: '@django.TextField'
         options:
