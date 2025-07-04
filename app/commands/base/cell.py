@@ -1,8 +1,12 @@
 import re
 import copy
+import logging
 
 from systems.commands.index import BaseCommand
 from utility.data import normalize_value, load_json
+
+
+logger = logging.getLogger(__name__)
 
 
 class CellError(Exception):
@@ -13,15 +17,26 @@ class Cell(BaseCommand("cell")):
 
     def exec(self):
         state_key = f"cell:state:{".".join(self.get_full_name().split(" "))}"
+        logger.info(f"Cell starting with state key: {state_key}")
 
         self.manager.load_templates()
+        logger.debug(f"Starting to listen for {self.sensor} with key: {self.get_sensor_key()}")
+
         for package in self.listen(self.sensor, state_key=self.get_sensor_key()):
+            logger.info(f"Message sender: {package.sender}")
+            logger.debug(f"Message received: {package.message}")
+
             message = self.load_message(package.message)
+            logger.info(f"Message loaded: {message}")
 
             if self._check_message(message):
+                logger.debug("Message check successful")
                 state = self.get_state(state_key, {"goal": self.goal, "rules": self.rules, "tools": self.tools})
+                logger.debug(f"Loading agent state: {state}")
+
                 self.perform_action(package, message, state)
                 self.set_state(state_key, self.refine_state(package, message, state))
+                logger.debug("Cell cycle complete")
 
     def perform_action(self, package, message, state):
         try:
@@ -29,54 +44,71 @@ class Cell(BaseCommand("cell")):
             response = self.profile(self._process_message, message, state)
 
         except Exception as error:
+            logger.debug(f"Got an error performing action: {error}")
             self.handle_error(error, package)
             raise error
 
-        self.send(
-            package.sender if self.channel == "sender" else self.channel,
-            self.format_message(
-                {
-                    "sensor": self.sensor,
-                    "sender": package.sender,
-                    "message": message,
-                    "response": response.result,
-                    "time": response.time,
-                    "memory": response.memory,
-                }
-            ),
-        )
+        channel = package.sender if self.channel == "sender" else self.channel
+        communication_data = {
+            "sensor": self.sensor,
+            "sender": package.sender,
+            "message": message,
+            "response": response.result,
+            "time": response.time,
+            "memory": response.memory,
+        }
+
+        logger.info(f"Sending data to channel {channel}: {communication_data}")
+        self.send(channel, self.format_message(communication_data))
 
     def _process_message(self, message, state):
         model = self.get_provider("language_model", self.model_provider, **self.model_options)
-        prompts = self._render_prompts({**state, "message": message, "tools": self.mcp.list_tools(state["tools"])})
+        prompts = self._render_prompts(
+            {
+                **state,
+                "message": message,
+                "field_labels": self.message_field_labels,
+                "tools": self.mcp.list_tools(state["tools"]),
+            }
+        )
+        system_message = {"role": "system", "message": prompts["system"]}
+        request_prompt = "\n\n".join([prompts["request"], prompts["tools"]])
+        request_message = {"role": "user", "message": request_prompt}
+        request_tokens = model.get_token_count([system_message, request_message])
 
-        for exec_try in range(5):
-            request = "\n\n".join([prompts["request"], prompts["tools"]])
-            response = model.exec(
-                [
-                    {"role": "system", "message": prompts["system"]},
-                    *self.load_memories(message),
-                    {"role": "user", "message": request},
-                ]
-            )
+        logger.info(f"Cell using model: {model}")
+        logger.info(f"Cell system prompt:\n{prompts["system"]}")
+        logger.info(f"Cell request prompt:\n{request_prompt}")
+        logger.info(f"Cell core token count: {request_tokens}")
 
-            tool_call = re.search(r"```json([^`])```", response.text)
-            if tool_call:
-                tool_data = load_json(tool_call.group(1).strip())
-                if self.validate_exec(tool_data):
-                    result = self.mcp.exec_tool(tool_data["tool"], tool_data["parameters"])
-                    self.save_memories(
-                        message,
-                        {"role": "assistant", "message": response.text},
-                        {"role": "assistant", "message": result},
-                    )
-            else:
-                self.save_memories(
-                    message, {"role": "user", "message": prompts["request"]}, {"role": "assistant", "message": response.text}
-                )
-                return {"comment": response.text}
+        # STOP HERE FOR NOW!!!
+        self.sleep(60)
+        # for exec_try in range(5):
+        #     response = model.exec(
+        #         [
+        #             system_message,
+        #             *self.load_memories(message),
+        #             request_message,
+        #         ]
+        #     )
 
-        raise CellError("Maximum amount of retries")
+        #     tool_call = re.search(r"```json([^`])```", response.text)
+        #     if tool_call:
+        #         tool_data = load_json(tool_call.group(1).strip())
+        #         if self.validate_exec(tool_data):
+        #             result = self.mcp.exec_tool(tool_data["tool"], tool_data["parameters"])
+        #             self.save_memories(
+        #                 message,
+        #                 {"role": "assistant", "message": response.text},
+        #                 {"role": "assistant", "message": result},
+        #             )
+        #     else:
+        #         self.save_memories(
+        #             message, {"role": "user", "message": prompts["request"]}, {"role": "assistant", "message": response.text}
+        #         )
+        #         return {"message": response.text}
+
+        # raise CellError("Maximum amount of retries")
 
     def refine_state(self, package, message, state):
         return state
