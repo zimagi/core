@@ -243,6 +243,10 @@ command_mixins:
         help: 'one or more data fields to pass to the model'
         value_label: NAME
         tags: [agent, communication]
+      message_field_labels:
+        parser: fields
+        optional: true
+        tags: [agent, communication]
       model_provider:
         parser: variable
         type: str
@@ -414,7 +418,7 @@ command_mixins:
         flag: '--clear'
         help: 'clear chat history before generating response'
         tags: [message, chat]
-      user_chat_message:
+      chat_message:
         parser: variable
         type: str
         optional: false
@@ -422,10 +426,18 @@ command_mixins:
         value_label: MESSAGE
         api_only: true
         tags: [message, chat]
+      listen_timeout:
+        parser: variable
+        type: int
+        default: 60
+        optional: true
+        help: 'chat listener timeout in seconds'
+        value_label: SEC
+        api_only: true
+        tags: [communication, chat]
     parse:
       chat_name:
-      chat_clear:
-      user_chat_message:
+      chat_message:
   schedule:
     class: ScheduleMixin
     meta:

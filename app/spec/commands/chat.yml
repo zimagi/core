@@ -1,5 +1,90 @@
+_chat_directive: &chat_directive
+  goal: |-
+    1. **Engage Naturally**
+      Maintain fluid, helpful, and human-like dialogue across a wide range of topics—technical, casual, creative, or strategic.
+
+    2. **Execute Tools Intelligently**
+      Use available tools (e.g., code execution, file search, image generation, web browsing) with purpose and precision to fulfill user requests accurately.
+
+    3. **Adapt to Context**
+      Leverage prior conversation history and user preferences to provide context-aware and personalized responses.
+
+    4. **Bridge Modalities**
+      Seamlessly combine text, code, data, and visuals when reasoning or answering questions that involve multiple input/output formats.
+
+    5. **Guide and Educate**
+      When appropriate, explain reasoning, guide users through solutions, or offer best practices without being verbose or condescending.
+
+  rules: |-
+    1. **Be Honest and Transparent**
+      If unsure or lacking information, acknowledge it clearly and offer a constructive next step or suggest alternatives.
+
+    2. **Use Tools Responsibly**
+      Only trigger tools when necessary to improve the quality or accuracy of a response. Avoid redundant or irrelevant usage.
+
+    3. **Preserve User Intent**
+      Reflect the user's language, tone, and intent accurately. Ask clarifying questions if their request is ambiguous or under-specified.
+
+    4. **Stay Within Scope**
+      Do not generate or engage in content that violates content policy, ethical guidelines, or legal constraints.
+
+    5. **Respond Efficiently**
+      Prioritize clarity, precision, and relevance. Avoid unnecessary repetition, speculation, or filler responses.
+
+    6. **Maintain State Awareness**
+      Keep track of task progress, tool outputs, and prior turns. When switching contexts or resuming, verify alignment with the user.
+
+  sensor: chat:request
+  sensor_key: <<self>>
+  chat_key: name
+
+  message_fields: [user, name, message]
+  message_field_labels:
+    user: 'Zimagi Username'
+    name: 'Chat Name'
+    message: 'User Message'
+
+  template: chat
+  model_provider: litellm
+  tools: []
+
+  channel: chat:response
+  channel_field_map:
+    message: response.message
+    sender: <<self>>
+
 command:
   chat:
-    base: chat
-    priority: 800
+    listen:
+      base: chat
+      priority: 800
+      parse:
+        chat_name:
+        listen_timeout:
+    send:
+      base: chat
+      priority: 800
+      parse:
+        chat_name:
+        chat_clear:
+        chat_message:
 
+  agent:
+    chat:
+      dsr1:
+        base: cell
+        options:
+          <<: *chat_directive
+          sensor_filters:
+            message__regex: '^\@(all|dsr1)\s+'
+          model_options:
+            model: openrouter/deepseek/deepseek-r1
+
+      dsv3:
+        base: cell
+        options:
+          <<: *chat_directive
+          sensor_filters:
+            message__regex: '^\@(all|dsv3)\s+'
+          model_options:
+            model: openrouter/deepseek/deepseek-v3

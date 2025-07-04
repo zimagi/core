@@ -76,8 +76,6 @@ command_base:
     background: true
   chat:
     mixins: [chat]
-    server_enabled: true
-    remote_exec: false
     groups_allowed: [chat-user]
     background: false
   agent:
@@ -102,6 +100,7 @@ command_base:
       - sensor_data_id
       - sensor_filters
       - message_fields
+      - message_field_labels
       - goal
       - rules
       - system_template
