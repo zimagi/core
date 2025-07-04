@@ -23,7 +23,6 @@ ZIMAGI_COMMON_ARGS=(
   "--rm"
   "--interactive"
   "--tty"
-  "--network" "zimagi-net"
   "--user" "$(id -u):zimagi"
   "--volume" "${__zimagi_app_dir}:/usr/local/share/zimagi"
   "--volume" "${__zimagi_package_dir}:/usr/local/share/zimagi-client"
@@ -39,10 +38,19 @@ done <<< "$(env | grep -o "ZIMAGI_[_A-Z0-9]*")"
 
 if [[ "${ZIMAGI_LOCAL_MODE:-}" ]] || [[ "${*}" == "build" ]] || [[ "${*}" == "build "* ]] || [[ "${*}" == "agent "* ]]; then
   ZIMAGI_SERVER_IMAGE="zimagi/server:${ZIMAGI_ENVIRONMENT}"
-  ZIMAGI_ARGS=("${ZIMAGI_COMMON_ARGS[@]}" "--env" "ZIMAGI_CLI_EXEC=True" "$ZIMAGI_SERVER_IMAGE" "${@}")
+  ZIMAGI_ARGS=(
+    "${ZIMAGI_COMMON_ARGS[@]}"
+    "--network" "zimagi-net"
+    "--env" "ZIMAGI_CLI_EXEC=True"
+    "$ZIMAGI_SERVER_IMAGE" "${@}"
+  )
 else
   ZIMAGI_CLIENT_IMAGE="zimagi/cli:${ZIMAGI_VERSION}"
-  ZIMAGI_ARGS=("${ZIMAGI_COMMON_ARGS[@]}" "$ZIMAGI_CLIENT_IMAGE" "${@}")
+  ZIMAGI_ARGS=(
+    "${ZIMAGI_COMMON_ARGS[@]}"
+    "--network" "host"
+    "$ZIMAGI_CLIENT_IMAGE" "${@}"
+  )
 
   if ! docker inspect "$ZIMAGI_CLIENT_IMAGE" >/dev/null 2>&1; then
     "${__zimagi_docker_dir}/build_client_image.sh" "${ZIMAGI_ENVIRONMENT}"
