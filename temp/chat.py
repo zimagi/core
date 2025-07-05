@@ -29,12 +29,33 @@ def generate_random_markdown():
 class MessageInput(TextArea):
     """Custom text area for chat messages"""
 
+    BINDINGS = [
+        ("ctrl+s", "submit", "Submit"),
+        ("ctrl+c", "copy", "Copy"),
+        ("ctrl+v", "paste", "Paste"),
+    ]
+
     class SubmitRequest(Message):
         """Event to request message submission"""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._has_focus = False  # Track focus state manually
+    async def on_mount(self) -> None:
+        """Initialize widget"""
+        self.app.set_focus(self)
+
+    def action_submit(self) -> None:
+        """Handle message submission"""
+        self.app.submit_message()
+
+    def action_copy(self) -> None:
+        """Copy selected text to clipboard"""
+        try:
+            import pyperclip
+
+            selected_text = self.selected_text
+            if selected_text:
+                pyperclip.copy(selected_text)
+        except ImportError:
+            self.app.notify("pyperclip package required for copy functionality", severity="error")
 
     def action_paste(self) -> None:
         """Handle paste from clipboard"""
@@ -43,38 +64,59 @@ class MessageInput(TextArea):
 
             text = pyperclip.paste()
             if text:
-                self.insert(text.replace("\n", " "))  # Remove newlines for chat input
+                self.insert(text)
         except ImportError:
             self.app.notify("pyperclip package required for paste functionality", severity="error")
-
-    def on_paste(self, event) -> None:
-        """Handle paste events"""
-        self.insert(event.text)
 
     def _create_right_click_menu(self):
         from textual.widgets import MenuItem
 
         menu = super()._create_right_click_menu()
-        # Add paste at top of context menu with keyboard shortcut
-        menu.items.insert(0, MenuItem("Paste", "action_paste", "Ctrl+V"))
+        # Add copy/paste at top of context menu with keyboard shortcuts
+        menu.items.insert(0, MenuItem("Submit", "action_submit", "Ctrl+S"))
+        menu.items.insert(1, MenuItem("Copy", "action_copy", "Ctrl+C"))
+        menu.items.insert(2, MenuItem("Paste", "action_paste", "Ctrl+V"))
         return menu
 
-    async def on_mount(self) -> None:
-        """Initialize widget"""
-        self.app.set_focus(self)
 
-    def key_ctrl_v(self) -> None:
-        """Handle paste with Ctrl+V"""
-        self.action_paste()
+class ChatNameInput(Input):
+    """Custom input for chat names with enter-to-submit"""
 
-    def _on_key(self, event) -> None:
-        """Handle key events"""
-        super()._on_key(event)
+    BINDINGS = [
+        ("enter", "select_or_create_chat", "Select/Create Chat"),
+    ]
 
-    def key_enter(self) -> None:
-        """Allow Enter key to create newlines"""
-        if not self.has_focus or not self.has_composition:
-            self.insert_text("\n")
+    def action_select_or_create_chat(self) -> None:
+        """Handle enter key press - select existing chat or create new one"""
+        app = self.app
+        if not isinstance(app, ChatApp):
+            return
+
+        name = self.value.strip()
+        if not name:
+            return
+
+        if name in app.chats:
+            # Find and click the matching chat item
+            for item in app.query(".chat-item"):
+                if item.name == name:
+                    item.post_message(ChatItem.Clicked(item))
+                    break
+        else:
+            # Create new chat (which will handle selection)
+            app.create_new_chat(name)
+
+        # Clear input and focus back to message input
+        self.value = ""
+        app.query_one("#message-input").focus()
+
+    def _create_right_click_menu(self):
+        from textual.widgets import MenuItem
+
+        menu = super()._create_right_click_menu()
+        # Add copy/paste at top of context menu with keyboard shortcuts
+        menu.items.insert(0, MenuItem("Select / Create", "action_select_or_create_chat", "Enter"))
+        return menu
 
 
 class ChatItem(Static):
@@ -351,11 +393,6 @@ class ChatApp(App):
     #message-input:focus {
         border: none;
     }
-    #paste-button {
-        width: 8;
-        min-width: 8;
-        margin: 1;
-    }
 
     #submit-button {
         width: 12;
@@ -379,7 +416,7 @@ class ChatApp(App):
         with Container(id="chat-row"):
             with Container(id="sidebar"):
                 with Container(classes="sidebar-header"):
-                    yield Input(placeholder="Filter chats...", id="new-chat-name", classes="chat-name-input")
+                    yield ChatNameInput(placeholder="Filter chats...", id="new-chat-name", classes="chat-name-input")
                     yield Button("+ Add", id="add-chat-button", variant="success", disabled=True)
                 yield ScrollableContainer(id="chat-selector", classes="chat-selector-container")
 
@@ -388,7 +425,6 @@ class ChatApp(App):
 
         with Container(id="input-area"):
             yield MessageInput(id="message-input", language="markdown", show_line_numbers=False, tab_behavior="indent")
-            yield Button("Paste", id="paste-button", variant="default")
             yield Button("Submit", id="submit-button", variant="primary")
         yield Footer()
 
@@ -426,7 +462,6 @@ class ChatApp(App):
         history.refresh()
         history.scroll_end(animate=False)
 
-
     def on_unmount(self) -> None:
         """Cleanup on app exit."""
         # Cancel any running intervals
@@ -454,23 +489,20 @@ class ChatApp(App):
         """Populate the chat selector sidebar with filtered and ordered chats"""
         selector = self.query_one("#chat-selector")
         selector.remove_children()
-        
+
         # Get filter text if any
         filter_text = self.query_one("#new-chat-name", Input).value.strip().lower()
-        
+
         # Filter chats based on input
-        filtered_chats = [
-            name for name in self.chats 
-            if not filter_text or filter_text in name.lower()
-        ]
-        
+        filtered_chats = [name for name in self.chats if not filter_text or filter_text in name.lower()]
+
         # Order chats:
         # 1. Current chat first
         # 2. Unread chats next (most recent first)
         # 3. Other chats alphabetically
         ordered_chats = []
         other_chats = []
-        
+
         for name in filtered_chats:
             if name == self.current_chat:
                 ordered_chats.insert(0, name)
@@ -478,24 +510,19 @@ class ChatApp(App):
                 ordered_chats.append(name)
             else:
                 other_chats.append(name)
-        
+
         # Sort unread chats by most recent message timestamp
-        ordered_chats[1:] = sorted(
-            ordered_chats[1:],
-            key=lambda name: self._get_last_message_time(name),
-            reverse=True
-        )
-        
+        ordered_chats[1:] = sorted(ordered_chats[1:], key=lambda name: self._get_last_message_time(name), reverse=True)
+
         # Add remaining chats alphabetically
         ordered_chats.extend(sorted(other_chats))
-        
-        selector.mount(*[
-            ChatItem(
-                name, 
-                selected=(name == self.current_chat),
-                unread=(name in self._unread_chats)
-            ) for name in ordered_chats
-        ])
+
+        selector.mount(
+            *[
+                ChatItem(name, selected=(name == self.current_chat), unread=(name in self._unread_chats))
+                for name in ordered_chats
+            ]
+        )
         selector.refresh()
 
     def _get_last_message_time(self, chat_name: str) -> datetime:
@@ -505,55 +532,65 @@ class ChatApp(App):
         # Return time of last message (content, is_user) tuple
         last_msg = self._chat_messages[chat_name][-1]
         # Extract timestamp from message content if possible
-        for line in last_msg[0].split('\n'):
-            if line.strip().startswith('###'):
+        for line in last_msg[0].split("\n"):
+            if line.strip().startswith("###"):
                 continue
-            if 'at ' in line:
-                time_str = line.split('at ')[-1].split()[0]
+            if "at " in line:
+                time_str = line.split("at ")[-1].split()[0]
                 try:
                     return datetime.strptime(time_str, "%H:%M:%S")
                 except ValueError:
                     continue
         return datetime.now()  # Fallback to current time if no timestamp found
 
-    def add_new_chat(self) -> None:
-        """Add a new chat session"""
-        name_input = self.query_one("#new-chat-name", Input)
-        new_name = name_input.value.strip()
-
-        if not new_name:
+    def create_new_chat(self, name: str) -> None:
+        """Shared method to create a new chat session"""
+        if not name:
             self.notify("Chat name cannot be empty!", severity="error")
             return
 
-        if new_name in self.chats:
+        if name in self.chats:
             self.notify("Chat name already exists!", severity="error")
             return
 
-        self.chats.append(new_name)
-        self.current_chat = new_name
-        name_input.value = ""
+        self.chats.append(name)
+        self.current_chat = name
 
         # Initialize chat messages storage
-        self._chat_messages[new_name] = []
-        welcome_msg = f"### Welcome to {new_name} Chat!\n\nThis is a persistent chat session."
-        self._chat_messages[new_name].append((welcome_msg, False))
+        self._chat_messages[name] = []
+        welcome_msg = f"### Welcome to {name} Chat!\n\nThis is a persistent chat session."
+        self._chat_messages[name].append((welcome_msg, False))
 
         # Update UI components
         self.load_chat_selector()
 
-        # Force immediate message display
-        history = self.query_one("#chat-history")
-        history.remove_children()
-        for content, is_user in self._chat_messages[self.current_chat]:
-            message = ChatMessage(content, is_user)
-            history.mount(message)
-        history.refresh()
-        history.scroll_end(animate=False)
+        # Find and select the new chat item
+        for item in self.query(".chat-item"):
+            if item.name == name:
+                # Deselect all other chats first
+                for other_item in self.query(".chat-item"):
+                    other_item.deselect()
 
-        # Force focus back to input and update button state
-        name_input.focus()
-        button = self.query_one("#add-chat-button", Button)
-        button.disabled = True
+                # Select the new chat
+                item.select()
+                item.post_message(ChatItem.Clicked(item))
+
+                # Force immediate message load
+                self.call_next(self.load_chat_messages)
+                break
+
+        # Update button state
+        self.query_one("#add-chat-button", Button).disabled = True
+
+    def add_new_chat(self) -> None:
+        """Handle add chat button press"""
+        name_input = self.query_one("#new-chat-name", Input)
+        new_name = name_input.value.strip()
+        self.create_new_chat(new_name)
+
+        # Clear input and focus back to message input
+        name_input.value = ""
+        self.query_one("#message-input").focus()
 
     async def load_chat_messages(self) -> None:
         """Load messages for the current chat"""
@@ -641,11 +678,11 @@ class ChatApp(App):
         """Test thread that randomly selects chats and sends messages"""
         while self._test_thread_running:
             await asyncio.sleep(10)  # Wait 10 seconds between messages
-            
+
             # Randomly select a chat (may or may not be current)
             random_chat = random.choice(self.chats)
             was_current = random_chat == self.current_chat
-            
+
             # Generate test message
             timestamp = datetime.now().strftime("%H:%M:%S")
             message = (
@@ -653,12 +690,12 @@ class ChatApp(App):
                 f"Random message in {random_chat} at {timestamp}\n"
                 f"This chat was {'current' if was_current else 'not current'} when sent"
             )
-            
+
             # Add message to the random chat
             if random_chat not in self._chat_messages:
                 self._chat_messages[random_chat] = []
             self._chat_messages[random_chat].append((message, False))
-            
+
             # Update UI
             if was_current:
                 # If current chat, add message directly to view
@@ -667,13 +704,6 @@ class ChatApp(App):
                 # If background chat, mark as unread
                 self._unread_chats.add(random_chat)
                 self.call_from_thread(self.load_chat_selector)
-
-    @on(Button.Pressed, "#paste-button")
-    def handle_paste(self) -> None:
-        """Handle paste button press."""
-        input_widget = self.query_one("#message-input", MessageInput)
-        input_widget.action_paste()
-        input_widget.focus()
 
     @on(Input.Changed, "#new-chat-name")
     def on_name_changed(self, event: Input.Changed) -> None:
@@ -688,9 +718,8 @@ class ChatApp(App):
         self.add_new_chat()
 
     @on(Button.Pressed, "#submit-button")
-    @on(MessageInput.SubmitRequest)
-    def handle_submission(self) -> None:
-        """Handle message submission."""
+    def handle_button_submission(self) -> None:
+        """Handle submit button press."""
         self.submit_message()
 
     def on_chat_item_clicked(self, event: ChatItem.Clicked) -> None:
