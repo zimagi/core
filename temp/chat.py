@@ -246,11 +246,21 @@ class ChatApp(App):
         self.chats = ["General", "Support", "Random", "Project A", "Project B"]
         self._unread_chats = set()  # Track chats with unread messages
         self._test_thread_running = True  # Flag to control test thread
+        self._last_read_index = {}  # Track last read message index per chat
         super().__init__()
 
     """Chat application with multi-line input and Markdown rendering."""
 
     CSS = """
+    .unread-separator {
+        color: $accent;
+        text-style: bold italic;
+        padding: 1;
+        text-align: center;
+        border-top: solid $accent 50%;
+        border-bottom: solid $accent 50%;
+        margin: 1 0;
+    }
     Screen {
         background: #1e1e1e;
         transition: background 0.3s;
@@ -459,8 +469,15 @@ class ChatApp(App):
             message = ChatMessage(content, is_user)
             history.mount(message)
 
+        # Initialize last read position
+        self._last_read_index[self.current_chat] = len(self._chat_messages[self.current_chat]) - 1
+        self._refresh_separator()
+
         history.refresh()
         history.scroll_end(animate=False)
+
+        # Track scroll position changes
+        self.set_interval(0.1, self.update_last_read_position)
 
     def on_unmount(self) -> None:
         """Cleanup on app exit."""
@@ -594,58 +611,121 @@ class ChatApp(App):
 
     async def load_chat_messages(self) -> None:
         """Load messages for the current chat"""
-        # Clear existing messages
         history = self.query_one("#chat-history")
         history.remove_children()
+        
+        chat_messages = self._chat_messages.get(self.current_chat, [])
+        last_read = self._last_read_index.get(self.current_chat, -1)
+        
+        # Mount all messages with unread separator if needed
+        for index, (content, is_user) in enumerate(chat_messages):
+            # Add unread separator before first unread message
+            if index > last_read and index > 0:
+                history.mount(Static("─── New Messages ───", classes="unread-separator"))
+                
+            history.mount(ChatMessage(content, is_user))
 
-        # Cancel any existing periodic messages
-        if hasattr(self, "_chat_intervals"):
-            for interval in self._chat_intervals.values():
-                interval.stop()
-            self._chat_intervals.clear()
+        # Calculate scroll position based on unread messages
+        if chat_messages:
+            separators = list(history.query(".unread-separator"))
+            if separators:
+                # Get all messages after the separator
+                all_widgets = list(history.query("*"))
+                separator_index = all_widgets.index(separators[0])
+                unread_widgets = all_widgets[separator_index:]
+                
+                # Calculate total height of unread messages
+                total_unread_height = sum(widget.region.height for widget in unread_widgets)
+                
+                # Get available viewport height
+                viewport_height = history.size.height
+                
+                # Rule 1: More unread than fits - scroll to separator at top
+                if total_unread_height > viewport_height:
+                    history.scroll_to_widget(separators[0], top=True, animate=False)
+                else:
+                    # Rule 2: All unread fits - scroll to bottom
+                    history.scroll_end(animate=False)
+            else:
+                # No unread messages - scroll to bottom
+                history.scroll_end(animate=False)
 
-        # Ensure chat exists in storage
-        if self.current_chat not in self._chat_messages:
-            self._chat_messages[self.current_chat] = []
-            welcome_msg = f"### Welcome to {self.current_chat} Chat!\n\nThis is a persistent chat session."
-            self._chat_messages[self.current_chat].append((welcome_msg, False))
-
-        # Mount messages synchronously first
-        history = self.query_one("#chat-history")
-        for content, is_user in self._chat_messages[self.current_chat]:
-            message = ChatMessage(content, is_user)
-            history.mount(message)
-
-        # Force immediate UI update
         history.refresh()
-        history.scroll_end(animate=False)
 
-        # Then setup async components
-        async with self._chat_lock:
-            pass  # Reserved for future async operations
+    def update_last_read_position(self) -> None:
+        """Update last read position based on visible messages"""
+        history = self.query_one("#chat-history")
+        try:
+            # Get all message widgets
+            messages = list(history.query(".user-message, .bot-message"))
+            if not messages:
+                return
+                
+            # Find first fully visible message
+            viewport_top = history.scroll_y
+            viewport_bottom = viewport_top + history.size.height
+            
+            last_visible_index = 0
+            for i, msg in enumerate(messages):
+                msg_top = msg.region.y
+                msg_bottom = msg_top + msg.region.height
+                
+                # Message is at least partially visible
+                if msg_bottom > viewport_top and msg_top < viewport_bottom:
+                    last_visible_index = i
+                    
+            # Don't update last read position here - only track visible position
+            # Last read position should only update when switching chats
+            
+            # Always refresh separator to maintain position
+            self._refresh_separator()
+        except Exception:
+            pass  # Ignore errors during widget destruction
+
+    def _refresh_separator(self) -> None:
+        """Refresh the separator position between read and unread messages"""
+        history = self.query_one("#chat-history")
+        messages = self._chat_messages[self.current_chat]
+        last_read = self._last_read_index.get(self.current_chat, -1)
+        
+        # Always clear existing separators first
+        for separator in history.query(".unread-separator"):
+            separator.remove()
+
+        # Only show separator if there are ACTUAL unread messages
+        if last_read < len(messages) - 1:
+            separator = Static("─── New Messages ───", classes="unread-separator")
+            children = list(history.query(".user-message, .bot-message"))
+            
+            if children:
+                # Calculate valid position ensuring we stay within message bounds
+                separator_pos = max(min(last_read + 1, len(children) - 1), 1)
+                try:
+                    history.mount(separator, before=children[separator_pos])
+                except IndexError:
+                    history.mount(separator)
 
     def add_message(self, content: str, is_user: bool = False) -> None:
         """Add a message to the chat history."""
-        history = self.query_one("#chat-history")
-        message = ChatMessage(content, is_user)
-        history.mount(message)
-
-        # Store message in persistent storage
+        # Store message
         if self.current_chat not in self._chat_messages:
             self._chat_messages[self.current_chat] = []
         self._chat_messages[self.current_chat].append((content, is_user))
-
-        # Mark as unread if not current chat
-        if not is_user and self.query_one("#chat-history").has_focus is False:
+        
+        # If adding to current chat, update UI immediately
+        history = self.query_one("#chat-history")
+        if is_user or self.current_chat == self.current_chat:
+            message = ChatMessage(content, is_user)
+            history.mount(message)
+            
+            # Update last read position if user sent message
+            if is_user:
+                self._last_read_index[self.current_chat] = len(self._chat_messages[self.current_chat]) - 1
+                history.scroll_end(animate=False)
+        else:
+            # Mark other chats as unread
             self._unread_chats.add(self.current_chat)
             self.load_chat_selector()
-
-        # Scroll to bottom after message is fully rendered
-        def scroll_to_bottom():
-            history.scroll_end(animate=True, duration=0.3)
-
-        # Use a small delay to ensure message is rendered
-        self.set_timer(0.1, scroll_to_bottom)
 
     async def generate_server_response(self, user_message: str) -> None:
         """Generate a server response to a user message"""
@@ -724,31 +804,31 @@ class ChatApp(App):
 
     def on_chat_item_clicked(self, event: ChatItem.Clicked) -> None:
         """Handle chat item selection"""
-        # Deselect all items first
-        for item in self.query(".chat-item"):
-            item.deselect()
-
-        # Select clicked item
-        event.item.select()
         prev_chat = self.current_chat
-        self.current_chat = event.item.name
+        new_chat = event.item.name
+        
+        # Clear previous chat's separator immediately
+        if prev_chat in self._chat_messages:
+            history = self.query_one("#chat-history")
+            for separator in history.query(".unread-separator"):
+                separator.remove()
+            
+            # Update last read position if scrolled to bottom
+            if history.scroll_y >= history.max_scroll_y:
+                self._last_read_index[prev_chat] = len(self._chat_messages[prev_chat]) - 1
 
-        # Mark chat as read
-        if self.current_chat in self._unread_chats:
-            self._unread_chats.remove(self.current_chat)
+        # Switch to new chat
+        self.current_chat = new_chat
+        event.item.select()
+        
+        # Mark new chat as read and update UI
+        if new_chat in self._unread_chats:
+            self._unread_chats.remove(new_chat)
             event.item.unread = False
-
-        # Refresh chat selector to update ordering
         self.load_chat_selector()
 
-        # Only load messages if chat changed
-        if prev_chat != self.current_chat:
-            # Cancel any existing interval for previous chat
-            if prev_chat in self._chat_intervals:
-                self._chat_intervals[prev_chat].stop()
-
-            # Schedule message loading through the event loop
-            self.call_next(self.load_chat_messages)
+        # Load messages for new chat
+        self.call_next(self.load_chat_messages)
 
     def submit_message(self) -> None:
         """Process message submission."""
