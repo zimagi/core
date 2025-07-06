@@ -15,6 +15,11 @@ data:
         options:
           'null': true
           on_delete: '@django.PROTECT'
+      label:
+        type: '@django.CharField'
+        options:
+          'null': true
+          max_length: 256
     meta:
       ordering: [user, name, '-created']
       dynamic_fields: [message_render]
