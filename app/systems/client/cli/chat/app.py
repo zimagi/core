@@ -243,6 +243,7 @@ class ChatApp(App):
     def handle_button_submission(self):
         self.submit_message()
 
+    @on(ChatItemDisplay.Clicked)
     def on_chat_item_clicked(self, event):
         prev_chat = self.current_chat
         new_chat = event.item.name
