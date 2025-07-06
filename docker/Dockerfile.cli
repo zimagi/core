@@ -93,8 +93,11 @@ VOLUME ${DATA_DIR}
 # Application entrypoints and dependencies
 #
 RUN ln -s ${APP_DIR}/scripts/client.sh /usr/local/bin/zimagi-cli
+
+COPY ./docker/cli_entrypoint.sh /entrypoint
+RUN chmod +x /entrypoint
 #
 # Execution gateway
 #
 USER zimagi
-ENTRYPOINT ["zimagi-cli"]
+ENTRYPOINT ["/entrypoint"]
