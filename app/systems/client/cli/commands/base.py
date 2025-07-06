@@ -41,6 +41,9 @@ class BaseExecutable(TerminalMixin):
         self.client = index.command_client
         self.schema = schema
 
+    def passthrough(self):
+        return False
+
     def get_arg_boundary(self):
         return 1
 

@@ -47,44 +47,46 @@ class Client(TerminalMixin):
         return args
 
     def execute(self):
-        try:
-            if settings.COMMAND_PROFILE:
-                command_profiler = cProfile.Profile()
+        args = self.initialize()
+        command = CommandIndex().find(args)
 
-            if settings.INIT_PROFILE:
-                init_profiler = cProfile.Profile()
-                init_profiler.enable()
-
+        if command.passthrough():
+            command.run_from_argv(self.argv)
+        else:
             try:
-                args = self.initialize()
-                command = CommandIndex().find(args)
+                if settings.COMMAND_PROFILE:
+                    command_profiler = cProfile.Profile()
 
                 if settings.INIT_PROFILE:
-                    init_profiler.disable()
+                    init_profiler = cProfile.Profile()
+                    init_profiler.enable()
+                try:
+                    if settings.INIT_PROFILE:
+                        init_profiler.disable()
+
+                    if settings.COMMAND_PROFILE:
+                        command_profiler.enable()
+
+                    if not command:
+                        command_name = " ".join(args)
+                        raise CommandNotFoundError(f"Command {command_name} not found")
+
+                    command.run_from_argv(self.argv)
+                    self.exit(0)
+
+                except KeyboardInterrupt:
+                    self.print("> " + self.error_color("User aborted"), stream=sys.stderr)
+                except Exception as error:
+                    self.handle_error(error)
+
+                self.exit(1)
+            finally:
+                if settings.INIT_PROFILE:
+                    init_profiler.dump_stats(self.get_profiler_path("init"))
 
                 if settings.COMMAND_PROFILE:
-                    command_profiler.enable()
-
-                if not command:
-                    command_name = " ".join(args)
-                    raise CommandNotFoundError(f"Command {command_name} not found")
-
-                command.run_from_argv(self.argv)
-                self.exit(0)
-
-            except KeyboardInterrupt:
-                self.print("> " + self.error_color("User aborted"), stream=sys.stderr)
-            except Exception as error:
-                self.handle_error(error)
-
-            self.exit(1)
-        finally:
-            if settings.INIT_PROFILE:
-                init_profiler.dump_stats(self.get_profiler_path("init"))
-
-            if settings.COMMAND_PROFILE:
-                command_profiler.disable()
-                command_profiler.dump_stats(self.get_profiler_path("command"))
+                    command_profiler.disable()
+                    command_profiler.dump_stats(self.get_profiler_path("command"))
 
     def get_profiler_path(self, name):
         return os.path.join(settings.PROFILE_DIR, f"{name}.profile")
