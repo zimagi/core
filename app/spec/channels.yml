@@ -1,10 +1,115 @@
 channels:
-  administration:
-    admin:
-    db-admin:
-    schedule-admin:
-    notification-admin:
-    user-admin:
-    config-admin:
-    module-admin:
-    data-admin:
+  'data:save:{type}':
+    description: 'This channel receives the newly created ID field values for any defined data {type}'
+    message:
+      type: str
+      description: 'The data type instance ID that was saved'
+      required: true
+
+  'data:remove:{type}':
+    description: 'This channel receives the newly removed ID field values for any defined data {type}'
+    message:
+      type: str
+      description: 'The data type instance ID that was removed'
+      required: true
+
+  'worker:scaling':
+    description: 'This channel records worker scaling events for analysis'
+    message:
+      type: dict
+      items:
+        command:
+          type: str
+          description: 'Command that triggered the worker scaling event'
+          required: true
+        worker_type:
+          type: str
+          description: 'Worker type that is being scaled'
+          required: true
+        worker_max_count:
+          type: int
+          description: 'Maximum number of workers allowed running at any given time'
+          required: true
+        worker_count:
+          type: int
+          description: 'Current number of workers that are running'
+          required: true
+        task_count:
+          type: int
+          description: 'Number of tasks waiting to be executed for this worker type'
+          required: true
+        worker_max_created:
+          type: int
+          description: 'The maximum number of workers we can create'
+          required: true
+        workers_created:
+          type: int
+          description: 'Number of workers that were actually created for this scaling event'
+          required: true
+
+  'chat:message':
+    description: 'This channel receives a sequence of chat messages'
+    message:
+      type: dict
+      items:
+        user:
+          type: str
+          description: 'User that submitted the chat message'
+          required: true
+        name:
+          type: str
+          description: 'Chat name'
+          required: true
+        message:
+          type: str
+          description: 'Chat message (can contains mentions: @user, @group)'
+          required: true
+
+  'db:backup:init':
+    description: 'This channel gets notified when a database backup is about to take place'
+    message:
+      type: str
+      description: 'The snapshot name that is being created'
+      required: true
+
+  'db:backup:complete':
+    description: 'This channel gets notified when a database backup has been completed'
+    message:
+      type: str
+      description: 'The snapshot name that has been successfully created'
+      required: true
+
+  'db:restore:init':
+    description: 'This channel gets notified when a database restore is about to take place'
+    message:
+      type: dict
+      items:
+        name:
+          type: str
+          description: 'The snapshot name that is the source of the database restore'
+          required: true
+        latest:
+          type: bool
+          description: 'Whether or not we are restoring the latest snapshot'
+          required: true
+
+  'db:restore:complete':
+    description: 'This channel gets notified when a database restore has been completed'
+    message:
+      type: dict
+      items:
+        name:
+          type: str
+          description: 'The snapshot name that is the source of the database restore'
+          required: true
+        latest:
+          type: bool
+          description: 'Whether or not we are restoring the latest snapshot'
+          required: true
+
+  'db:clean':
+    description: 'This channel gets notified when database snapshots are pruned'
+    message:
+      type: int
+      description: 'The number of snapshots that are being kept'
+      required: true
