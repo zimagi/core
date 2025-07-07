@@ -5,6 +5,7 @@ from django.conf import settings
 from utility.data import Collection, dump_json, load_json
 from utility.mutex import MutexError, MutexTimeoutError, check_mutex
 from utility.time import Time
+from utility.validation import TypeValidator
 
 
 def channel_communication_key(key):
@@ -22,6 +23,10 @@ def channel_listen_state_key(key, state_key=None):
 
 
 class CommunicationError(Exception):
+    pass
+
+
+class ChannelValidationError(Exception):
     pass
 
 
@@ -73,12 +78,17 @@ class ManagerCommunicationMixin:
                             connection.set(state_key, last_id)
 
                     if stream_data:
-                        yield Collection(
-                            time=Time().to_datetime(package["time"]),
-                            sender=package["sender"],
-                            message=load_json(package["message"]) if int(package["json"]) else package["message"],
-                        )
-                        start_time = time.time()
+                        try:
+                            message = self._validate_channel_message(channel, package["message"])
+                            yield Collection(
+                                time=Time().to_datetime(package["time"]),
+                                sender=package["sender"],
+                                message=load_json(message) if int(package["json"]) else message,
+                            )
+                            start_time = time.time()
+
+                        except ChannelValidationError:
+                            pass
 
                     current_time = time.time()
 
@@ -94,6 +104,7 @@ class ManagerCommunicationMixin:
             try:
                 if isinstance(message, Collection):
                     message = message.export()
+                message = self._validate_channel_message(channel, message)
 
                 connection.xadd(
                     channel_communication_key(channel),
@@ -125,3 +136,80 @@ class ManagerCommunicationMixin:
                 connection.delete(channel_listen_state_key(channel, state_key))
             except Exception as error:
                 raise CommunicationError(f"Deletion of channel {channel} failed with error: {error}")
+
+    def _validate_channel_message(self, channel_name, message):
+        channel_spec = None
+        for spec_name, spec in self.get_spec("channels").items():
+            pattern = "^" + re.sub(r"{[^}]+}", "[^:]+", spec_name) + "$"
+            if re.match(pattern, channel_name):
+                channel_spec = spec
+                break
+
+        if not channel_spec:
+            return message
+
+        message_spec = channel_spec.get("message", {})
+        return self._validate_message_structure(message, message_spec, channel_name)
+
+    def _validate_message_structure(self, message, spec, context):
+        expected_type = spec.get("type")
+        required = spec.get("required", False)
+        default = spec.get("default", None)
+
+        # Apply default if message is None and default is specified
+        if message is None and default is not None:
+            message = default
+
+        # Check required fields (after applying default)
+        if required and message is None:
+            raise ChannelValidationError(f"Message is required for channel {context}")
+
+        # Handle type validation if specified
+        if expected_type:
+            # Special case for lists
+            if expected_type.startswith("list[") and expected_type.endswith("]"):
+                if not isinstance(message, list):
+                    raise ChannelValidationError(f"Expected list for channel {context}, got {type(message)}")
+
+                # Extract item type from list[type] syntax
+                item_type = expected_type[5:-1]
+                self._validate_list_items(
+                    message, item_type, spec.get("length"), spec.get("min_length"), spec.get("max_length"), context
+                )
+            else:
+                # Standard type validation
+                if not TypeValidator.is_instance(message, expected_type):
+                    raise ChannelValidationError(
+                        f"Expected type '{expected_type}' for channel {context}, got {type(message)}"
+                    )
+
+        # Handle dictionary validation
+        if isinstance(message, dict):
+            items_spec = spec.get("items", {})
+            validated_dict = {}
+            for field, field_spec in items_spec.items():
+                field_value = message.get(field, field_spec.get("default"))
+                try:
+                    validated_dict[field] = self._validate_message_structure(field_value, field_spec, f"{context}.{field}")
+                except ChannelValidationError as e:
+                    if field_spec.get("required", False):
+                        raise
+            message = validated_dict
+
+        return message
+
+    def _validate_list_items(self, items, item_type, length=None, min_length=None, max_length=None, context=""):
+        # Validate list length constraints
+        if length is not None and len(items) != length:
+            raise ChannelValidationError(f"Expected list length {length} for {context}, got {len(items)}")
+        if min_length is not None and len(items) < min_length:
+            raise ChannelValidationError(f"List length must be at least {min_length} for {context}, got {len(items)}")
+        if max_length is not None and len(items) > max_length:
+            raise ChannelValidationError(f"List length must be at most {max_length} for {context}, got {len(items)}")
+
+        # Validate each item's type
+        for index, item in enumerate(items):
+            if not TypeValidator.is_instance(item, item_type):
+                raise ChannelValidationError(
+                    f"Expected type '{item_type}' for item {index} in list {context}, got {type(item)}"
+                )
