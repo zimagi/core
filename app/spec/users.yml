@@ -1,0 +1,5 @@
+users:
+  dsv3:
+    groups: [ai-user]
+  dsr1:
+    groups: [ai-user]
