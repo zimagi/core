@@ -155,7 +155,7 @@ class BasePlugin(base.BasePlugin):
         if normalize:
             values = normalize_dict(values)
 
-        if self.command.check_available(self.facade, key):
+        if not key or self.command.check_available(self.facade, key):
             values = self.preprocess_fields(values)
 
             self._init_config(values, True)
