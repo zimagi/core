@@ -34,9 +34,8 @@ _chat_directive: &chat_directive
     6. **Maintain State Awareness**
       Keep track of task progress, tool outputs, and prior turns. When switching contexts or resuming, verify alignment with the user.
 
-  sensor: chat:request
-  sensor_key: <<self>>
   chat_key: name
+  sensor: chat:request
 
   message_fields: [user, name, message]
   message_field_labels:
@@ -51,7 +50,6 @@ _chat_directive: &chat_directive
   channel: chat:response
   channel_field_map:
     message: response.message
-    sender: <<self>>
 
 command:
   chat:
@@ -74,8 +72,9 @@ command:
         base: cell
         options:
           <<: *chat_directive
+          user: dsr1
           sensor_filters:
-            message__regex: '^\@(all|dsr1)\s+'
+            mentions_me: message
           model_options:
             model: openrouter/deepseek/deepseek-r1
 
@@ -83,7 +82,8 @@ command:
         base: cell
         options:
           <<: *chat_directive
+          user: dsr1
           sensor_filters:
-            message__regex: '^\@(all|dsv3)\s+'
+            mentions_me: message
           model_options:
             model: openrouter/deepseek/deepseek-v3
