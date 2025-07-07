@@ -13,21 +13,26 @@ class UserFacade(ModelFacade("user")):
     def ensure(self, command, reinit, force):
         admin = self.retrieve(settings.ADMIN_USER)
         if not admin:
-            original_mute = command.mute
-            command.mute = True
             admin = command.user_provider.create(settings.ADMIN_USER, {})
-            command.mute = original_mute
 
         self.manager.runtime.admin_user(admin)
 
-    def keep(self, key=None):
-        if key:
-            return []
+        for name, config in settings.MANAGER.index.users.items():
+            user = self.retrieve(name)
+            if not user:
+                command.user_provider.create(name, config)
 
-        return settings.ADMIN_USER
+    def keep(self, key=None):
+        return [settings.ADMIN_USER] + list(settings.MANAGER.index.users.keys())
 
     def keep_relations(self):
-        return {"groups": {settings.ADMIN_USER: Roles.admin}}
+        keep_relations = {"groups": {settings.ADMIN_USER: Roles.admin}}
+
+        for name, config in settings.MANAGER.index.users.items():
+            if config.get("groups", None):
+                keep_relations["groups"][name] = config["groups"]
+
+        return keep_relations
 
     @property
     def admin(self):
