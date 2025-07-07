@@ -89,25 +89,26 @@ command_base:
   cell:
     base: agent
     mixins: [cell, chat]
-    groups_allowed: [admin, chat-user, ai-user]
+    groups_allowed: [admin]
     background: false
     parse:
       - lifetime
       - pause
+      - goal
+      - rules
+      - user
+      - chat_key
       - sensor
-      - sensor_key
       - sensor_data
       - sensor_data_id
       - sensor_filters
       - message_fields
       - message_field_labels
-      - goal
-      - rules
       - system_template
       - tools_template
       - template
-      - chat_key
       - model_provider
       - model_options
-      - channel
       - tools
+      - channel
+      - channel_field_map
