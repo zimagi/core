@@ -87,11 +87,9 @@ class ModuleFacade(ModelFacade("module")):
             command.notice("-" * terminal_width)
 
     def keep(self, key=None):
-        keep_names = []
+        keep_names = [settings.CORE_MODULE] + self.manager.index.get_default_module_names()
         if key and self.manager.index.module_dependencies.get(key, None):
-            keep_names = [key]
-        elif not key:
-            keep_names = [settings.CORE_MODULE] + self.manager.index.get_default_module_names()
+            keep_names = keep_names + [key]
         return keep_names
 
     def delete(self, key, **filters):
