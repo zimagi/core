@@ -10,8 +10,9 @@ import threading
 import time
 import tracemalloc
 import warnings
-
 import urllib3
+
+from contextlib import contextmanager
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.base import CommandError, CommandParser
@@ -502,6 +503,13 @@ class BaseCommand(
 
         parser = self.create_parser()
         self.system_info(parser.format_help())
+
+    @contextmanager
+    def run_muted(self):
+        original_mute = self.mute
+        self.mute = True
+        yield
+        self.mute = original_mute
 
     def start_capture(self):
         self._capture_messages = []
