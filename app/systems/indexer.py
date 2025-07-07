@@ -25,6 +25,7 @@ class Indexer(module.IndexerModuleMixin, django.IndexerDjangoMixin, component.In
         self._spec = OrderedDict()
         self._reset = False
 
+        self._users = {}
         self._roles = {}
         self._locks = {}
 
@@ -124,6 +125,16 @@ class Indexer(module.IndexerModuleMixin, django.IndexerDjangoMixin, component.In
                             info[sub_key].pop("aliases")
                             for alias in aliases:
                                 info[alias] = info[sub_key]
+
+    @property
+    def users(self):
+        if not self._users:
+            for name, config in self.spec["users"].items():
+                self._users[name] = config
+
+            logger.debug(f"Application system users: {self._users}")
+
+        return self._users
 
     @property
     def roles(self):
