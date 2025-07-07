@@ -6,7 +6,7 @@ class Send(Command("chat.send")):
     def exec(self):
         if self.chat_message:
             self.send(
-                "chat:request",
+                "chat:message",
                 {
                     "user": self.active_user.name,
                     "name": self.chat_name,
