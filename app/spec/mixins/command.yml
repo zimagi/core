@@ -413,11 +413,6 @@ command_mixins:
         help: 'chat sequence name'
         value_label: NAME
         tags: [chat, key]
-      chat_clear:
-        parser: flag
-        flag: '--clear'
-        help: 'clear chat history before generating response'
-        tags: [message, chat]
       chat_message:
         parser: variable
         type: str
