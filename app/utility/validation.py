@@ -48,3 +48,65 @@ class TypeValidator:
             return isinstance(value, py_type)
         except ValueError:
             return False
+
+
+def validate_flattened_dict(flat_dict, filters=None):
+    if not filters:
+        return flat_dict
+
+    for key, value in flat_dict.items():
+        for filter_key, filter_value in filters.items():
+            if "__" in filter_key:
+                field, lookup = filter_key.rsplit("__", 1)
+            else:
+                field, lookup = filter_key, "exact"
+
+            if not key.startswith(field + "__") and key != field:
+                continue
+
+            if lookup == "exact":
+                if value != filter_value:
+                    return None
+            elif lookup == "iexact":
+                if str(value).lower() != str(filter_value).lower():
+                    return None
+            elif lookup == "contains":
+                if str(filter_value) not in str(value):
+                    return None
+            elif lookup == "icontains":
+                if str(filter_value).lower() not in str(value).lower():
+                    return None
+            elif lookup == "startswith":
+                if not str(value).startswith(str(filter_value)):
+                    return None
+            elif lookup == "istartswith":
+                if not str(value).lower().startswith(str(filter_value).lower()):
+                    return None
+            elif lookup == "endswith":
+                if not str(value).endswith(str(filter_value)):
+                    return None
+            elif lookup == "iendswith":
+                if not str(value).lower().endswith(str(filter_value).lower()):
+                    return None
+            elif lookup == "isnull":
+                if filter_value and value is not None:
+                    return None
+                if not filter_value and value is None:
+                    return None
+            elif lookup == "in":
+                if value not in filter_value:
+                    return None
+            elif lookup == "gt":
+                if not (value > filter_value):
+                    return None
+            elif lookup == "gte":
+                if not (value >= filter_value):
+                    return None
+            elif lookup == "lt":
+                if not (value < filter_value):
+                    return None
+            elif lookup == "lte":
+                if not (value <= filter_value):
+                    return None
+
+    return flat_dict
