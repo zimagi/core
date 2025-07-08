@@ -1,6 +1,7 @@
 import time
-
+import re
 import redis
+
 from django.conf import settings
 from utility.data import Collection, dump_json, load_json
 from utility.mutex import MutexError, MutexTimeoutError, check_mutex
@@ -137,18 +138,19 @@ class ManagerCommunicationMixin:
             except Exception as error:
                 raise CommunicationError(f"Deletion of channel {channel} failed with error: {error}")
 
-    def _validate_channel_message(self, channel_name, message):
-        channel_spec = None
-        for spec_name, spec in self.get_spec("channels").items():
-            pattern = "^" + re.sub(r"{[^}]+}", "[^:]+", spec_name) + "$"
+    def get_channel_spec(self, channel_name):
+        for name, spec in self.get_spec("channels").items():
+            pattern = "^" + re.sub(r"{[^}]+}", "[^:]+", name) + "$"
             if re.match(pattern, channel_name):
-                channel_spec = spec
-                break
+                return Collection(name=name, schema=spec)
+        return None
 
+    def _validate_channel_message(self, channel_name, message):
+        channel_spec = self.get_channel_spec(channel_name)
         if not channel_spec:
             return message
 
-        message_spec = channel_spec.get("message", {})
+        message_spec = channel_spec.schema.get("message", {})
         return self._validate_message_structure(message, message_spec, channel_name)
 
     def _validate_message_structure(self, message, spec, context):
