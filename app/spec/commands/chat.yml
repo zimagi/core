@@ -1,5 +1,5 @@
 _chat_directive: &chat_directive
-  goal: |-
+  agent_goal: |-
     1. **Engage Naturally**
       Maintain fluid, helpful, and human-like dialogue across a wide range of topics—technical, casual, creative, or strategic.
 
@@ -15,7 +15,7 @@ _chat_directive: &chat_directive
     5. **Guide and Educate**
       When appropriate, explain reasoning, guide users through solutions, or offer best practices without being verbose or condescending.
 
-  rules: |-
+  agent_rules: |-
     1. **Be Honest and Transparent**
       If unsure or lacking information, acknowledge it clearly and offer a constructive next step or suggest alternatives.
 
@@ -34,22 +34,24 @@ _chat_directive: &chat_directive
     6. **Maintain State Awareness**
       Keep track of task progress, tool outputs, and prior turns. When switching contexts or resuming, verify alignment with the user.
 
-  chat_key: name
-  sensor: chat:request
+  agent_chat_key: name
+  agent_sensor: chat:message
 
-  message_fields: [user, name, message]
-  message_field_labels:
+  agent_message_fields: [user, name, message]
+  agent_message_field_labels:
     user: 'Zimagi Username'
     name: 'Chat Name'
     message: 'User Message'
 
-  template: chat
-  model_provider: litellm
-  tools: []
+  agent_template: chat
+  agent_model_provider: litellm
+  agent_tools: []
 
-  channel: chat:response
-  channel_field_map:
-    message: response.message
+  agent_channel: chat:message
+  agent_channel_field_map:
+    user: user
+    name: name
+    message: message
 
 command:
   chat:
@@ -72,18 +74,18 @@ command:
         base: cell
         options:
           <<: *chat_directive
-          user: dsr1
-          sensor_filters:
+          agent_user: dsr1
+          agent_sensor_filters:
             mentions_me: message
-          model_options:
+          agent_model_options:
             model: openrouter/deepseek/deepseek-r1
 
       dsv3:
         base: cell
         options:
           <<: *chat_directive
-          user: dsr1
-          sensor_filters:
+          agent_user: dsv3
+          agent_sensor_filters:
             mentions_me: message
-          model_options:
+          agent_model_options:
             model: openrouter/deepseek/deepseek-v3

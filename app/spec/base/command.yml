@@ -94,21 +94,21 @@ command_base:
     parse:
       - lifetime
       - pause
-      - goal
-      - rules
-      - user
-      - chat_key
-      - sensor
-      - sensor_data
-      - sensor_data_id
-      - sensor_filters
-      - message_fields
-      - message_field_labels
-      - system_template
-      - tools_template
-      - template
-      - model_provider
-      - model_options
-      - tools
-      - channel
-      - channel_field_map
+      - agent_goal
+      - agent_rules
+      - agent_user
+      - agent_chat_key
+      - agent_sensor
+      - agent_sensor_data
+      - agent_sensor_data_id
+      - agent_sensor_filters
+      - agent_message_fields
+      - agent_message_field_labels
+      - agent_system_template
+      - agent_tools_template
+      - agent_template
+      - agent_model_provider
+      - agent_model_options
+      - agent_tools
+      - agent_channel
+      - agent_channel_field_map
