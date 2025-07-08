@@ -1,13 +1,15 @@
 channels:
-  'data:save:{type}':
+  'data:save:{data_type}':
     description: 'This channel receives the newly created ID field values for any defined data {type}'
+    groups: ai-user
     message:
       type: str
       description: 'The data type instance ID that was saved'
       required: true
 
-  'data:remove:{type}':
+  'data:remove:{data_type}':
     description: 'This channel receives the newly removed ID field values for any defined data {type}'
+    groups: ai-user
     message:
       type: str
       description: 'The data type instance ID that was removed'
@@ -15,6 +17,7 @@ channels:
 
   'worker:scaling':
     description: 'This channel records worker scaling events for analysis'
+    groups: admin
     message:
       type: dict
       items:
@@ -49,6 +52,9 @@ channels:
 
   'chat:message':
     description: 'This channel receives a sequence of chat messages'
+    groups:
+      - ai-user
+      - chat-user
     message:
       type: dict
       items:
@@ -67,6 +73,7 @@ channels:
 
   'db:backup:init':
     description: 'This channel gets notified when a database backup is about to take place'
+    groups: db-admin
     message:
       type: str
       description: 'The snapshot name that is being created'
@@ -74,6 +81,7 @@ channels:
 
   'db:backup:complete':
     description: 'This channel gets notified when a database backup has been completed'
+    groups: db-admin
     message:
       type: str
       description: 'The snapshot name that has been successfully created'
@@ -81,6 +89,7 @@ channels:
 
   'db:restore:init':
     description: 'This channel gets notified when a database restore is about to take place'
+    groups: db-admin
     message:
       type: dict
       items:
@@ -95,6 +104,7 @@ channels:
 
   'db:restore:complete':
     description: 'This channel gets notified when a database restore has been completed'
+    groups: db-admin
     message:
       type: dict
       items:
@@ -109,6 +119,7 @@ channels:
 
   'db:clean':
     description: 'This channel gets notified when database snapshots are pruned'
+    groups: db-admin
     message:
       type: int
       description: 'The number of snapshots that are being kept'
