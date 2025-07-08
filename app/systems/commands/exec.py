@@ -3,8 +3,9 @@ import logging
 import re
 import threading
 import time
-
 import yaml
+import zimagi
+
 from django.conf import settings
 from django.core.management.base import CommandError
 from systems.api.mcp.client import MCPClient
@@ -13,9 +14,7 @@ from systems.commands.index import CommandMixin
 from systems.commands.mixins import exec
 from systems.manage.task import CommandAborted
 from utility import display
-from utility.data import create_token
-
-import zimagi
+from utility.data import create_token, ensure_list
 
 logger = logging.getLogger(__name__)
 
@@ -260,21 +259,75 @@ class ExecCommand(
     def run_once(self):
         return self.options.get("run_once")
 
-    @property
-    def mcp(self):
-        if not getattr(self, "_mcp_client", None):
-            self._mcp_client = MCPClient(self)
-        return self._mcp_client
+    def check_channel_access(self, channel, schema=None, raise_errors=True):
+        if self.active_user is None:
+            if raise_errors:
+                self.error("You must be an authenticated user to communicate through channels")
+            return False
+        if self.active_user.name == settings.ADMIN_USER:
+            return True
+
+        if not schema:
+            spec = self.manager.get_channel_spec(channel)
+            if spec:
+                schema = spec.schema
+
+        if schema and "groups" in schema:
+            groups = ensure_list(schema["groups"])
+
+            if "public" not in groups and not self.active_user.groups.filter(name__in=groups).exists():
+                if raise_errors:
+                    self.error(
+                        f"Channel {channel} access requires at least one of the following roles in environment: {", ".join(groups)}",
+                    )
+                return False
+        return True
+
+    def get_channels(self, reset=False):
+        if not getattr(self, "_channels", None) or reset:
+            self._channels = {}
+            for name, schema in self.manager.get_spec("channels").items():
+                if self.check_channel_access(name, schema=schema, raise_errors=False):
+                    self._channels[name] = schema
+        return self._channels
+
+    def get_channel_tokens(self, channel):
+        spec = self.manager.get_channel_spec(channel)
+
+        channel_parts = channel.split(":")
+        pattern_parts = spec.name.split(":")
+
+        if len(channel_parts) != len(pattern_parts):
+            self.error("Channel name and pattern must have same number of segments")
+
+        tokens = {}
+        token_pattern = re.compile(r"{(.+?)}")
+
+        for index, (channel_part, pattern_part) in enumerate(zip(channel_parts, pattern_parts)):
+            # Check if current pattern part is a token
+            match = token_pattern.fullmatch(pattern_part)
+            if match:
+                token_name = match.group(1)
+                if not re.match(r"^\w+$", token_name):
+                    self.error(
+                        f"Invalid token name '{token_name}' - must contain only alphanumeric chars and underscores",
+                    )
+                tokens[token_name] = channel_part
+
+        return tokens
 
     def listen(self, channel, timeout=None, block_sec=10, state_key=None, terminate_callback=None):
+        self.check_channel_access(channel)
+
         if not timeout:
             timeout = settings.AGENT_MAX_LIFETIME
-
         return self.manager.listen(
             channel, timeout=timeout, block_sec=block_sec, state_key=state_key, terminate_callback=terminate_callback
         )
 
     def submit(self, channel, message, timeout=None):
+        self.check_channel_access(channel)
+
         return_channel = f"command:submit:{self.log_entry.name}:{time.time_ns()}-{create_token(5)}"
         self.send(channel, message, return_channel)
         try:
@@ -284,6 +337,8 @@ class ExecCommand(
             self.delete_stream(return_channel)
 
     def collect(self, channel, message, timeout=None, quantity=None):
+        self.check_channel_access(channel)
+
         return_channel = f"command:collect:{self.log_entry.name}:{time.time_ns()}-{create_token(5)}"
         self.send(channel, message, return_channel)
         try:
@@ -298,13 +353,21 @@ class ExecCommand(
             self.delete_stream(return_channel)
 
     def send(self, channel, message, sender=None):
+        self.check_channel_access(channel)
+
         if sender is None:
             sender = self.service_id
-
         return self.manager.send(channel, message, sender=sender)
 
     def delete_stream(self, channel):
+        self.check_channel_access(channel)
         return self.manager.delete_stream(channel)
+
+    @property
+    def mcp(self):
+        if not getattr(self, "_mcp_client", None):
+            self._mcp_client = MCPClient(self)
+        return self._mcp_client
 
     def exec(self):
         # Override in subclass
