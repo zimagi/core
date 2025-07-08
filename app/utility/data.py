@@ -210,6 +210,30 @@ def deep_merge(data, override, merge_lists=False, merge_null=True):
     return default_override
 
 
+def flatten_dict(data, allowed_fields=None, parent_key=""):
+    result = {}
+
+    for key, value in data.items():
+        new_key = f"{parent_key}__{key}" if parent_key else key
+
+        include_field = allowed_fields is None or any(
+            f.startswith(new_key) or field.startswith(key) or new_key.startswith(field) for field in allowed_fields
+        )
+        if not include_field:
+            continue
+
+        if isinstance(value, dict):
+            nested = flatten_dict(value, allowed_fields, new_key)
+            result.update(nested)
+        else:
+            result[new_key] = value
+
+    if allowed_fields:
+        return {field: value for field, value in result.items() if field in allowed_fields}
+
+    return result
+
+
 def flatten(values):
     results = []
     for item in ensure_list(values):
