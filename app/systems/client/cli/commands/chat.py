@@ -1,5 +1,3 @@
-import os
-
 from django.conf import settings
 
 from .base import BaseExecutable
@@ -15,6 +13,7 @@ class ChatCommand(BaseExecutable):
         self.app = ChatApp(self, css_path=os.path.join(settings.APP_DIR, "systems/client/cli/chat/style.tcss"))
         self.app.run()
 
-    # def handle_message(self, message):
-    #     if not message.system:
-    #         self.app.add_server_message("Server", message.format())
+    def handle_message(self, message):
+        if not message.system:
+            # self.app.add_server_message("Server", message.format())
+            self.app.add_message(chat_name, content, time=None, sender=None, is_user=False)
