@@ -64,8 +64,8 @@ class ModuleFacade(ModelFacade("module")):
                         completed_updates[module.name] = True
 
                 command.info("Running model migrations...")
-                settings.MANAGER.index.generate()
-                call_command("migrate", interactive=False, verbosity=3 if settings.MANAGER.runtime.debug() else 0)
+                self.manager.index.generate()
+                call_command("migrate", interactive=False, verbosity=3 if self.manager.runtime.debug() else 0)
 
             command.info("Ensuring display configurations...")
             for module in command.get_instances(self):
@@ -82,6 +82,9 @@ class ModuleFacade(ModelFacade("module")):
 
         self.manager.ordered_modules = None
         command.exec_local("module install", {"verbosity": command.verbosity, "local": True})
+
+        command.info("Loading templates...")
+        self.manager.load_templates()
 
         if not reinit:
             command.notice("-" * terminal_width)
