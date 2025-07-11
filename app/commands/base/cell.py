@@ -17,15 +17,19 @@ class CellError(Exception):
 
 class Cell(BaseCommand("cell")):
 
-    def __init__(self, name, parent=None):
-        super().__init__(name, parent)
+    def _initialize_agent(self):
         if self.agent_user:
             self._user.set_active_user(self.get_instance(self._user, self.agent_user, required=True))
 
         self.channels = self.get_channels()
-
         self._set_sensor(self.agent_sensor)
         logger.debug(f"Set sensor to: {self.sensor_name}")
+
+        state_key = self.get_state_key()
+        sensor_key = self.get_sensor_key()
+        logger.info(f"Cell starting with state key: {state_key}")
+
+        return (state_key, sensor_key)
 
     def get_state_key(self):
         return f"cell:state:{self.agent_user}:{".".join(self.get_full_name().split(" ")[1:])}"
@@ -34,6 +38,7 @@ class Cell(BaseCommand("cell")):
         return self.agent_user
 
     def exec(self):
+        state_key, sensor_key = self._initialize_agent()
         #
         # Listen (sensor) - listen
         # Translate (message) - load_message
@@ -42,10 +47,6 @@ class Cell(BaseCommand("cell")):
         # Transmit (transmitter) - send
         # Evaluate Outcome (llm / agent) - refine_state
         #
-        state_key = self.get_state_key()
-        sensor_key = self.get_sensor_key()
-        logger.info(f"Cell starting with state key: {state_key}")
-
         try:
             state = self.get_state(
                 state_key,
