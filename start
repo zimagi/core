@@ -61,7 +61,7 @@ export ZIMAGI_ADMIN_API_KEY=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 32; echo)
 
 export ZIMAGI_POSTGRES_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 15; echo)
 export ZIMAGI_REDIS_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 15; echo)
-export ZIMAGI_QDRANT_TOKEN=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 15; echo)
+export ZIMAGI_QDRANT_ACCESS_KEY=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 15; echo)
 """ >"${__zimagi_env_dir}/generated"
 fi
 source "${__zimagi_env_dir}/generated"
@@ -97,10 +97,12 @@ ZIMAGI_POSTGRES_HOST=postgresql-zimagi
 ZIMAGI_POSTGRES_PORT=5432
 ZIMAGI_REDIS_HOST=redis-zimagi
 ZIMAGI_REDIS_PORT=6379
+ZIMAGI_QDRANT_HOST=qdrant
+ZIMAGI_QDRANT_PORT=6333
 
 ZIMAGI_POSTGRES_PASSWORD=${ZIMAGI_POSTGRES_PASSWORD}
 ZIMAGI_REDIS_PASSWORD=${ZIMAGI_REDIS_PASSWORD}
-ZIMAGI_QDRANT_TOKEN=${ZIMAGI_QDRANT_TOKEN}
+ZIMAGI_QDRANT_ACCESS_KEY=${ZIMAGI_QDRANT_ACCESS_KEY}
 
 # API connectivity environment
 ZIMAGI_COMMAND_HOST=localhost

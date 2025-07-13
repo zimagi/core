@@ -1,0 +1,38 @@
+plugin:
+  qdrant_collection:
+    base: base
+    interface:
+      exists:
+        params:
+          ids: list
+        returns: bool
+      get:
+        params:
+          ids: list
+          options: dict
+        returns: list
+      store:
+        params:
+          fields: list
+        returns: bool
+      remove:
+        params:
+          ids: list
+      search:
+        params:
+          embeddings: list
+          limit: int
+          fields: list
+        returns: list
+    option:
+      dimension:
+        type: int
+        help: 'Embedding vector dimension'
+        default: '@settings.QDRANT_DEFAULT_VECTOR_DIMENSION'
+      shards:
+        type: int
+        help: 'Data collection shards'
+        default: 1
+
+    providers:
+      chat:

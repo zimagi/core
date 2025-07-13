@@ -54,7 +54,7 @@ services:
       QDRANT__STORAGE__SNAPSHOTS_PATH: /qdrant/snapshots
       QDRANT__STORAGE__TEMP_PATH: /qdrant/snapshots/tmp
       QDRANT__SERVICE__MAX_REQUEST_SIZE_MB: 1000
-      QDRANT__SERVICE__API_KEY: ${ZIMAGI_QDRANT_TOKEN}
+      QDRANT__SERVICE__API_KEY: ${ZIMAGI_QDRANT_ACCESS_KEY}
     ports:
       - '6333:6333'
       - '6334:6334'

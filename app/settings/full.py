@@ -149,6 +149,20 @@ if redis_host and redis_port:
         redis_url = f"{redis_protocol}://{redis_host}:{redis_port}"
 
 #
+# Qdrant configurations
+#
+QDRANT_HOST = Config.value("ZIMAGI_QDRANT_HOST", None)
+QDRANT_PORT = Config.value("ZIMAGI_QDRANT_PORT", None)
+QDRANT_ACCESS_KEY = Config.string("ZIMAGI_QDRANT_ACCESS_KEY", None)
+
+if not QDRANT_HOST or not QDRANT_PORT or not QDRANT_ACCESS_KEY:
+    raise ConfigurationError(
+        "ZIMAGI_QDRANT_HOST, ZIMAGI_QDRANT_PORT, and ZIMAGI_QDRANT_ACCESS_KEY environment variables required"
+    )
+
+QDRANT_HTTPS = Config.boolean("ZIMAGI_QDRANT_HTTPS", False)
+
+#
 # Process Management
 #
 if redis_url:
