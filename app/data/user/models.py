@@ -21,6 +21,8 @@ class UserFacade(ModelFacade("user")):
             user = self.retrieve(name)
             if not user:
                 command.user_provider.create(name, config)
+            else:
+                user.provider.update(config)
 
     def keep(self, key=None):
         return [settings.ADMIN_USER] + list(settings.MANAGER.index.users.keys())

@@ -13,7 +13,6 @@ data:
         type: '@django.ForeignKey'
         relation: user
         options:
-          'null': true
           on_delete: '@django.PROTECT'
       label:
         type: '@django.CharField'
@@ -21,8 +20,36 @@ data:
           'null': true
           max_length: 256
     meta:
-      ordering: [user, name, '-created']
+      ordering: [user, name, 'created']
       dynamic_fields: [message_render]
+
+  chat_dialog:
+    app: chat
+    base: id_resource
+    disable_ops: [update]
+    roles:
+      edit: []
+      view: [chat-user]
+    packages: []
+    key: id
+    id_fields: [chat_id, created]
+    fields:
+      name: null
+      chat:
+        type: '@django.ForeignKey'
+        relation: chat
+        options:
+          on_delete: '@django.CASCADE'
+          related_name: dialogs
+      previous:
+        type: '@django.ForeignKey'
+        relation: chat_dialog
+        options:
+          'null': true
+          on_delete: '@django.CASCADE'
+          related_name: '+'
+    meta:
+      ordering: [chat_id, 'created']
 
   chat_message:
     app: chat
@@ -42,6 +69,12 @@ data:
         options:
           on_delete: '@django.CASCADE'
           related_name: messages
+      dialog:
+        type: '@django.ForeignKey'
+        relation: chat_dialog
+        options:
+          on_delete: '@django.CASCADE'
+          related_name: messages
       role:
         type: '@django.CharField'
         options:
@@ -57,4 +90,4 @@ data:
         options:
           default: ""
     meta:
-      ordering: [chat_id, '-created']
+      ordering: [chat_id, 'created']
