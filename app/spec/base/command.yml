@@ -50,6 +50,11 @@ command_base:
     mixins: [db]
     groups_allowed: [db-admin]
     background: true
+  qdrant_admin:
+    mixins: [qdrant]
+    groups_allowed: [db-admin]
+    worker_type: qdrant
+    background: true
   cache:
     groups_allowed: [admin]
     background: false
@@ -88,7 +93,7 @@ command_base:
       - pause
   cell:
     base: agent
-    mixins: [cell, chat]
+    mixins: [cell, chat, qdrant]
     groups_allowed: [admin]
     background: false
     parse:
@@ -99,16 +104,18 @@ command_base:
       - agent_user
       - agent_chat_key
       - agent_sensor
-      - agent_sensor_data
-      - agent_sensor_data_id
+      - agent_sensor_id_field
       - agent_sensor_filters
       - agent_message_fields
       - agent_message_field_labels
+      - agent_message_splitter_provider
       - agent_system_template
       - agent_tools_template
       - agent_template
-      - agent_model_provider
-      - agent_model_options
+      - agent_embedding_model_provider
+      - agent_embedding_model_options
+      - agent_primary_model_provider
+      - agent_primary_model_options
       - agent_tools
       - agent_channel
       - agent_channel_field_map

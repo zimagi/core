@@ -84,6 +84,23 @@ command_mixins:
         help: 'JSON encoded database record objects'
         value_label: JSON
         tags: [database]
+  qdrant:
+    class: QdrantMixin
+    parameters:
+      collection_name:
+        parser: variable
+        type: str
+        optional: true
+        help: 'Qdrant Collection name'
+        value_label: NAME
+        tags: [qdrant]
+      snapshot_name:
+        parser: variable
+        type: str
+        optional: true
+        help: 'Qdrant Collection snapshot name'
+        value_label: NAME
+        tags: [qdrant]
   config:
     class: ConfigMixin
     meta:
@@ -168,7 +185,7 @@ command_mixins:
         parser: variable
         type: str
         optional: true
-        default: admin
+        default: '@settings.ADMIN_USER'
         help: 'cell run as user (defaults to admin)'
         value_label: USER_NAME
         tags: [agent, experience, access]
@@ -187,14 +204,7 @@ command_mixins:
         help: 'cell sensory communication channel'
         value_label: CHANNEL
         tags: [agent, communication]
-      agent_sensor_data:
-        parser: variable
-        type: str
-        optional: true
-        help: 'cell sensory data type (if sensor instance and not data:save:* channel)'
-        value_label: TYPE
-        tags: [agent, communication]
-      agent_sensor_data_id:
+      agent_sensor_id_field:
         parser: variable
         type: str
         default: id
@@ -217,6 +227,14 @@ command_mixins:
         parser: fields
         optional: true
         tags: [agent, communication]
+      agent_message_splitter_provider:
+        parser: variable
+        type: str
+        default: spacy
+        optional: true
+        help: 'cell message text splitter plugin provider'
+        value_label: PROVIDER
+        tags: [agent, experience]
       agent_system_template:
         parser: variable
         type: str
@@ -241,15 +259,27 @@ command_mixins:
         help: 'cell instruction prompt template'
         value_label: NAME
         tags: [agent, template]
-      agent_model_provider:
+      agent_embedding_model_provider:
         parser: variable
         type: str
-        default: openrouter/deepseek-r1
+        default: litellm
         optional: true
-        help: 'cell model plugin provider'
+        help: 'cell embedding model plugin provider'
         value_label: NAME
         tags: [agent, model]
-      agent_model_options:
+      agent_embedding_model_options:
+        parser: fields
+        optional: true
+        tags: [agent, model]
+      agent_primary_model_provider:
+        parser: variable
+        type: str
+        default: litellm
+        optional: true
+        help: 'cell primary model plugin provider'
+        value_label: NAME
+        tags: [agent, model]
+      agent_primary_model_options:
         parser: fields
         optional: true
         tags: [agent, model]
