@@ -11,6 +11,15 @@ plugin:
       model:
         type: str
         help: 'Encoder model name'
+    option:
+      dimensions:
+        type: int
+        help: 'Embedding dimensions'
+        default: 768
+      format:
+        type: str
+        help: 'Embedding format'
+        default: float
 
     providers:
       transformer:
