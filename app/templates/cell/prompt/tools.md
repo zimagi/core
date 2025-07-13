@@ -1,3 +1,8 @@
+#%- if tools %#
+Once you have completed running any actions or calling available tools needed
+then wrap up by summarizing the findings or results to either ellicit new
+information or signal completion.
+
 ## Tools Available
 
 You may choose from the following tools to achieve your goals.
@@ -40,3 +45,4 @@ tools:
 #%- endif %#
 #% endfor %#
 ```
+#%- endif %#
