@@ -87,7 +87,8 @@ class MCPServer(object):
         self.index = {}
 
     def initialize(self, reload_index=False):
-        def _initialize():
+        if reload_index or not self.index:
+
             async def _run_operation():
                 async with connect(self.url, self.token) as session:
                     self.index["tools"] = {}
@@ -98,12 +99,6 @@ class MCPServer(object):
 
             self._preconnect()
             asyncio.run(_run_operation())
-
-        if reload_index or not self.index:
-            if self.name == settings.MCP_LOCAL_SERVER_NAME:
-                self.client.command.run_exclusive("mcp_request", _initialize)
-            else:
-                _initialize()
 
     def _preconnect(self):
         # Override in subclass if needed
@@ -132,24 +127,18 @@ class MCPServer(object):
         if tool_name not in self.index["tools"]:
             raise RuntimeError(f"Tool {tool_name} not found in MCP server {self.name}")
 
-        def _exec_tool():
-            async def _run_operation():
-                async with connect(self.url, self.token) as session:
-                    messages = []
+        async def _run_operation():
+            async with connect(self.url, self.token) as session:
+                messages = []
 
-                    tool = await session.call_tool(tool_name, arguments=arguments)
-                    for message in tool.content:
-                        messages.append(format_tool_message(message))
+                tool = await session.call_tool(tool_name, arguments=arguments)
+                for message in tool.content:
+                    messages.append(format_tool_message(message))
 
-                    return "\n".join(messages)
+                return "\n".join(messages)
 
-            self._preconnect()
-            return asyncio.run(_run_operation())
-
-        if self.name == settings.MCP_LOCAL_SERVER_NAME:
-            return self.client.command.run_exclusive("mcp_request", _exec_tool)
-        else:
-            return _exec_tool()
+        self._preconnect()
+        return asyncio.run(_run_operation())
 
 
 class MCPLocalServer(MCPServer):
