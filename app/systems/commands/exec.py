@@ -537,7 +537,6 @@ class ExecCommand(
             if primary:
                 self.check_abort()
                 self.manager.start_sensor(log_key)
-                self.manager.set_command(self)
                 if signals:
                     self._register_signal_handlers()
 

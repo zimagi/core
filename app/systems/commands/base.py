@@ -243,6 +243,7 @@ class BaseCommand(
         parser.error = display_error
 
         if self.require_db():
+            self.manager.set_command(self)
             self._user._ensure(self)
 
         self.add_arguments(parser)
@@ -858,6 +859,8 @@ class BaseCommand(
         return False
 
     def bootstrap(self, options):
+        self.manager.set_command(self)
+
         if "json_options" in options and options["json_options"] != "{}":
             options = load_json(options["json_options"])
 
