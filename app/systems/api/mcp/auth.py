@@ -22,9 +22,8 @@ class TokenAuthBackend(APITokenAuthenticationMixin, AuthenticationBackend):
 
         user, token = self.parse_token(connection.headers["Authorization"])
         self.check_login(user, token)
-
         return AuthCredentials(["authenticated"]), ZimagiUser(user)
 
     def check_token(self, user, token):
-        if not (user.check_password(token) or (user.temp_token and token == user.temp_token)):
+        if not ((user.temp_token and token == user.temp_token) or user.check_password(token)):
             self.raise_auth_failed("Invalid token: User credentials are invalid")
