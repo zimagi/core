@@ -1,0 +1,26 @@
+plugin:
+  channel_token:
+    base: base
+    interface:
+      load:
+        params:
+          message: int|str|dict
+        returns: dict
+    requirement:
+      value:
+        type: str
+        help: 'Token value'
+    option:
+      fields:
+        type: list
+        help: 'List of fields to load'
+      filters:
+        type: dict
+        help: 'Collection of filters to apply to loaded objects'
+      id_field:
+        type: str
+        default: id
+        help: 'ID field in message object'
+
+    providers:
+      data_type:
