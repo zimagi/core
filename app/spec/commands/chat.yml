@@ -43,15 +43,20 @@ _chat_directive: &chat_directive
     name: 'Chat Name'
     message: 'User Message'
 
+  agent_message_splitter_provider: spacy
+  agent_embedding_model_provider: deepinfra
+  agent_embedding_model_options:
+    model: Qwen/Qwen3-Embedding-8B
+
+  agent_primary_model_provider: litellm
   agent_template: chat
-  agent_model_provider: litellm
   agent_tools: []
 
   agent_channel: chat:message
   agent_channel_field_map:
     user: user
-    name: name
-    message: message
+    name: message__name
+    message: response__text
 
 command:
   chat:
@@ -77,8 +82,9 @@ command:
           agent_user: dsr1
           agent_sensor_filters:
             mentions_me: message
-          agent_model_options:
+          agent_primary_model_options:
             model: openrouter/deepseek/deepseek-r1
+            max_token_percent: 0.3
 
       dsv3:
         base: cell
@@ -87,5 +93,6 @@ command:
           agent_user: dsv3
           agent_sensor_filters:
             mentions_me: message
-          agent_model_options:
+          agent_primary_model_options:
             model: openrouter/deepseek/deepseek-v3
+            max_token_percent: 0.3
