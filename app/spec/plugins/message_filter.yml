@@ -1,0 +1,12 @@
+plugin:
+  message_filter:
+    base: base
+    interface:
+      filter:
+        params:
+          message: dict
+          value: int|float|str|bool
+        returns: dict|null
+
+    providers:
+      mentions_me:
