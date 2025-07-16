@@ -37,6 +37,7 @@ _chat_directive: &chat_directive
   agent_chat_key: name
   agent_sensor: chat:message
 
+  agent_memory_search_field: message
   agent_message_fields: [user, name, message]
   agent_message_field_labels:
     user: 'Zimagi Username'
