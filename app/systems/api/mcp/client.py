@@ -135,7 +135,7 @@ class MCPServer(object):
                 for message in tool.content:
                     messages.append(format_tool_message(message))
 
-                return "\n".join(messages)
+                return "\n\n".join(messages)
 
         self._preconnect()
         return asyncio.run(_run_operation())
