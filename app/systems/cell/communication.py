@@ -33,7 +33,7 @@ class CommunicationProcessor:
         self._sensor_tokens = self.command.get_channel_tokens(self.sensor_name)
         logger.debug(f"Set sensor to: {self.sensor_name}")
 
-    def listen(self, filters, fields, id_field):
+    def listen(self, filters, fields, id_field=None):
         logger.debug(f"Starting to listen for {self.sensor_name}")
         for package in self.command.listen(self.sensor_name, state_key=self.sensor_key):
             try:
@@ -77,7 +77,7 @@ class CommunicationProcessor:
             },
         )
 
-    def _load_message(self, package, filters, fields, id_field):
+    def _load_message(self, package, filters, fields, id_field=None):
         message_filters = self.command.manager.index.get_plugin_providers("message_filter")
         message = package.message
         plugin_filters = {}

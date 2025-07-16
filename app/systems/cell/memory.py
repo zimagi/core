@@ -77,12 +77,24 @@ class MemoryManager:
         self.memory_collection = "chat"
         self.chat_embeddings = self.command.qdrant(self.memory_collection)
 
+        self.new_messages = []
+
     def _get_chat(self):
         return self.command._chat.retrieve(None, user=self.user, name=self.chat_key)
 
-    def load_memories(self, text, available_tokens):
+    def add(self, *messages):
+        for message in messages:
+            if isinstance(message, (list, tuple)):
+                self.new_messages.extend(message)
+            else:
+                self.new_messages.append(message)
+
+    def load(self, text, available_tokens):
         experience = self._search_experience(text)
-        return self._format_messages(experience, available_tokens)
+        if self.new_messages:
+            new_tokens = self.actor.get_token_count(self.new_messages)
+            return self._trim_experience(experience, (available_tokens - new_tokens)) + self.new_messages
+        return self._trim_experience(experience, available_tokens)
 
     def _search_experience(self, text):
         sections = self.text_splitter.split(text)
@@ -97,7 +109,7 @@ class MemoryManager:
         )
         return Experience(self.actor, search_results)
 
-    def _format_messages(self, experience, available_tokens):
+    def _trim_experience(self, experience, available_tokens):
         selected_messages = []
         selected_tokens = 0
         sorted_dialogs = sorted(experience.dialogs.items(), key=lambda x: x[1].score, reverse=True)
@@ -116,11 +128,11 @@ class MemoryManager:
             for message_id in sorted(selected_messages, key=lambda message_id: experience.messages[message_id].created)
         ]
 
-    def save_memories(self, *memories):
+    def save(self):
         def _save_callback():
             chat_dialog = self.command._chat_dialog.set_order("-created").set_limit(1).filter(chat=self.chat)
 
-            for memory in memories:
+            for memory in self.new_messages:
                 if not chat_dialog or memory["role"] == "user" and chat_dialog.role == "assistant":
                     chat_dialog = self.command.save_instance(
                         self.command._chat_dialog,
@@ -148,4 +160,6 @@ class MemoryManager:
                         order=index,
                     )
 
-        self.command.run_exclusive(f"save-memories-{chat.id}", _save_callback)
+        if self.new_messages:
+            self.command.run_exclusive(f"save-memories-{chat.id}", _save_callback)
+            self.new_messages = []

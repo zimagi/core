@@ -20,18 +20,34 @@ class EmbeddedData:
 
 
 class Response:
-    def __init__(self, messages=None, data=None):
-        self.messages = messages or []
-        self.data = data or {}
+    def __init__(self, memory_manager):
+        self.memory_manager = memory_manager
+        self.messages = []
 
     def __str__(self):
-        return f"{"\n\n".join(messages)}: {dump_json(self.data, indent=2)}"
+        return f"{self.get_message()}:\n\nData:\n{dump_json(self.data, indent=2)}\nReferences:\n{dump_json(self.references, indent=2)}"
 
-    def add_message(self, message):
-        self.messages.append(message)
+    def get_message(self):
+        return "\n\n".join([message["content"] for message in self.messages])
+
+    def add_message(self, message, role="assistant"):
+        message = {"role": role, "content": message}
+        self.memory_manager.add(message)
+        if role == "assistant":
+            self.messages.append(message)
 
     def add_data(self, identifier, data):
         self.data[identifier] = data
+
+    def add_reference(self, identifier, reference):
+        self.references[identifier] = reference
+
+    def export(self):
+        return {
+            "message": self.get_message(),
+            "data": self.data,
+            "references": self.references,
+        }
 
 
 class Actor:
@@ -64,46 +80,47 @@ class Actor:
     def get_token_count(self, messages):
         return self.language_model.get_token_count(ensure_list(messages))
 
-    def _get_message_sequence(self, message, field_labels=None):
-        if field_labels is None:
-            field_labels = {}
-
-        prompts = self.prompt_engine.render(
-            {
-                **self.state_manager.export(),
-                "message": message,
-                "field_labels": field_labels,
-                "tools": self.mcp.list_tools(self.state_manager["tools"]) if self.state_manager["tools"] else [],
-            }
-        )
-        system_message = {"role": "system", "message": prompts["system"]}
-        request_prompt = "\n\n".join([prompts["request"], prompts["tools"]])
-        request_message = {"role": "user", "message": request_prompt}
+    def _get_message_sequence(self, prompts, text):
+        system_messages = []
+        request_messages = []
         extra_messages = []
+
+        if "system" in prompts:
+            system_messages.append({"role": "system", "message": prompts["system"]})
+
+        if "request" in prompts:
+            tools_prompt = [prompts["tools"]] if "tools" in prompts else []
+            request_prompt = "\n\n".join([prompts["request"], *tools_prompt])
+            request_messages.append({"role": "user", "message": request_prompt})
+
         for prompt_name, prompt_text in prompts.items():
             if prompt_name not in ["system", "tools", "request"]:
                 extra_messages.append({"role": "user", "message": prompt_text})
 
-        request_tokens = self.get_token_count([system_message, request_message, *extra_messages])
+        self.memory_manager.add(extra_messages, request_messages)
         return [
-            system_message,
-            *self.memory_manager.load_memories(message, (self.available_tokens - request_tokens)),
-            *extra_messages,
-            request_message,
+            *system_messages,
+            *self.memory_manager.load(text, (self.available_tokens - self.get_token_count(system_messages))),
         ]
 
-    def respond(self, message, field_labels=None):
-        response = Response()
-
+    def respond(self, message, search_field, field_labels=None):
+        response = Response(self.memory_manager)
+        prompts = self.prompt_engine.render(
+            {
+                **self.state_manager.export(),
+                "message": message,
+                "field_labels": field_labels or {},
+                "tools": self.mcp.list_tools(self.state_manager["tools"]) if self.state_manager["tools"] else [],
+            }
+        )
         for cycle in range(self.get_max_cycles()):
             try:
-
-                response = self.language_model.exec(self._get_message_sequence(message, field_labels))
-                logger.debug(f"Response success: {response.text}")
+                model_response = self.language_model.exec(self._get_message_sequence(prompts, message[search_field]))
+                logger.debug(f"Response success: {model_response.text}")
 
                 data_objects = []
                 tool_calls = []
-                for data_object in self._parse_data_objects(response.text):
+                for data_object in self._parse_data_objects(model_response.text):
                     if self._validate_tool(data_object):
                         tool_calls.append(data_object)
                     else:
@@ -115,8 +132,10 @@ class Actor:
 
                 if tool_calls:
                     results = self.command.run_list(tool_calls, self._exec_tool)
+                    for index, value in enumerate(results):
+                        response.add_message(value.result, "tool")
                 else:
-                    response.add_message({"role": "assistant", "content": response.text})
+                    response.add_message(response.text)
                     break
 
             except Exception as error:
@@ -126,6 +145,33 @@ class Actor:
 
         return response
 
+    def assist(self, message, search_field, field_labels=None):
+        response = Response(self.memory_manager)
+        prompts = self.prompt_engine.render(
+            {
+                **self.state_manager.export(),
+                "message": message,
+                "field_labels": field_labels or {},
+            }
+        )
+        for cycle in range(self.get_max_cycles()):
+            try:
+                model_response = self.language_model.exec(self._get_message_sequence(prompts, message[search_field]))
+                logger.debug(f"Response success: {model_response.text}")
+                response.add_message(model_response.text)
+                break
+
+            except Exception as error:
+                logger.error("Actor response generation failed")
+                logger.debug(f"Internal actor traceback: {format_traceback()}")
+                if cycle == (self.get_max_cycles() - 1):
+                    return self._handle_error(error)
+
+        return response
+
+    def memorize(self):
+        self.memory_manager.save()
+
     def refine_state(self):
         pass
 
@@ -133,7 +179,7 @@ class Actor:
         if not tool_data or "tool" not in tool_data or not tool_data["tool"]:
             return False
 
-        fields = self.command.mcp.get_tool_fields(tool_data["tool"])
+        fields = self.mcp.get_tool_fields(tool_data["tool"])
 
         if fields.index and ("parameters" not in tool_data or not tool_data["parameters"]):
             return False
@@ -150,9 +196,8 @@ class Actor:
 
     def _exec_tool(self, tool_data):
         logger.info(f"Executing tool: {tool_data['tool']}")
-        parameters = tool_data.get("parameters", {})
-        result = self.command.mcp.exec_tool(tool_data["tool"], parameters)
-        return {"role": "assistant", "content": f"Tool executed: {tool_data['tool']}", "result": result}
+        response_text = self.mcp.exec_tool(tool_data["tool"], tool_data.get("parameters", {}))
+        return f"Tool executed: {tool_data['tool']}\n\n{response_text}"
 
     def _handle_error(self, error):
         logger.warning(f"Actor encountered error: {error}")
