@@ -109,8 +109,10 @@ command_base:
       - agent_message_fields
       - agent_message_field_labels
       - agent_message_splitter_provider
+      - agent_memory_search_field
       - agent_system_template
       - agent_tools_template
+      - agent_assistant_template
       - agent_template
       - agent_embedding_model_provider
       - agent_embedding_model_options

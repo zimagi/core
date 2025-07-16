@@ -235,6 +235,13 @@ command_mixins:
         help: 'cell message text splitter plugin provider'
         value_label: PROVIDER
         tags: [agent, experience]
+      agent_memory_search_field:
+        parser: variables
+        type: str
+        optional: false
+        help: 'cell memory search field for searching memories'
+        value_label: NAME
+        tags: [agent, experience]
       agent_system_template:
         parser: variable
         type: str
@@ -249,6 +256,14 @@ command_mixins:
         optional: true
         default: tools
         help: 'cell instruction tools prompt template'
+        value_label: NAME
+        tags: [agent, template]
+      agent_assistant_template:
+        parser: variable
+        type: str
+        optional: true
+        default: assistant
+        help: 'cell instruction assistant prompt template'
         value_label: NAME
         tags: [agent, template]
       agent_template:
