@@ -25,13 +25,6 @@ for arg in "$@"; do
   fi
 done
 
-if [ ! "${args[0]:-}" ]; then
-  echo """
- Usage: source start [--env] runtime [environment:local] [profile:default]
-"""
-  return
-fi
-
 export COMPOSE_RUNTIME="${args[0]:-standard}"
 export COMPOSE_ENVIRONMENT="${args[1]:-local}"
 export COMPOSE_PROFILE="${args[2]:-default}"
