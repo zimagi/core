@@ -1,3 +1,4 @@
+import logging
 import re
 import time
 
@@ -7,6 +8,8 @@ from utility.data import Collection, dump_json, load_json
 from utility.mutex import MutexError, MutexTimeoutError, check_mutex
 from utility.time import Time
 from utility.validation import TypeValidator
+
+logger = logging.getLogger(__name__)
 
 
 def channel_communication_key(key):
@@ -33,18 +36,22 @@ class ChannelValidationError(Exception):
 
 class ManagerCommunicationMixin:
     def communication_connection(self):
-        if not getattr(self, "_communication_connection", None):
-            if settings.REDIS_COMMUNICATION_URL:
-                self._communication_connection = redis.from_url(
-                    settings.REDIS_COMMUNICATION_URL, encoding="utf-8", decode_responses=True
-                )
-            else:
+        self._communication_connection = None
+        if settings.REDIS_COMMUNICATION_URL:
+            self._communication_connection = redis.from_url(
+                settings.REDIS_COMMUNICATION_URL, encoding="utf-8", decode_responses=True
+            )
+            try:
+                self._communication_connection.ping()
+            except redis.exceptions.ConnectionError:
                 self._communication_connection = None
+
         return self._communication_connection
 
     def cleanup_communication(self, key):
-        if self.communication_connection():
-            self._communication_connection.close()
+        connection = self.communication_connection()
+        if connection:
+            connection.close()
 
     def listen(self, channel, timeout=0, block_sec=0.5, state_key=None, terminate_callback=None):
         communication_key = channel_communication_key(channel)
@@ -80,17 +87,18 @@ class ManagerCommunicationMixin:
 
                     if stream_data:
                         try:
-                            message = self._validate_channel_message(channel, package["message"])
+                            message = load_json(package["message"]) if int(package["json"]) else package["message"]
+                            message = self._validate_channel_message(channel, message)
                             yield Collection(
                                 time=Time().to_datetime(package["time"]),
                                 sender=package["sender"],
                                 user=package["user"],
-                                message=load_json(message) if int(package["json"]) else message,
+                                message=message,
                             )
                             start_time = time.time()
 
-                        except ChannelValidationError:
-                            pass
+                        except ChannelValidationError as error:
+                            logger.error(f"Communication listener validation error: {error}")
 
                     current_time = time.time()
 
