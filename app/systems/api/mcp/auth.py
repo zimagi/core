@@ -1,5 +1,4 @@
 from starlette.authentication import AuthCredentials, AuthenticationBackend, AuthenticationError, SimpleUser
-
 from systems.api.auth import APITokenAuthenticationMixin
 
 

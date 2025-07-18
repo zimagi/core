@@ -330,7 +330,7 @@ def UpdateSerializer(facade, exclude_fields=None, parent_data=None):
 
         instance = self.command.save_instance(
             facade,
-            validated_data.pop(facade.key()),
+            validated_data.pop(facade.key()) if facade.key() in validated_data else None,
             fields={
                 **get_relation_ids(self.command, facade, relations),
                 **get_scope_ids(self.command, facade, scope),

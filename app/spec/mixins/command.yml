@@ -480,6 +480,14 @@ command_mixins:
         value_label: SEC
         api_only: true
         tags: [communication, chat]
+      listen_state_key:
+        parser: variable
+        type: str
+        optional: true
+        help: 'chat message listener state key'
+        value_label: MESSAGE
+        api_only: true
+        tags: [communication, chat]
     parse:
       chat_name:
       chat_message:

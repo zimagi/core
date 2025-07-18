@@ -1,10 +1,10 @@
-from django.conf import settings
+import os
 
+from django.conf import settings
 from systems.plugins.index import BaseProvider
 from utility.data import dump_json
-from .base import LanguageModelResult
 
-import os
+from .base import LanguageModelResult
 
 
 class Provider(BaseProvider("language_model", "transformer")):

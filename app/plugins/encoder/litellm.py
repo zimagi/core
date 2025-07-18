@@ -1,5 +1,4 @@
 from litellm import embedding
-
 from systems.plugins.index import BaseProvider
 from utility.data import ensure_list
 

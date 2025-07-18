@@ -1,22 +1,32 @@
+import threading
+from datetime import datetime
+
 from django.conf import settings
 from textual import on
 from textual.app import App
 from textual.containers import Container, ScrollableContainer
-from textual.widgets import Input, Button, Footer, Static
+from textual.widgets import Button, Footer, Input, Static
+
+from zimagi.parallel import Parallel
 
 from .data import ChatMessage
-from .widgets import MessageInput, ChatNameInput, ChatItemDisplay, ChatMessageDisplay
+from .widgets import ChatItemDisplay, ChatMessageDisplay, ChatNameInput, MessageInput
 
 
 class ChatApp(App):
 
+    lock = threading.Lock()
+
     def __init__(self, command, chat_name=None, **kwargs):
         self.command = command
+        self.command_client = command.command_client
+        self.data_client = command.data_client
+
         self.initial_chat_name = chat_name
+        self.start_time = datetime.now().strftime("%Y-%m-%d+%H:%M:%S")
 
         self._chat_messages = {}
         self._unread_chats = set()
-        self._last_read_index = {}
 
         super().__init__(**kwargs)
 
@@ -41,8 +51,7 @@ class ChatApp(App):
         history = self.query_one("#chat-history")
         history.scroll_end(animate=False)
 
-        # TODO: Load all chats from server for user
-        self.chats = ["General", "Support", "Random", "Project A", "Project B"]
+        self.chats = self.data_client.values("chat", "name", user__name=settings.API_USER).results
         self.current_chat = (
             self.initial_chat_name if self.initial_chat_name and self.initial_chat_name in self.chats else self.chats[0]
         )
@@ -58,9 +67,6 @@ class ChatApp(App):
         history.remove_children()
         for message in self._chat_messages[self.current_chat]:
             history.mount(ChatMessageDisplay(message))
-
-        self._last_read_index[self.current_chat] = len(self._chat_messages[self.current_chat]) - 1
-        self._refresh_separator()
 
         history.refresh()
         history.scroll_end(animate=False)
@@ -128,15 +134,17 @@ class ChatApp(App):
             self.notify("Chat name already exists!", severity="error")
             return
 
-        self.chats.append(name)
-        self.current_chat = name
+        chat = self.data_client.create("chat", user=settings.API_USER, name=name)
+        self.chats.append(chat.name)
+        self.current_chat = chat.name
 
-        self._chat_messages[name] = self.add_message(name, self.get_welcome_message(name), sender="system", is_user=False)
-
+        self._chat_messages[chat.name] = [
+            self.add_message(chat.name, self.get_welcome_message(chat.name), sender="system", is_user=False)
+        ]
         self.load_chat_selector()
 
         for item in self.query(".chat-item"):
-            if item.name == name:
+            if item.name == chat.name:
                 for other_item in self.query(".chat-item"):
                     other_item.deselect()
 
@@ -157,77 +165,16 @@ class ChatApp(App):
         self.query_one("#message-input").focus()
 
     async def load_chat_messages(self):
-        history = self.query_one("#chat-history")
-        history.remove_children()
+        with self.lock:
+            history = self.query_one("#chat-history")
+            history.remove_children()
 
-        chat_messages = self._chat_messages.get(self.current_chat, [])
-        last_read = self._last_read_index.get(self.current_chat, -1)
+            chat_messages = self._chat_messages.get(self.current_chat, [])
+            for index, message in enumerate(chat_messages):
+                history.mount(ChatMessageDisplay(message))
 
-        for index, message in enumerate(chat_messages):
-            if index > last_read and index > 0:
-                history.mount(self.get_separator())
-
-            history.mount(ChatMessageDisplay(message))
-
-        if chat_messages:
-            separators = list(history.query(".unread-separator"))
-            if separators:
-                all_widgets = list(history.query("*"))
-                separator_index = all_widgets.index(separators[0])
-                unread_widgets = all_widgets[separator_index:]
-
-                total_unread_height = sum(widget.region.height for widget in unread_widgets)
-                viewport_height = history.size.height
-
-                if total_unread_height > viewport_height:
-                    history.scroll_to_widget(separators[0], top=True, animate=False)
-                else:
-                    history.scroll_end(animate=False)
-            else:
-                history.scroll_end(animate=False)
-
-        history.refresh()
-
-    def update_last_read_position(self):
-        history = self.query_one("#chat-history")
-        try:
-            messages = list(history.query(".user-message, .bot-message"))
-            if not messages:
-                return
-
-            viewport_top = history.scroll_y
-            viewport_bottom = viewport_top + history.size.height
-
-            last_visible_index = 0
-            for i, msg in enumerate(messages):
-                msg_top = msg.region.y
-                msg_bottom = msg_top + msg.region.height
-
-                if msg_bottom > viewport_top and msg_top < viewport_bottom:
-                    last_visible_index = i
-
-            self._refresh_separator()
-        except Exception:
-            pass
-
-    def _refresh_separator(self):
-        history = self.query_one("#chat-history")
-        messages = self._chat_messages[self.current_chat]
-        last_read = self._last_read_index.get(self.current_chat, -1)
-
-        for separator in history.query(".unread-separator"):
-            separator.remove()
-
-        if last_read < len(messages) - 1:
-            separator = self.get_separator()
-            children = list(history.query(".user-message, .bot-message"))
-
-            if children:
-                separator_pos = max(min(last_read + 1, len(children) - 1), 1)
-                try:
-                    history.mount(separator, before=children[separator_pos])
-                except IndexError:
-                    history.mount(separator)
+            history.scroll_end(animate=False)
+            history.refresh()
 
     @on(Input.Changed, "#new-chat-name")
     def on_name_changed(self, event: Input.Changed):
@@ -252,9 +199,6 @@ class ChatApp(App):
             history = self.query_one("#chat-history")
             for separator in history.query(".unread-separator"):
                 separator.remove()
-
-            if history.scroll_y >= history.max_scroll_y:
-                self._last_read_index[prev_chat] = len(self._chat_messages[prev_chat]) - 1
 
         self.current_chat = new_chat
         event.item.select()
@@ -286,7 +230,6 @@ class ChatApp(App):
             history.mount(ChatMessageDisplay(message))
 
             if message.is_user:
-                self._last_read_index[chat_name] = len(self._chat_messages[chat_name]) - 1
                 history.scroll_end(animate=False)
         else:
             self._unread_chats.add(chat_name)
@@ -295,24 +238,31 @@ class ChatApp(App):
     def submit_message(self):
         input_widget = self.query_one("#message-input", MessageInput)
         if text := input_widget.text.strip():
-            self.render_message(self.current_chat, text, sender=settings.API_USER, is_user=True)
+            self.command_client.execute("chat send", chat_name=self.current_chat, chat_message=text)
             input_widget.text = ""
             input_widget.focus()
 
     async def _listener_thread(self):
-        import time
-        import random
-
         while self._listener_running:
-            chat_name = random.choice(self.chats)
-            current_chat = chat_name == self.current_chat
 
-            message = (
-                f"### Test Notification\n"
-                f"Random message in {chat_name}\n"
-                f"This chat was {'current' if current_chat else 'not current'} when sent"
-            )
-            sender = "assistant"
+            def process_message(message):
+                with self.lock:
+                    if message.name and message.name == "message":
+                        self.call_from_thread(
+                            self.render_message,
+                            message.data["name"],
+                            message.data["message"],
+                            time=None,
+                            sender=message.data["user"],
+                            is_user=(True if message.data["user"] == settings.API_USER else False),
+                        )
 
-            self.call_from_thread(self.render_message, chat_name, message, sender=sender, is_user=False)
-            time.sleep(5)
+            def listen_to_chat(chat_name):
+                command_client = self.command_client.clone(process_message)
+                command_client.execute(
+                    "chat listen",
+                    chat_name=chat_name,
+                    listen_timeout=60,
+                )
+
+            Parallel.list(self.chats, listen_to_chat, thread_count=len(self.chats))

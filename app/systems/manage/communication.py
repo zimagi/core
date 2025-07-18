@@ -1,7 +1,7 @@
-import time
 import re
-import redis
+import time
 
+import redis
 from django.conf import settings
 from utility.data import Collection, dump_json, load_json
 from utility.mutex import MutexError, MutexTimeoutError, check_mutex

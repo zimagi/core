@@ -3,13 +3,12 @@ import re
 
 from django.utils.timezone import now
 from rest_framework import authentication, exceptions
-
 from systems.models.index import Model
 
 logger = logging.getLogger(__name__)
 
 
-class APITokenAuthenticationMixin(object):
+class APITokenAuthenticationMixin:
     api_type = None
     keyword = "Token"
 

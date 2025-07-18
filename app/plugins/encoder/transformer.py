@@ -1,9 +1,8 @@
-from django.conf import settings
+import os
 
+from django.conf import settings
 from systems.plugins.index import BaseProvider
 from utility.data import ensure_list
-
-import os
 
 
 class Provider(BaseProvider("encoder", "transformer")):

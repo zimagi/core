@@ -38,7 +38,8 @@ class BaseExecutable(TerminalMixin):
 
     def __init__(self, index, schema):
         self.index = index
-        self.client = index.command_client
+        self.command_client = index.command_client
+        self.data_client = index.data_client
         self.schema = schema
 
     def passthrough(self):

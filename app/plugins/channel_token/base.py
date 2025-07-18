@@ -1,5 +1,5 @@
 from systems.plugins.index import BasePlugin
-from utility.data import normalize_value, flatten_dict
+from utility.data import flatten_dict, normalize_value
 from utility.validation import validate_flattened_dict
 
 

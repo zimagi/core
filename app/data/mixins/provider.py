@@ -1,5 +1,5 @@
-from systems.models.index import ModelMixin, ModelMixinFacade
 from systems.models.errors import ProviderError
+from systems.models.index import ModelMixin, ModelMixinFacade
 
 
 class ProviderMixinFacade(ModelMixinFacade("provider")):

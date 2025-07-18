@@ -1,14 +1,12 @@
 import pyperclip
-
-from textual.widgets import TextArea, Static, Input
-from textual.message import Message
 from rich import box
-from rich.style import Style
-from rich.panel import Panel
 from rich.console import Group
-from rich.text import Text
 from rich.markdown import Markdown as RichMarkdown
-from datetime import datetime
+from rich.panel import Panel
+from rich.style import Style
+from rich.text import Text
+from textual.message import Message
+from textual.widgets import Input, Static, TextArea
 
 
 class MessageInput(TextArea):

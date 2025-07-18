@@ -1,9 +1,8 @@
-from django.conf import settings
-
-from systems.plugins.index import BasePlugin
-from utility.data import Collection, get_uuid, ensure_list, chunk_list
-
 import time
+
+from django.conf import settings
+from systems.plugins.index import BasePlugin
+from utility.data import Collection, chunk_list, ensure_list, get_uuid
 
 
 class BaseProvider(BasePlugin("qdrant_collection")):
@@ -40,7 +39,7 @@ class BaseProvider(BasePlugin("qdrant_collection")):
             try:
                 return getattr(self.client, method)(*args, **kwargs)
             except ResponseHandlingException as e:
-                self.command.warning("Request for Qdrant {} failed with: {}".format(method, e))
+                self.command.warning(f"Request for Qdrant {method} failed with: {e}")
                 time.sleep(wait)
                 wait = min(wait * 2, 300)
 
@@ -122,14 +121,13 @@ class BaseProvider(BasePlugin("qdrant_collection")):
         scoped_groups = chunk_list(ensure_list(scoped_ids), batch)
 
         for group_ids in scoped_groups:
-            for record in self.get(
+            yield from self.get(
                 **{
                     id_field: group_ids,
                     "fields": fields if fields else id_field,
                     "include_vectors": include_vectors,
                 }
-            ):
-                yield record
+            )
 
     def _get_query_id_condition(self, name, ids):
         from qdrant_client import models
@@ -248,7 +246,7 @@ class BaseProvider(BasePlugin("qdrant_collection")):
 
         for index, snapshot in enumerate(self.list_snapshots()):
             if index >= keep_num:
-                self.command.notice("Removing snapshot: {}".format(snapshot.name))
+                self.command.notice(f"Removing snapshot: {snapshot.name}")
                 if not self.delete_snapshot(snapshot.name):
                     success = False
 
@@ -264,7 +262,7 @@ class BaseProvider(BasePlugin("qdrant_collection")):
         return self.request(
             "recover_snapshot",
             self.get_collection_name(),
-            "file:///qdrant/snapshots/{}/{}".format(self.get_collection_name(), name),
+            f"file:///qdrant/snapshots/{self.get_collection_name()}/{name}",
             priority=priority,
             wait=True,
         )

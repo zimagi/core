@@ -67,6 +67,7 @@ command:
       parse:
         chat_name:
         listen_timeout:
+        listen_state_key:
     send:
       base: chat
       priority: 800

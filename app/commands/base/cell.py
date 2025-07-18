@@ -1,12 +1,11 @@
 import logging
 
-from systems.commands.index import BaseCommand
-from systems.cell.communication import CommunicationProcessor
-from systems.cell.state import StateManager
-from systems.cell.memory import MemoryManager
 from systems.cell.actor import Actor
+from systems.cell.communication import CommunicationProcessor
 from systems.cell.error import ErrorHandler
-
+from systems.cell.memory import MemoryManager
+from systems.cell.state import StateManager
+from systems.commands.index import BaseCommand
 
 logger = logging.getLogger(__name__)
 
@@ -175,7 +174,7 @@ class Cell(BaseCommand("cell")):
             },
         )
 
-    def finalize_event_response(event, response):
+    def finalize_event_response(self, event, response):
         self.actor.memorize()
 
     def _finalize_cycle(self):

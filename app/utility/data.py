@@ -217,7 +217,7 @@ def flatten_dict(data, allowed_fields=None, parent_key=""):
         new_key = f"{parent_key}__{key}" if parent_key else key
 
         include_field = allowed_fields is None or any(
-            f.startswith(new_key) or field.startswith(key) or new_key.startswith(field) for field in allowed_fields
+            field.startswith(new_key) or field.startswith(key) or new_key.startswith(field) for field in allowed_fields
         )
         if not include_field:
             continue

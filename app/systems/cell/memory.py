@@ -1,5 +1,4 @@
 import logging
-from utility.data import Collection, ensure_list
 
 logger = logging.getLogger(__name__)
 
@@ -161,5 +160,5 @@ class MemoryManager:
                     )
 
         if self.new_messages:
-            self.command.run_exclusive(f"save-memories-{chat.id}", _save_callback)
+            self.command.run_exclusive(f"save-memories-{self.chat.id}", _save_callback)
             self.new_messages = []

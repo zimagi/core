@@ -1,10 +1,9 @@
-from django.conf import settings
-
-from systems.plugins.index import BaseProvider
-from utility.data import load_json, ensure_list
+import time
 
 import requests
-import time
+from django.conf import settings
+from systems.plugins.index import BaseProvider
+from utility.data import ensure_list, load_json
 
 
 class DeepInfraRequestError(Exception):
@@ -22,7 +21,7 @@ class Provider(BaseProvider("encoder", "deepinfra")):
                 response = requests.post(
                     "https://api.deepinfra.com/v1/openai/embeddings",
                     headers={
-                        "Authorization": "Bearer {}".format(settings.DEEPINFRA_API_KEY),
+                        "Authorization": f"Bearer {settings.DEEPINFRA_API_KEY}",
                         "Content-Type": "application/json",
                     },
                     timeout=2000,

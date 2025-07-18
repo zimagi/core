@@ -8,8 +8,8 @@ https://docs.djangoproject.com/en/5.2/howto/deployment/asgi/
 """
 
 import os
-import django
 
+import django
 from mcp.server.lowlevel import Server
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 from starlette.applications import Starlette
@@ -20,7 +20,6 @@ from systems.api.mcp.auth import TokenAuthBackend
 from systems.api.mcp.routes import get_connection_handler, get_connection_lifespan, handle_status
 from systems.models.overrides import *  # noqa: F401, F403
 from utility.mutex import Mutex
-
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings.full")
 os.environ.setdefault("DJANGO_ALLOW_ASYNC_UNSAFE", "true")

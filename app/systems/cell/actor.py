@@ -1,10 +1,10 @@
 import logging
-import re
 import math
+import re
 
 from systems.cell.prompt import PromptEngine
-from utility.data import load_json, dump_json, load_yaml, ensure_list
-from utility.display import format_traceback, format_exception_info
+from utility.data import dump_json, ensure_list, load_json, load_yaml
+from utility.display import format_exception_info, format_traceback
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,11 @@ class Response:
         self.messages = []
 
     def __str__(self):
-        return f"{self.get_message()}:\n\nData:\n{dump_json(self.data, indent=2)}\nReferences:\n{dump_json(self.references, indent=2)}"
+        return (
+            f"{self.get_message()}:\n\n"
+            f"Data:\n{dump_json(self.data, indent=2)}\n"
+            f"References:\n{dump_json(self.references, indent=2)}"
+        )
 
     def get_message(self):
         return "\n\n".join([message["content"] for message in self.messages])

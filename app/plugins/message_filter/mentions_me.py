@@ -1,6 +1,7 @@
 import re
 
 from systems.plugins.index import BaseProvider
+
 from .base import MessageFilterParseError
 
 
@@ -11,7 +12,7 @@ class Provider(BaseProvider("message_filter", "mentions_me")):
             agent_user = self.command.agent_user
         except Exception:
             raise MessageFilterParseError(
-                f"Message Filter mentions_me requires the agent_user attribute (cell agent descendents)"
+                "Message Filter mentions_me requires the agent_user attribute (cell agent descendents)"
             )
         if value not in message:
             raise MessageFilterParseError(f"Message Filter value {value} not in message: {message}")

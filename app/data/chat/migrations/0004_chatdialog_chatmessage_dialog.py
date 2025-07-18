@@ -18,9 +18,7 @@ class Migration(migrations.Migration):
                 ("updated", models.DateTimeField(editable=False, null=True)),
                 (
                     "id",
-                    models.CharField(
-                        editable=False, max_length=64, primary_key=True, serialize=False
-                    ),
+                    models.CharField(editable=False, max_length=64, primary_key=True, serialize=False),
                 ),
                 (
                     "chat",

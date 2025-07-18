@@ -1,11 +1,11 @@
-from systems.plugins.index import BasePlugin
-from utility.data import dump_json
-
 import copy
 import math
 
+from systems.plugins.index import BasePlugin
+from utility.data import dump_json
 
-class LanguageModelResult(object):
+
+class LanguageModelResult:
 
     def __init__(self, text, reasoning="", prompt_tokens=0, output_tokens=0, cost=None):
         self.text = text

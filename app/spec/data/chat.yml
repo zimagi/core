@@ -1,7 +1,6 @@
 data:
   chat:
     base: id_resource
-    disable_ops: [update]
     roles:
       edit: [chat-user]
       view: [chat-user]

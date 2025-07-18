@@ -3,9 +3,8 @@ import logging
 import re
 import threading
 import time
-import yaml
-import zimagi
 
+import yaml
 from django.conf import settings
 from django.core.management.base import CommandError
 from systems.api.mcp.client import MCPClient
@@ -15,6 +14,8 @@ from systems.commands.mixins import exec
 from systems.manage.task import CommandAborted
 from utility import display
 from utility.data import create_token, ensure_list
+
+import zimagi
 
 logger = logging.getLogger(__name__)
 
@@ -278,7 +279,8 @@ class ExecCommand(
             if "public" not in groups and not self.active_user.groups.filter(name__in=groups).exists():
                 if raise_errors:
                     self.error(
-                        f"Channel {channel} access requires at least one of the following roles in environment: {", ".join(groups)}",
+                        f"Channel {channel} access requires at least one of the following roles "
+                        f" in environment: {", ".join(groups)}",
                     )
                 return False
         return True

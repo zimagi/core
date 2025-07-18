@@ -47,8 +47,12 @@ class Client(TerminalMixin):
         return args
 
     def execute(self):
-        args = self.initialize()
-        command = CommandIndex().find(args)
+        try:
+            args = self.initialize()
+            command = CommandIndex().find(args)
+        except Exception as error:
+            self.handle_error(error)
+            self.exit(1)
 
         if command.passthrough():
             command.run_from_argv(self.argv)

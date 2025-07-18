@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-import os
-import sys
-import re
+# flake8: noqa
+
 import json
-
+import os
+import re
+import sys
 from contextlib import contextmanager
-from pathlib import Path
-from typing import List, Dict
 from io import StringIO
-from aider.commands import SwitchCoder, Commands
-from aider.coders import Coder
-from aider.models import Model
-from aider.io import InputOutput
-from aider.utils import is_image_file
+from pathlib import Path
 
+from aider.coders import Coder
+from aider.commands import Commands, SwitchCoder
+from aider.io import InputOutput
+from aider.models import Model
+from aider.utils import is_image_file
 
 doc_sequence = [
     "docker",
@@ -503,7 +503,7 @@ class DocGenerator:
         self.doc_sequence = doc_sequence
         self.output_token_context = output_token_context
 
-    def find_directories(self, base_path: str = ".") -> List[Path]:
+    def find_directories(self, base_path: str = ".") -> list[Path]:
         """Find all directories to document, excluding skipped patterns."""
         directories = []
         base_path = Path(base_path)

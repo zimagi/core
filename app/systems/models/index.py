@@ -9,14 +9,14 @@ import types
 
 import inflect
 import oyaml
-from jinja2 import Environment, FileSystemLoader
 from django.conf import settings
 from django.contrib.postgres import fields as postgresql
 from django.db import models as django
+from jinja2 import Environment, FileSystemLoader
 from systems.models import fields
 from utility.data import ensure_list
-from utility.python import PythonParser
 from utility.filesystem import save_file
+from utility.python import PythonParser
 
 logger = logging.getLogger(__name__)
 

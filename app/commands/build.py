@@ -1,12 +1,12 @@
-from django.conf import settings
-from django.apps import apps
-from django.core.management import call_command
-from systems.commands.index import Command
-from systems.commands import exec, router
-from utility.data import RecursiveCollection
-
 import os
 import shutil
+
+from django.apps import apps
+from django.conf import settings
+from django.core.management import call_command
+from systems.commands import exec, router
+from systems.commands.index import Command
+from utility.data import RecursiveCollection
 
 
 class Build(Command("build")):

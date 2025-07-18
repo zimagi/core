@@ -1,10 +1,9 @@
 import logging
 
 from django.conf import settings
-from utility.data import normalize_value, flatten_dict
+from utility.data import flatten_dict, normalize_value
+from utility.display import format_exception_info, format_traceback
 from utility.validation import validate_flattened_dict
-from utility.display import format_traceback, format_exception_info
-
 
 logger = logging.getLogger(__name__)
 

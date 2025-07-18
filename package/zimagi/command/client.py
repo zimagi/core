@@ -1,3 +1,4 @@
+import copy
 import re
 
 from .. import client
@@ -24,9 +25,10 @@ class Client(client.BaseAPIClient):
             ],
             **kwargs,
         )
-        self.transport = transports.CommandHTTPTransport(
-            client=self, verify_cert=verify_cert, options_callback=options_callback, message_callback=message_callback
-        )
+        self.verify_cert = verify_cert
+        self.options_callback = options_callback
+        self.set_message_callback(message_callback)
+
         if not self.get_status().encryption:
             self.cipher = None
 
@@ -34,6 +36,11 @@ class Client(client.BaseAPIClient):
         self.init_commands = init_commands
         if self.init_commands:
             self._init_commands()
+
+    def clone(self, message_callback):
+        clone = copy.deepcopy(self)
+        clone.set_message_callback(message_callback)
+        return clone
 
     def _init_commands(self):
         self.commands = {}
@@ -53,6 +60,14 @@ class Client(client.BaseAPIClient):
 
     def _normalize_path(self, command_name):
         return re.sub(r"(\s+|\.)", "/", command_name)
+
+    def set_message_callback(self, message_callback):
+        self.transport = transports.CommandHTTPTransport(
+            client=self,
+            verify_cert=self.verify_cert,
+            options_callback=self.options_callback,
+            message_callback=message_callback,
+        )
 
     def execute(self, command_name, **options):
         command_path = self._normalize_path(command_name)

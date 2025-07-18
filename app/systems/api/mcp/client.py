@@ -1,14 +1,12 @@
 import asyncio
-
-from copy import deepcopy
 from contextlib import asynccontextmanager
-from django.conf import settings
-from django.utils.timezone import now
+from copy import deepcopy
 
 import mcp.types as types
+from django.conf import settings
+from django.utils.timezone import now
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
-
 from utility.data import Collection, create_token, flatten
 
 
@@ -29,7 +27,7 @@ def format_tool_message(message):
         raise RuntimeError(f"Message type {type(message)} not supported")
 
 
-class MCPClient(object):
+class MCPClient:
 
     def __init__(self, command):
         self.command = command
@@ -77,7 +75,7 @@ class MCPClient(object):
         return (resource_name, server_name)
 
 
-class MCPServer(object):
+class MCPServer:
 
     def __init__(self, client, name, url, token):
         self.client = client

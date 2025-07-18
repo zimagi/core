@@ -156,7 +156,7 @@ QDRANT_PORT = Config.value("ZIMAGI_QDRANT_PORT", None)
 QDRANT_ACCESS_KEY = Config.string("ZIMAGI_QDRANT_ACCESS_KEY", None)
 
 if not QDRANT_HOST or not QDRANT_PORT or not QDRANT_ACCESS_KEY:
-    raise ConfigurationError(
+    raise ConfigurationError(  # noqa: F405
         "ZIMAGI_QDRANT_HOST, ZIMAGI_QDRANT_PORT, and ZIMAGI_QDRANT_ACCESS_KEY environment variables required"
     )
 

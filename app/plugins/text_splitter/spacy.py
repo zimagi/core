@@ -1,9 +1,9 @@
-from systems.plugins.index import BaseProvider
-from utility.filesystem import save_file
+import os
+import re
 
 import spacy
-import re
-import os
+from systems.plugins.index import BaseProvider
+from utility.filesystem import save_file
 
 
 class Provider(BaseProvider("text_splitter", "spacy")):

@@ -1,4 +1,5 @@
 from systems.plugins.index import BaseProvider
+
 from .base import ChannelTokenParseError
 
 

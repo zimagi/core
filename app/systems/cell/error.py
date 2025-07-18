@@ -1,6 +1,6 @@
 import logging
-from utility.display import format_traceback, format_exception_info
 
+from utility.display import format_exception_info, format_traceback
 
 logger = logging.getLogger(__name__)
 

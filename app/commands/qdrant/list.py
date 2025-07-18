@@ -8,7 +8,7 @@ class List(Command("qdrant.list")):
             info = collection.get_info()
 
             self.info(self.display_width * "=")
-            self.info(" Qdrant Collection: {}".format(self.key_color(collection.name)))
+            self.info(f" Qdrant Collection: {self.key_color(collection.name)}")
 
             status = info.status
             if status == "green":

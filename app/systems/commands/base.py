@@ -10,9 +10,9 @@ import threading
 import time
 import tracemalloc
 import warnings
-import urllib3
-
 from contextlib import contextmanager
+
+import urllib3
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.base import CommandError, CommandParser

@@ -1,9 +1,8 @@
-import logging
 import copy
+import logging
 import threading
 
 from utility.data import dump_json
-
 
 logger = logging.getLogger(__name__)
 

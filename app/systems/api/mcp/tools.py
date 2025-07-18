@@ -1,5 +1,4 @@
 import mcp.types as types
-
 from django.conf import settings
 from django.core.management.base import CommandError
 
@@ -22,8 +21,8 @@ def get_type(type):
 
 
 def index_tools(user, server):
+    from systems.commands import action, messages, router
     from systems.commands.index import find_command
-    from systems.commands import action, router, messages
     from utility.data import dump_json
 
     async def tools_list_handler(request):
