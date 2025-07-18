@@ -84,6 +84,7 @@ class ManagerCommunicationMixin:
                             yield Collection(
                                 time=Time().to_datetime(package["time"]),
                                 sender=package["sender"],
+                                user=package["user"],
                                 message=load_json(message) if int(package["json"]) else message,
                             )
                             start_time = time.time()
@@ -99,7 +100,7 @@ class ManagerCommunicationMixin:
                 except (MutexError, MutexTimeoutError):
                     continue
 
-    def send(self, channel, message, sender=""):
+    def send(self, channel, message, sender="", user=None):
         connection = self.communication_connection()
         if connection:
             try:
@@ -112,6 +113,7 @@ class ManagerCommunicationMixin:
                     {
                         "time": Time().now_string,
                         "sender": sender,
+                        "user": user,
                         "message": dump_json(message) if isinstance(message, (list, tuple, dict)) else message,
                         "json": 1 if isinstance(message, (list, tuple, dict)) else 0,
                     },
