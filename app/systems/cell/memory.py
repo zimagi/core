@@ -11,9 +11,10 @@ class DialogResult:
 
 
 class Experience:
-    def __init__(self, command, actor, search_results):
+
+    def __init__(self, command, language_model, search_results):
         self.command = command
-        self.actor = actor
+        self.language_model = language_model
         self.search_results = search_results
 
         self.dialogs = {}
@@ -41,7 +42,9 @@ class Experience:
 
         for instance in self.command._chat_message.filter(id__in=message_ids):
             self.messages[instance.id] = instance
-            self.tokens[instance.id] = self.actor.get_token_count({"role": instance.role, "content": instance.content})
+            self.tokens[instance.id] = self.language_model.get_token_count(
+                {"role": instance.role, "content": instance.content}
+            )
 
 
 class MemoryManager:
@@ -49,64 +52,75 @@ class MemoryManager:
     def __init__(
         self,
         command,
-        actor,
         user,
-        chat_key,
-        text_splitter,
-        encoder_model,
-        encoder_model_options=None,
-        search_limit=1000,
-        search_min_score=0.3,
+        search_limit=None,
+        search_min_score=None,
     ):
-        if encoder_model_options is None:
-            encoder_model_options = {}
-
         self.command = command
-        self.actor = actor
-        self.user = user
-        self.chat_key = chat_key
-        self.chat = self._get_chat()
+        self.user = self._get_user(user)
 
-        self.search_limit = search_limit
-        self.search_min_score = search_min_score
+        self.language_model = self.user.get_language_model(self.command)
+        self.text_splitter = self.user.get_text_splitter(self.command)
+        self.encoder = self.user.get_encoder(self.command)
+        self.search_limit = self.user.get_search_limit(search_limit)
+        self.search_min_score = self.user.get_search_min_score(search_min_score)
 
-        self.text_splitter = self.command.get_provider("text_splitter", text_splitter)
-        self.encoder = self.command.get_provider("encoder", encoder_model, **encoder_model_options)
+        if not self.language_model or not self.text_splitter or not self.encoder:
+            self.error(
+                f"User {self.user.name} language model, text splitter, and encoder provider "
+                "configurations required to use memory manager"
+            )
 
         self.memory_collection = "chat"
         self.chat_embeddings = self.command.qdrant(self.memory_collection)
 
         self.new_messages = []
 
-    def _get_chat(self):
-        return self.command._chat.retrieve(None, user=self.user, name=self.chat_key)
+    def _get_user(self, user):
+        if isinstance(user, str):
+            return self._user.retrieve(user)
+        return user
+
+    def _get_chat(self, user, chat_key):
+        return self.command._chat.retrieve(None, user=user, name=chat_key)
+
+    def set_chat(self, chat_key):
+        self.chat = self._get_chat(self.user, chat_key)
+        return self
 
     def add(self, *messages):
-        for message in messages:
-            if isinstance(message, (list, tuple)):
-                self.new_messages.extend(message)
-            else:
-                self.new_messages.append(message)
 
-    def load(self, text, available_tokens):
-        experience = self._search_experience(text)
+        def _add_list(message_list):
+            for message in message_list:
+                if isinstance(message, (list, tuple)):
+                    _add_list(message)
+                else:
+                    if "sender" not in message:
+                        message["sender"] = self.user.name
+                    self.new_messages.append(message)
+
+        _add_list(messages)
+        return self
+
+    def load(self, text, available_tokens, search_limit=None, min_score=None):
+        experience = self._search_experience(text, search_limit, min_score)
         if self.new_messages:
-            new_tokens = self.actor.get_token_count(self.new_messages)
+            new_tokens = self.language_model.get_token_count(self.new_messages)
             return self._trim_experience(experience, (available_tokens - new_tokens)) + self.new_messages
         return self._trim_experience(experience, available_tokens)
 
-    def _search_experience(self, text):
+    def _search_experience(self, text, search_limit, min_score):
         sections = self.text_splitter.split(text)
         search_results = self.command.search_embeddings(
             self.memory_collection,
             self.encoder.encode(sections),
             fields=["dialog_id", "message_id"],
-            limit=self.search_limit,
-            min_score=self.search_min_score,
+            limit=search_limit or self.search_limit,
+            min_score=min_score or self.search_min_score,
             filter_field="chat_id",
             filter_ids=self.chat.id,
         )
-        return Experience(self.actor, search_results)
+        return Experience(self.language_model, search_results)
 
     def _trim_experience(self, experience, available_tokens):
         selected_messages = []
@@ -162,3 +176,5 @@ class MemoryManager:
         if self.new_messages:
             self.command.run_exclusive(f"save-memories-{self.chat.id}", _save_callback)
             self.new_messages = []
+
+        return self
