@@ -8,6 +8,8 @@ from rich.text import Text
 from textual.message import Message
 from textual.widgets import Input, Static, TextArea
 
+from zimagi.datetime import Time
+
 
 class MessageInput(TextArea):
     BINDINGS = [
@@ -137,9 +139,10 @@ class ChatMessageDisplay(Static):
     def __init__(self, message):
         super().__init__()
         self.message = message
+        self.time = Time(spacer=" ")
 
     def compose(self):
-        timestamp = self.message.time.now
+        timestamp = self.time.to_string(self.message.time)
         sender = "You" if self.message.is_user else self.message.sender
 
         bg_color = "rgb(30,30,30)"  # Dark background
