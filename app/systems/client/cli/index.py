@@ -25,7 +25,6 @@ class CommandIndex(TerminalMixin):
             token=settings.API_USER_TOKEN,
             encryption_key=settings.API_USER_KEY,
             init_commands=False,
-            message_callback=self.handle_command_message,
         )
         self.data_client = DataClient(
             protocol=("http" if settings.DATA_HOST == "localhost" else "https"),
@@ -69,6 +68,3 @@ class CommandIndex(TerminalMixin):
             return self.command
         else:
             raise CommandNotFoundError(f"Command '{command.name} {name}' not found")
-
-    def handle_command_message(self, message):
-        self.command.handle_message(message)
