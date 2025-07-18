@@ -7,7 +7,7 @@ from textual.app import App
 from textual.containers import Container, ScrollableContainer
 from textual.widgets import Button, Footer, Input, Static
 
-from zimagi.parallel import Parallel
+from zimagi.datetime import Time
 
 from .data import ChatMessage
 from .widgets import ChatItemDisplay, ChatMessageDisplay, ChatNameInput, MessageInput
@@ -27,6 +27,8 @@ class ChatApp(App):
 
         self._chat_messages = {}
         self._unread_chats = set()
+
+        self.time = Time()
 
         super().__init__(**kwargs)
 
@@ -55,13 +57,14 @@ class ChatApp(App):
         self.current_chat = (
             self.initial_chat_name if self.initial_chat_name and self.initial_chat_name in self.chats else self.chats[0]
         )
-        self._listener_running = True
+        for chat_name in self.chats:
+            self.add_message(chat_name, self.get_welcome_message(chat_name), "system", datetime.min, False)
 
         self.load_chat_selector()
-        self.run_worker(self._listener_thread(), thread=True)
+        self.call_next(self.load_chat_messages)
 
-        for chat_name in self.chats:
-            self.add_message(chat_name, self.get_welcome_message(chat_name), sender="system", is_user=False)
+        self._listener_running = True
+        self.run_worker(self._listener_thread(), thread=True)
 
         history = self.query_one("#chat-history")
         history.remove_children()
@@ -139,7 +142,7 @@ class ChatApp(App):
         self.current_chat = chat.name
 
         self._chat_messages[chat.name] = [
-            self.add_message(chat.name, self.get_welcome_message(chat.name), sender="system", is_user=False)
+            self.add_message(chat.name, self.get_welcome_message(chat.name), "system", datetime.min, False)
         ]
         self.load_chat_selector()
 
@@ -166,10 +169,26 @@ class ChatApp(App):
 
     async def load_chat_messages(self):
         with self.lock:
+            chat_messages = self._chat_messages.get(self.current_chat, [])
+
+            for message in self.data_client.json(
+                "chat_message",
+                fields=["sender", "created", "content"],
+                ordering="created",
+                chat__name=self.current_chat,
+                created__gte=self._get_last_message_time(self.current_chat),
+            ):
+                self.add_message(
+                    self.current_chat,
+                    message["content"],
+                    message["sender"],
+                    message["created"],
+                    True if message["sender"] == settings.API_USER else False,
+                )
+
             history = self.query_one("#chat-history")
             history.remove_children()
 
-            chat_messages = self._chat_messages.get(self.current_chat, [])
             for index, message in enumerate(chat_messages):
                 history.mount(ChatMessageDisplay(message))
 
@@ -210,20 +229,19 @@ class ChatApp(App):
 
         self.call_next(self.load_chat_messages)
 
-    def get_message(self, content, time=None, sender=None, is_user=False):
-        return ChatMessage(content=content, time=time, sender=sender, is_user=is_user)
+    def get_message(self, content, sender, time, is_user):
+        return ChatMessage(content, sender, time=self.time.to_datetime(time), is_user=is_user)
 
-    def add_message(self, chat_name, content, time=None, sender=None, is_user=False):
-        message = self.get_message(content=content, time=time, sender=sender, is_user=is_user)
+    def add_message(self, chat_name, content, sender, time, is_user):
+        message = self.get_message(content, sender, time, is_user)
 
         if chat_name not in self._chat_messages:
             self._chat_messages[chat_name] = []
         self._chat_messages[chat_name].append(message)
-
         return message
 
-    def render_message(self, chat_name, content, time=None, sender=None, is_user=False):
-        message = self.add_message(chat_name, content=content, time=time, sender=sender, is_user=is_user)
+    def render_message(self, chat_name, content, sender, time, is_user):
+        message = self.add_message(chat_name, content, sender, time, is_user)
 
         history = self.query_one("#chat-history")
         if message.is_user or chat_name == self.current_chat:
@@ -238,31 +256,27 @@ class ChatApp(App):
     def submit_message(self):
         input_widget = self.query_one("#message-input", MessageInput)
         if text := input_widget.text.strip():
-            self.command_client.execute("chat send", chat_name=self.current_chat, chat_message=text)
+            self.command_client.execute("chat send", chat_name=self.current_chat, chat_text=text)
             input_widget.text = ""
             input_widget.focus()
 
     async def _listener_thread(self):
+
+        def process_message(message):
+            with self.lock:
+                if message.name and message.name == "message":
+                    self.call_from_thread(
+                        self.render_message,
+                        message.data["name"],
+                        message.data["message"],
+                        message.data["user"],
+                        message.data["time"],
+                        (True if message.data["user"] == settings.API_USER else False),
+                    )
+
         while self._listener_running:
-
-            def process_message(message):
-                with self.lock:
-                    if message.name and message.name == "message":
-                        self.call_from_thread(
-                            self.render_message,
-                            message.data["name"],
-                            message.data["message"],
-                            time=None,
-                            sender=message.data["user"],
-                            is_user=(True if message.data["user"] == settings.API_USER else False),
-                        )
-
-            def listen_to_chat(chat_name):
-                command_client = self.command_client.clone(process_message)
-                command_client.execute(
-                    "chat listen",
-                    chat_name=chat_name,
-                    listen_timeout=60,
-                )
-
-            Parallel.list(self.chats, listen_to_chat, thread_count=len(self.chats))
+            command_client = self.command_client.clone(process_message)
+            command_client.execute(
+                "chat listen",
+                listen_timeout=15,
+            )
