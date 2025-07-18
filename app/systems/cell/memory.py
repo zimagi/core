@@ -144,14 +144,22 @@ class MemoryManager:
     def save(self):
         def _save_callback():
             chat_dialog = self.command._chat_dialog.set_order("-created").set_limit(1).filter(chat=self.chat)
+            last_message = None
+
+            if chat_dialog:
+                chat_dialog = chat_dialog[0]
+                last_message = self.command._chat_message.set_order("-created").set_limit(1).filter(dialog=chat_dialog)
+                if last_message:
+                    last_message = last_message[0]
 
             for memory in self.new_messages:
-                if not chat_dialog or memory["role"] == "user" and chat_dialog.role == "assistant":
-                    chat_dialog = self.command.save_instance(
-                        self.command._chat_dialog,
-                        None,
-                        fields={"chat": self.chat, "previous": chat_dialog if chat_dialog else None},
-                    )
+                if not chat_dialog or memory["role"] == "user":
+                    if not last_message or last_message.role == "assistant":
+                        chat_dialog = self.command.save_instance(
+                            self.command._chat_dialog,
+                            None,
+                            fields={"chat": self.chat, "previous": chat_dialog if chat_dialog else None},
+                        )
 
                 chat_message = self.command.save_instance(
                     self.command._chat_message,
@@ -172,6 +180,8 @@ class MemoryManager:
                         role=chat_message.role,
                         order=index,
                     )
+
+                last_message = chat_message
 
         if self.new_messages:
             self.command.run_exclusive(f"save-memories-{self.chat.id}", _save_callback)
