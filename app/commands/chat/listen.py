@@ -10,4 +10,11 @@ class Listen(Command("chat.listen")):
             timeout=self.listen_timeout,
             block_sec=self.listen_timeout,
         ):
-            self.data("Message", package.message, "message")
+            chat_names = self._chat.field_values("name", user=self.active_user)
+            message = package.message
+
+            if message["name"] in chat_names and message["user"] != self.active_user.name:
+                self.data("Message", message, "message")
+                self.save_user_message(
+                    message["name"], message["message"], time=message["time"], user=message["user"], role="assistant"
+                )
