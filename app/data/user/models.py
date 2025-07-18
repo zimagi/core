@@ -20,9 +20,9 @@ class UserFacade(ModelFacade("user")):
         for name, config in settings.MANAGER.index.users.items():
             user = self.retrieve(name)
             if not user:
-                command.user_provider.create(name, config)
+                command.user_provider.create(name, config, quiet=True)
             else:
-                user.provider.update(config)
+                user.provider.update(config, quiet=True)
 
     def keep(self, key=None):
         return [settings.ADMIN_USER] + list(settings.MANAGER.index.users.keys())
@@ -70,3 +70,24 @@ class User(Model("user"), DerivedAbstractModel(base_user, "AbstractBaseUser", "p
             self.encryption_key = Cipher.get_provider_class("user_api_key").generate_key()
 
         super().save(*args, **kwargs)
+
+    def get_language_model(self, command):
+        if self.language_provider:
+            return command.get_provider("language_model", self.language_provider, **self.language_provider_options)
+        return None
+
+    def get_text_splitter(self, command):
+        if self.text_splitter_provider:
+            return command.get_provider("text_splitter", self.text_splitter_provider)
+        return None
+
+    def get_encoder(self, command):
+        if self.encoder_provider:
+            return command.get_provider("encoder", self.encoder_provider, **self.encoder_provider_options)
+        return None
+
+    def get_search_limit(self, override=None):
+        return override if override else self.search_limit
+
+    def get_search_min_score(self, override=None):
+        return override if override else self.search_min_score

@@ -25,10 +25,17 @@ data:
         options:
           'null': true
           max_length: 150
+
       is_active:
         type: '@django.BooleanField'
         options:
           default: true
+      last_login:
+        type: '@django.DateTimeField'
+        options:
+          'null': true
+          editable: false
+
       password:
         type: '@django.CharField'
         options:
@@ -51,10 +58,43 @@ data:
         options:
           'null': true
           max_length: 256
-      last_login:
-        type: '@django.DateTimeField'
+
+      language_provider:
+        type: '@django.CharField'
         options:
           'null': true
-          editable: false
+          system: true
+          max_length: 256
+      language_provider_options:
+        type: '@zimagi.DictionaryField'
+        color: json
+        options:
+          system: true
+      text_splitter_provider:
+        type: '@django.CharField'
+        options:
+          'null': true
+          system: true
+          max_length: 256
+      encoder_provider:
+        type: '@django.CharField'
+        options:
+          'null': true
+          system: true
+          max_length: 256
+      encoder_provider_options:
+        type: '@zimagi.DictionaryField'
+        color: json
+        options:
+          system: true
+      search_limit:
+        type: '@django.IntegerField'
+        options:
+          default: 1000
+      search_min_score:
+        type: '@django.FloatField'
+        options:
+          default: 0.3
+
     meta:
       provider_name: user
