@@ -7,6 +7,7 @@ class TimeException(Exception):
 
 
 class Time:
+
     def __init__(self, timezone=None, date_format="%Y-%m-%d", time_format="%H:%M:%S", spacer="T"):
         self.set_timezone(timezone)
 
@@ -38,7 +39,10 @@ class Time:
             try:
                 date_time = datetime.datetime.strptime(date_time, self.time_format)
             except ValueError:
-                date_time = datetime.datetime.strptime(date_time, self.date_format)
+                try:
+                    date_time = datetime.datetime.strptime(date_time, f"{self.time_format}Z")
+                except ValueError:
+                    date_time = datetime.datetime.strptime(date_time, self.date_format)
 
         date_time.replace(tzinfo=self.timezone)
         return date_time
