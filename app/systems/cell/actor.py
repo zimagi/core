@@ -56,17 +56,21 @@ class Response:
 
 class Actor:
 
-    def __init__(self, command, language_model, language_model_options=None, prompts=None, output_token_percent=0.35):
-        if language_model_options is None:
-            language_model_options = {}
-        if prompts is None:
-            prompts = {}
+    chat_field_pattern = r"^\<\<(.+)\>\>$"
 
+    def __init__(
+        self,
+        command,
+        prompts,
+        search_limit=1000,
+        search_min_score=0.3,
+        output_token_percent=0.35,
+    ):
         self.command = command
-        self.state_manager = self.command.get_state_manager(self)
-        self.memory_manager = self.command.get_memory_manager(self)
+        self.state_manager = self.command.get_state_manager()
+        self.memory_manager = self.command.get_memory_manager(search_limit=search_limit, search_min_score=search_min_score)
+        self.language_model = self.memory_manager.language_model
 
-        self.language_model = self.command.get_provider("language_model", language_model, **language_model_options)
         self.max_tokens = self.language_model.get_max_tokens()
         self.output_token_percent = output_token_percent
         self.max_new_tokens = math.floor(self.max_tokens * self.output_token_percent)
@@ -84,22 +88,28 @@ class Actor:
     def get_token_count(self, messages):
         return self.language_model.get_token_count(ensure_list(messages))
 
-    def _get_message_sequence(self, prompts, text):
+    def set_chat(self, message, chat_key):
+        match = re.match(self.chat_field_pattern, chat_key)
+        if match and match[1] in message:
+            chat_key = message[match[1]]
+        self.memory_manager.set_chat(chat_key)
+
+    def _get_message_sequence(self, prompts, user, text):
         system_messages = []
         request_messages = []
         extra_messages = []
 
         if "system" in prompts:
-            system_messages.append({"role": "system", "message": prompts["system"]})
+            system_messages.append({"role": "system", "content": prompts["system"]})
 
         if "request" in prompts:
             tools_prompt = [prompts["tools"]] if "tools" in prompts else []
             request_prompt = "\n\n".join([prompts["request"], *tools_prompt])
-            request_messages.append({"role": "user", "message": request_prompt})
+            request_messages.append({"role": "user", "content": request_prompt, "sender": user})
 
         for prompt_name, prompt_text in prompts.items():
             if prompt_name not in ["system", "tools", "request"]:
-                extra_messages.append({"role": "user", "message": prompt_text})
+                extra_messages.append({"role": "user", "content": prompt_text, "sender": user})
 
         self.memory_manager.add(extra_messages, request_messages)
         return [
@@ -107,19 +117,23 @@ class Actor:
             *self.memory_manager.load(text, (self.available_tokens - self.get_token_count(system_messages))),
         ]
 
-    def respond(self, message, search_field, field_labels=None):
+    def respond(self, event, chat_key, search_field, field_labels=None):
+        self.set_chat(event.message, chat_key)
+
         response = Response(self.memory_manager)
         prompts = self.prompt_engine.render(
             {
                 **self.state_manager.export(),
-                "message": message,
+                "message": event.message,
                 "field_labels": field_labels or {},
                 "tools": self.mcp.list_tools(self.state_manager["tools"]) if self.state_manager["tools"] else [],
             }
         )
         for cycle in range(self.get_max_cycles()):
             try:
-                model_response = self.language_model.exec(self._get_message_sequence(prompts, message[search_field]))
+                model_response = self.language_model.exec(
+                    self._get_message_sequence(event.package.user, prompts, event.message[search_field])
+                )
                 logger.debug(f"Response success: {model_response.text}")
 
                 data_objects = []
@@ -149,18 +163,22 @@ class Actor:
 
         return response
 
-    def assist(self, message, search_field, field_labels=None):
+    def assist(self, event, chat_key, search_field, field_labels=None):
+        self.set_chat(event.message, chat_key)
+
         response = Response(self.memory_manager)
         prompts = self.prompt_engine.render(
             {
                 **self.state_manager.export(),
-                "message": message,
+                "message": event.message,
                 "field_labels": field_labels or {},
             }
         )
         for cycle in range(self.get_max_cycles()):
             try:
-                model_response = self.language_model.exec(self._get_message_sequence(prompts, message[search_field]))
+                model_response = self.language_model.exec(
+                    self._get_message_sequence(event.package.user, prompts, event.message[search_field])
+                )
                 logger.debug(f"Response success: {model_response.text}")
                 response.add_message(model_response.text)
                 break
