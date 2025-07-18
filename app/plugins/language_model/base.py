@@ -51,5 +51,25 @@ class BaseProvider(BasePlugin("language_model")):
     def get_token_count(self, messages):
         raise NotImplementedError("Language Model providers must implement get_token_count method")
 
-    def exec(self, messages):
+    def exec(self, messages, **options):
         raise NotImplementedError("Language Model providers must implement exec method")
+
+    def _get_messages(self, messages, default_role="user"):
+        processed_messages = []
+        for message in messages:
+            content = None
+            if isinstance(message, str):
+                content = message
+            elif "content" in message:
+                content = message["content"]
+            elif "message" in message:
+                content = message["message"]
+
+            if content:
+                if "role" in message:
+                    role = message["role"]
+                else:
+                    role = default_role
+
+                processed_messages.append({"role": role, "content": content})
+        return processed_messages

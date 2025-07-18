@@ -12,10 +12,10 @@ class Provider(BaseProvider("language_model", "litellm")):
     def get_token_count(self, messages):
         if isinstance(messages, str):
             return token_counter(model=self.field_model, messages=[{"role": "user", "content": messages}])
-        return token_counter(model=self.field_model, messages=messages)
+        return token_counter(model=self.field_model, messages=self._get_messages(messages))
 
-    def exec(self, messages):
-        response = completion(model=self.field_model, messages=messages, num_retries=3)
+    def exec(self, messages, retries=3, **options):
+        response = completion(model=self.field_model, messages=self._get_messages(messages), num_retries=retries)
         return LanguageModelResult(
             response.choices[0].message.content,
             reasoning=response.choices[0].message.reasoning_content,

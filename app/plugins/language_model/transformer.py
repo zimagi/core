@@ -39,9 +39,10 @@ class Provider(BaseProvider("language_model", "transformer")):
     def get_token_count(self, messages):
         if isinstance(messages, str):
             return len(self.tokenizer(messages)["input_ids"])
-        return len(self.tokenizer(dump_json(messages))["input_ids"])
+        return len(self.tokenizer(dump_json(self._get_messages(messages)))["input_ids"])
 
     def exec(self, messages):
+        messages = self._get_messages(messages)
         results = self.pipeline(
             messages,
             do_sample=True,
