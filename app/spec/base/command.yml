@@ -108,16 +108,15 @@ command_base:
       - agent_sensor_filters
       - agent_message_fields
       - agent_message_field_labels
-      - agent_message_splitter_provider
       - agent_memory_search_field
+      - agent_assistant_search_limit
+      - agent_assistant_search_min_score
       - agent_system_template
       - agent_tools_template
       - agent_assistant_template
       - agent_template
-      - agent_embedding_model_provider
-      - agent_embedding_model_options
-      - agent_primary_model_provider
-      - agent_primary_model_options
+      - agent_output_token_percent
+      - agent_assistant_output_token_percent
       - agent_tools
       - agent_channel
       - agent_channel_field_map

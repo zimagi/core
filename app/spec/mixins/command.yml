@@ -227,20 +227,26 @@ command_mixins:
         parser: fields
         optional: true
         tags: [agent, communication]
-      agent_message_splitter_provider:
-        parser: variable
-        type: str
-        default: spacy
-        optional: true
-        help: 'cell message text splitter plugin provider'
-        value_label: PROVIDER
-        tags: [agent, experience]
       agent_memory_search_field:
         parser: variables
         type: str
         optional: false
         help: 'cell memory search field for searching memories'
         value_label: NAME
+        tags: [agent, experience]
+      agent_assistant_search_limit:
+        parser: variable
+        type: int
+        optional: true
+        help: 'cell memory search limit for relevant dialog message sections (defaults to user preference)'
+        value_label: SECTIONS
+        tags: [agent, experience]
+      agent_assistant_search_min_score:
+        parser: variable
+        type: float
+        optional: true
+        help: 'cell memory search minimum score for relevant dialog message sections (defaults to user preference)'
+        value_label: SCORE
         tags: [agent, experience]
       agent_system_template:
         parser: variable
@@ -274,29 +280,20 @@ command_mixins:
         help: 'cell instruction prompt template'
         value_label: NAME
         tags: [agent, template]
-      agent_embedding_model_provider:
+      agent_output_token_percent:
         parser: variable
-        type: str
-        default: litellm
+        type: float
         optional: true
-        help: 'cell embedding model plugin provider'
-        value_label: NAME
+        default: 0.35
+        help: 'cell output message context token percentage reservation'
+        value_label: PERCENT
         tags: [agent, model]
-      agent_embedding_model_options:
-        parser: fields
-        optional: true
-        tags: [agent, model]
-      agent_primary_model_provider:
+      agent_assistant_output_token_percent:
         parser: variable
-        type: str
-        default: litellm
+        type: float
         optional: true
-        help: 'cell primary model plugin provider'
-        value_label: NAME
-        tags: [agent, model]
-      agent_primary_model_options:
-        parser: fields
-        optional: true
+        help: 'cell output message context token percentage reservation (defaults to primary)'
+        value_label: PERCENT
         tags: [agent, model]
       agent_tools:
         parser: variables
