@@ -65,6 +65,7 @@ class CommunicationProcessor:
         self.command.send(
             f"error:{channel}",
             {
+                "time": self.command.time.now_string,
                 "self": self.command.service_id,
                 "user": self.user if self.user else settings.ADMIN_USER,
                 "sensor": self.sensor_name,
