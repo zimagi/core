@@ -448,9 +448,12 @@ command_mixins:
       chat:
         data: chat
         priority: 1
+      chat_dialog:
+        data: chat_dialog
+        priority: 2
       chat_message:
         data: chat_message
-        priority: 2
+        priority: 3
     parameters:
       chat_name:
         parser: variable
@@ -460,11 +463,11 @@ command_mixins:
         help: 'chat sequence name'
         value_label: NAME
         tags: [chat, key]
-      chat_message:
+      chat_text:
         parser: variable
         type: str
         optional: false
-        help: 'chat message sent to server'
+        help: 'chat message text sent to server'
         value_label: MESSAGE
         api_only: true
         tags: [message, chat]
@@ -485,9 +488,6 @@ command_mixins:
         value_label: MESSAGE
         api_only: true
         tags: [communication, chat]
-    parse:
-      chat_name:
-      chat_message:
   schedule:
     class: ScheduleMixin
     meta:
