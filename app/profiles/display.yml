@@ -1,19 +1,31 @@
 config_store:
   user_list_fields:
     - is_active
+    - last_login
     - email
     - first_name
     - last_name
-    - last_login
+    - language_provider
+    - text_splitter_provider
+    - encoder_provider
+    - search_limit
+    - search_min_score
     - groups
   user_display_fields:
     - provider_type
     - is_active
+    - last_login
     - email
     - first_name
     - last_name
-    - encryption_key
-    - last_login
+    - encryption_key    -
+    - language_provider
+    - language_provider_options
+    - text_splitter_provider
+    - encoder_provider
+    - encoder_provider_options
+    - search_limit
+    - search_min_score
     - created
     - updated
     - groups
