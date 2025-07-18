@@ -34,10 +34,9 @@ class Cell(BaseCommand("cell")):
     def get_communication_processor(self):
         return CommunicationProcessor(self, self.agent_user, self.get_sensor_key())
 
-    def get_state_manager(self, actor):
+    def get_state_manager(self):
         return StateManager(
             self,
-            actor,
             self.get_state_key(),
             {
                 "goal": self.agent_goal,
@@ -46,26 +45,21 @@ class Cell(BaseCommand("cell")):
             },
         )
 
-    def get_memory_manager(self, actor):
+    def get_memory_manager(self, search_limit, search_min_score):
         return MemoryManager(
             self,
-            actor,
             self.agent_user,
-            self.agent_chat_key,
-            text_splitter=self.agent_message_splitter_provider,
-            encoder_model=self.agent_embedding_model_provider,
-            encoder_model_options=self.agent_embedding_model_options,
-            search_limit=1000,
-            search_min_score=0.3,
+            search_limit=search_limit,
+            search_min_score=search_min_score,
         )
 
-    def get_actor(self, prompts):
+    def get_actor(self, prompts, search_limit, search_min_score, output_token_percent):
         return Actor(
             self,
-            language_model=self.agent_primary_model_provider,
-            language_model_options=self.agent_primary_model_options,
             prompts=prompts,
-            output_token_percent=0.35,
+            search_limit=search_limit,
+            search_min_score=search_min_score,
+            output_token_percent=output_token_percent,
         )
 
     def event_processor(self):
@@ -73,11 +67,12 @@ class Cell(BaseCommand("cell")):
         try:
             self._initialize_cycle(
                 self.agent_sensor,
-                {
+                prompts={
                     "system": self.command.agent_system_template,
                     "tools": self.command.agent_tools_template,
                     "request": self.command.agent_template,
                 },
+                output_token_percent=self.agent_output_token_percent,
             )
         except Exception as error:
             self.error_handler.handle(error)
@@ -92,6 +87,7 @@ class Cell(BaseCommand("cell")):
                 response = self.profile(self.process_sensory_event, event)
                 self.communication.send(self.agent_channel, event, response.export())
                 self.finalize_event_response(event, response)
+
         except Exception as error:
             self.error_handler.handle(error)
             raise
@@ -111,10 +107,17 @@ class Cell(BaseCommand("cell")):
         try:
             self._initialize_cycle(
                 chat_channel,
-                {
+                prompts={
                     "system": self.command.agent_system_template,
                     "assistant": self.command.agent_assistant_template,
                 },
+                search_limit=self.agent_assistant_search_limit,
+                search_min_score=self.agent_assistant_search_min_score,
+                output_token_percent=(
+                    self.agent_assistant_output_token_percent
+                    if self.agent_assistant_output_token_percent
+                    else self.agent_output_token_percent
+                ),
             )
         except Exception as error:
             self.error_handler.handle(error)
@@ -125,11 +128,12 @@ class Cell(BaseCommand("cell")):
         try:
             for event in self.communication.listen(
                 {"mentions_me": "message"},
-                ["user", "name", "message"],
+                ["user", "name", "message", "time"],
             ):
                 response = self.profile(self.process_chat_message, event)
                 self.communication.send(chat_channel, event, response.export())
                 self.finalize_event_response(event, response)
+
         except Exception as error:
             self.error_handler.handle(error)
             raise
@@ -142,7 +146,7 @@ class Cell(BaseCommand("cell")):
             self.communication.send_error(chat_channel, error)
             raise
 
-    def _initialize_cycle(self, sensor_name, prompts):
+    def _initialize_cycle(self, sensor_name, prompts, search_limit=None, search_min_score=None, output_token_percent=None):
         self.manager.load_templates()
 
         if self.agent_user:
@@ -150,7 +154,9 @@ class Cell(BaseCommand("cell")):
 
         self.error_handler = self.get_error_handler()
 
-        self.actor = self.get_actor(prompts)
+        self.actor = self.get_actor(
+            prompts, search_limit=search_limit, search_min_score=search_min_score, output_token_percent=output_token_percent
+        )
         self.communication = self.get_communication_processor()
         self.communication.set_sensor(sensor_name)
 
@@ -161,15 +167,19 @@ class Cell(BaseCommand("cell")):
         pass
 
     def process_sensory_event(self, event):
-        return self.actor.respond(event.message, self.agent_memory_search_field, self.agent_message_field_labels)
+        return self.actor.respond(
+            event, self.agent_chat_key, self.agent_memory_search_field, self.agent_message_field_labels
+        )
 
     def process_chat_message(self, event):
         return self.actor.assist(
-            event.message,
+            event,
+            self.agent_chat_key,
             "message",
             {
                 "user": "Zimagi Username",
                 "name": "Chat Name",
+                "time": "Message Time Received",
                 "message": "User Message",
             },
         )
