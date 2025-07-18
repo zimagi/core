@@ -34,22 +34,19 @@ _chat_directive: &chat_directive
     6. **Maintain State Awareness**
       Keep track of task progress, tool outputs, and prior turns. When switching contexts or resuming, verify alignment with the user.
 
-  agent_chat_key: name
   agent_sensor: chat:message
+  agent_sensor_filters:
+    mentions_me: message
 
   agent_memory_search_field: message
-  agent_message_fields: [user, name, message]
+  agent_message_fields: [user, name, time, message]
   agent_message_field_labels:
     user: 'Zimagi Username'
     name: 'Chat Name'
+    time: 'Message Time Received'
     message: 'User Message'
 
-  agent_message_splitter_provider: spacy
-  agent_embedding_model_provider: deepinfra
-  agent_embedding_model_options:
-    model: Qwen/Qwen3-Embedding-8B
-
-  agent_primary_model_provider: litellm
+  agent_chat_key: <<name>>
   agent_template: chat
   agent_tools: []
 
@@ -58,6 +55,7 @@ _chat_directive: &chat_directive
     user: user
     name: message__name
     message: response__text
+    time: time
 
 command:
   chat:
@@ -82,19 +80,9 @@ command:
         options:
           <<: *chat_directive
           agent_user: dsr1
-          agent_sensor_filters:
-            mentions_me: message
-          agent_primary_model_options:
-            model: openrouter/deepseek/deepseek-r1
-            max_token_percent: 0.3
 
       dsv3:
         base: cell
         options:
           <<: *chat_directive
           agent_user: dsv3
-          agent_sensor_filters:
-            mentions_me: message
-          agent_primary_model_options:
-            model: openrouter/deepseek/deepseek-v3
-            max_token_percent: 0.3
