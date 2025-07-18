@@ -70,6 +70,10 @@ channels:
           type: str
           description: 'Chat message (can contains mentions: @user, @group)'
           required: true
+        time:
+          type: str
+          description: 'ISO 8601 formatted date/time for message send in format YYYY-MM-DDTHH:MM:SS (UTC)'
+          required: true
 
   'db:backup:init':
     description: 'This channel gets notified when a database backup is about to take place'
