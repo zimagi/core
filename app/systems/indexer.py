@@ -92,19 +92,20 @@ class Indexer(module.IndexerModuleMixin, django.IndexerDjangoMixin, component.In
                                             self.module_map[key][name] = module_info
                                     else:
                                         for name, spec in info.items():
-                                            if key == "command":
-                                                set_command_module(module, spec)
-                                            else:
-                                                app_name = spec.get("app", name)
-                                                self.module_map[key][app_name] = module_info
+                                            if isinstance(spec, dict):
+                                                if key == "command":
+                                                    set_command_module(module, spec)
+                                                else:
+                                                    app_name = spec.get("app", name)
+                                                    self.module_map[key][app_name] = module_info
 
-                                                if key in ("data", "data_base", "data_mixins"):
-                                                    module_name = model_index.get_module_name(key, app_name)
-                                                    model_class = model_index.get_model_name(name, spec)
-                                                    dynamic_class = model_index.get_dynamic_class_name(model_class)
+                                                    if key in ("data", "data_base", "data_mixins"):
+                                                        module_name = model_index.get_module_name(key, app_name)
+                                                        model_class = model_index.get_model_name(name, spec)
+                                                        dynamic_class = model_index.get_dynamic_class_name(model_class)
 
-                                                    self.model_class_path[model_class] = module_name
-                                                    self.model_class_path[dynamic_class] = module_name
+                                                        self.model_class_path[model_class] = module_name
+                                                        self.model_class_path[dynamic_class] = module_name
 
                             self._spec = deep_merge(self._spec, spec_data)
 
@@ -130,7 +131,27 @@ class Indexer(module.IndexerModuleMixin, django.IndexerDjangoMixin, component.In
     def users(self):
         if not self._users:
             for name, config in self.spec["users"].items():
-                self._users[name] = config
+                defaults = config.get("defaults", None)
+                self._users[name] = {}
+
+                if defaults:
+                    for default in ensure_list(defaults):
+                        default_key = default if default.startswith("user_defaults_") else f"user_defaults_{default}"
+                        if default_key in self.spec:
+                            self._users[name] = deep_merge(self._users[name], self.spec[default_key])
+                        else:
+                            logger.error(f"User default key {default_key} dos not exist in application specifications")
+
+                for field, value in config.items():
+                    if field != "defaults":
+                        if (
+                            field in self._users[name]
+                            and isinstance(self._users[name][field], dict)
+                            and isinstance(value, dict)
+                        ):
+                            self._users[name][field] = deep_merge(self._users[name][field], value)
+                        else:
+                            self._users[name][field] = value
 
             logger.debug(f"Application system users: {self._users}")
 
