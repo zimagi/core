@@ -10,9 +10,8 @@ logger = logging.getLogger(__name__)
 class StateManager:
     lock = threading.Lock()
 
-    def __init__(self, command, actor, state_key, default_state):
+    def __init__(self, command, state_key, default_state):
         self.command = command
-        self.actor = actor
         self.state_key = state_key
         self.default_state = default_state
         self._state = {}
