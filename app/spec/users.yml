@@ -5,6 +5,10 @@ user_defaults_ai:
     max_token_percent: 0.3
 
   text_splitter_provider: spacy
+  text_splitter_provider_options:
+    model: en_core_web_lg
+    validate: true
+    max_sentence_length: 2000
 
   encoder_provider: deepinfra
   encoder_provider_options:

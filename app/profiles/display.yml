@@ -18,10 +18,11 @@ config_store:
     - email
     - first_name
     - last_name
-    - encryption_key    -
+    - encryption_key
     - language_provider
     - language_provider_options
     - text_splitter_provider
+    - text_splitter_provider_options
     - encoder_provider
     - encoder_provider_options
     - search_limit

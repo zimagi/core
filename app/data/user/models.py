@@ -78,7 +78,7 @@ class User(Model("user"), DerivedAbstractModel(base_user, "AbstractBaseUser", "p
 
     def get_text_splitter(self, command):
         if self.text_splitter_provider:
-            return command.get_provider("text_splitter", self.text_splitter_provider)
+            return command.get_provider("text_splitter", self.text_splitter_provider, **self.text_splitter_provider_options)
         return None
 
     def get_encoder(self, command):

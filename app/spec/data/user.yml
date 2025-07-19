@@ -76,6 +76,11 @@ data:
           'null': true
           system: true
           max_length: 256
+      text_splitter_provider_options:
+        type: '@zimagi.DictionaryField'
+        color: json
+        options:
+          system: true
       encoder_provider:
         type: '@django.CharField'
         options:
