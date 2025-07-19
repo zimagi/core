@@ -70,8 +70,8 @@ class MemoryManager:
                 f"User {self.user.name} language model, text splitter, and encoder provider "
                 "configurations required to use memory manager"
             )
-
-        self.chat_embeddings = self.command.qdrant("chat", dimension=self.encoder.field_dimension)
+        self.memory_collection = "chat"
+        self.chat_embeddings = self.user.get_qdrant_collection(self.command, self.memory_collection)
         self.new_messages = []
 
     def _get_user(self, user):
@@ -164,20 +164,19 @@ class MemoryManager:
                     None,
                     fields={**memory, "chat": self.chat, "dialog": chat_dialog},
                 )
-                sections = self.text_splitter.split(chat_message.content)
-                embeddings = self.encoder.encode(sections)
-
-                for index, text in enumerate(sections):
-                    self.chat_embeddings.store(
-                        chat_id=self.chat.id,
-                        user_id=self.chat.user.name,
-                        dialog_id=chat_dialog.id,
-                        message_id=chat_message.id,
-                        text=text,
-                        embedding=embeddings[index],
-                        role=chat_message.role,
-                        order=index,
-                    )
+                self.command.encode(
+                    "chat_message",
+                    chat_message.id,
+                    "content",
+                    collection=self.memory_collection,
+                    payload={
+                        "chat_id": self.chat.id,
+                        "user_id": self.chat.user.name,
+                        "dialog_id": chat_dialog.id,
+                        "message_id": chat_message.id,
+                        "role": chat_message.role,
+                    },
+                )
                 last_message = chat_message
 
         if self.new_messages:
