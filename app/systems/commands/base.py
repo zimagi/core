@@ -110,6 +110,18 @@ class BaseCommand(
         # Override in subcommands if needed
         pass
 
+    @contextmanager
+    def run_as(self, user):
+        original_user = self.active_user
+        try:
+            if isinstance(user, str):
+                user = self.get_instance(self._user, user, required=True)
+
+            self._user.set_active_user(user)
+            yield user
+        finally:
+            self._user.set_active_user(original_user)
+
     def sleep(self, seconds):
         time.sleep(seconds)
 
