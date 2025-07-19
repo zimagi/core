@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pyperclip
 from rich import box
 from rich.console import Group
@@ -142,7 +144,7 @@ class ChatMessageDisplay(Static):
         self.time = Time(spacer=" ")
 
     def compose(self):
-        timestamp = self.time.to_string(self.message.time)
+        timestamp = f"{self.time.to_string(self.message.time)} " if self.message.time != datetime.min else ""
         sender = "You" if self.message.is_user else self.message.sender
 
         bg_color = "rgb(30,30,30)"  # Dark background
@@ -154,7 +156,7 @@ class ChatMessageDisplay(Static):
             self.message.content, style=Style(color=text_color), code_theme="monokai", hyperlinks=False, justify="left"
         )
 
-        header_text = Text.from_markup(f"[b]{timestamp} {sender}[/b]", justify="left", style=Style(color=header_color))
+        header_text = Text.from_markup(f"[b]{timestamp}{sender}[/b]", justify="left", style=Style(color=header_color))
         content = Group(header_text, "", markdown)
 
         border_style = Style(color=border_color)

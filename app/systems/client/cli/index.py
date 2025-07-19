@@ -17,6 +17,7 @@ from .errors import CommandNotFoundError
 class CommandIndex(TerminalMixin):
 
     def __init__(self):
+        self.command = None
         self.command_client = CommandClient(
             protocol=("http" if settings.COMMAND_HOST == "localhost" else "https"),
             host=settings.COMMAND_HOST,
@@ -25,6 +26,7 @@ class CommandIndex(TerminalMixin):
             token=settings.API_USER_TOKEN,
             encryption_key=settings.API_USER_KEY,
             init_commands=False,
+            message_callback=self.handle_command_message,
         )
         self.data_client = DataClient(
             protocol=("http" if settings.DATA_HOST == "localhost" else "https"),
@@ -68,3 +70,7 @@ class CommandIndex(TerminalMixin):
             return self.command
         else:
             raise CommandNotFoundError(f"Command '{command.name} {name}' not found")
+
+    def handle_command_message(self, message):
+        if self.command:
+            self.command.handle_message(message)
