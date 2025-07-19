@@ -12,7 +12,7 @@ class BaseProvider(BasePlugin("qdrant_collection")):
         self.import_config(options)
 
     def get_collection_name(self):
-        return f"{self.name}:{self.field_dimension}"
+        return f"{self.name}-{self.field_dimension}"
 
     @property
     def client(self):
