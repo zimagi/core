@@ -198,15 +198,18 @@ class ManagerCommunicationMixin:
         # Handle dictionary validation
         if isinstance(message, dict):
             items_spec = spec.get("items", {})
-            validated_dict = {}
-            for field, field_spec in items_spec.items():
-                field_value = message.get(field, field_spec.get("default"))
-                try:
-                    validated_dict[field] = self._validate_message_structure(field_value, field_spec, f"{context}.{field}")
-                except ChannelValidationError as e:
-                    if field_spec.get("required", False):
-                        raise
-            message = validated_dict
+            if items_spec:
+                validated_dict = {}
+                for field, field_spec in items_spec.items():
+                    field_value = message.get(field, field_spec.get("default"))
+                    try:
+                        validated_dict[field] = self._validate_message_structure(
+                            field_value, field_spec, f"{context}.{field}"
+                        )
+                    except ChannelValidationError as e:
+                        if field_spec.get("required", False):
+                            raise
+                message = validated_dict
 
         return message
 
