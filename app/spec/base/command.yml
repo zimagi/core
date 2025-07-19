@@ -94,8 +94,7 @@ command_base:
   cell:
     base: agent
     mixins: [cell, chat]
-    groups_allowed: [admin]
-    background: false
+    worker_type: cell
     parse:
       - lifetime
       - pause
