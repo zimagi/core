@@ -71,20 +71,35 @@ class User(Model("user"), DerivedAbstractModel(base_user, "AbstractBaseUser", "p
 
         super().save(*args, **kwargs)
 
-    def get_language_model(self, command):
-        if self.language_provider:
-            return command.get_provider("language_model", self.language_provider, **self.language_provider_options)
-        return None
+    def get_language_model(self, command, reset=False):
+        if (reset or not getattr(self, "_language_model", None)) and self.language_provider:
+            self._language_model = command.get_provider(
+                "language_model", self.language_provider, **self.language_provider_options
+            )
+        return self._language_model
 
-    def get_text_splitter(self, command):
-        if self.text_splitter_provider:
-            return command.get_provider("text_splitter", self.text_splitter_provider, **self.text_splitter_provider_options)
-        return None
+    def get_text_splitter(self, command, reset=False):
+        if (reset or not getattr(self, "_text_splitter", None)) and self.text_splitter_provider:
+            self._text_splitter = command.get_provider(
+                "text_splitter", self.text_splitter_provider, **self.text_splitter_provider_options
+            )
+        return self._text_splitter
 
-    def get_encoder(self, command):
-        if self.encoder_provider:
-            return command.get_provider("encoder", self.encoder_provider, **self.encoder_provider_options)
-        return None
+    def get_encoder(self, command, reset=False):
+        if (reset or not getattr(self, "_encoder", None)) and self.encoder_provider:
+            self._encoder = command.get_provider("encoder", self.encoder_provider, **self.encoder_provider_options)
+        return self._encoder
+
+    def get_qdrant_collection(self, command, name, reset=False, **options):
+        if not getattr(self, "_qdrant_collection", None):
+            self._qdrant_collection = {}
+
+        if reset or name not in self._qdrant_collection:
+            encoder = self.get_encoder(command, reset=reset)
+            self._qdrant_collection[name] = command.get_provider(
+                "qdrant_collection", name, dimension=encoder.field_dimension, **options
+            )
+        return self._qdrant_collection[name]
 
     def get_search_limit(self, override=None):
         return override if override else self.search_limit
