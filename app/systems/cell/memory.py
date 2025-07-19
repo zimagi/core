@@ -71,9 +71,7 @@ class MemoryManager:
                 "configurations required to use memory manager"
             )
 
-        self.memory_collection = "chat"
-        self.chat_embeddings = self.command.qdrant(self.memory_collection)
-
+        self.chat_embeddings = self.command.qdrant("chat", dimension=self.encoder.field_dimension)
         self.new_messages = []
 
     def _get_user(self, user):
@@ -112,7 +110,7 @@ class MemoryManager:
     def _search_experience(self, text, search_limit, min_score):
         sections = self.text_splitter.split(text)
         search_results = self.command.search_embeddings(
-            self.memory_collection,
+            self.chat_embeddings,
             self.encoder.encode(sections),
             fields=["dialog_id", "message_id"],
             limit=search_limit or self.search_limit,
@@ -172,7 +170,7 @@ class MemoryManager:
                 for index, text in enumerate(sections):
                     self.chat_embeddings.store(
                         chat_id=self.chat.id,
-                        user_id=self.chat.user.id,
+                        user_id=self.chat.user.name,
                         dialog_id=chat_dialog.id,
                         message_id=chat_message.id,
                         text=text,
@@ -180,7 +178,6 @@ class MemoryManager:
                         role=chat_message.role,
                         order=index,
                     )
-
                 last_message = chat_message
 
         if self.new_messages:
