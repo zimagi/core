@@ -1,31 +1,69 @@
+from django.conf import settings
 from systems.commands.index import CommandMixin
 from utility.data import Collection, ensure_list
 
 
 class QdrantMixin(CommandMixin("qdrant")):
 
-    def qdrant(self, name, **options):
-        return self.get_provider("qdrant_collection", name, **options)
+    def encode(self, data_type, id, field, collection=None, payload=None):
+        if collection is None:
+            collection = data_type
+        if payload is None:
+            payload = {}
 
-    def get_qdrant_collections(self, names=None, **options):
-        if names:
-            return [self.qdrant(name, **options) for name in ensure_list(names)]
-        return [
-            self.qdrant(name, **options)
-            for name in list(self.manager.index.get_plugin_providers("qdrant_collection").keys())
-        ]
+        self.send(
+            "encoder:save",
+            {
+                "user": self.active_user.name,
+                "data_type": data_type,
+                "id": id,
+                "field": field,
+                "collection": collection,
+                "payload": payload,
+            },
+        )
 
-    def _get_qdrant_collection(self, collection, **options):
-        if isinstance(collection, str):
-            return self.qdrant(collection, **options)
-        return collection
+    @property
+    def qdrant_client(self):
+        if not getattr(self, "_qdrant_client", None):
+            from qdrant_client import QdrantClient
+
+            self._qdrant_client = QdrantClient(
+                host=settings.QDRANT_HOST,
+                port=settings.QDRANT_PORT,
+                https=settings.QDRANT_HTTPS,
+                api_key=settings.QDRANT_ACCESS_KEY,
+                timeout=14400,
+            )
+        return self._qdrant_client
+
+    def get_qdrant_collections(self, names=None):
+        names = ensure_list(names) if names else []
+        collections = []
+
+        def check_name(collection_name, check_names):
+            for name in check_names:
+                if collection_name.startswith(name):
+                    return True
+            return False
+
+        for collection in self.qdrant_client.get_collections():
+            if not names or check_name(collection.name, names):
+                name_components = collection.name.split("--")
+                if len(name_components) > 1:
+                    collections.append(
+                        self.get_provider("qdrant_collection", name_components[0], dimension=name_components[1])
+                    )
+                else:
+                    collections.append(self.get_provider("qdrant_collection", name_components[0]))
+
+        return collections
 
     def get_embeddings(self, collection, **filters):
-        qdrant = self._get_qdrant_collection(collection)
         texts = []
         embeddings = []
 
-        for result in qdrant.get(fields="text", include_vectors=True, **filters):
+        for result in collection.get(fields="text", include_vectors=True, **filters):
             texts.append(result.payload["text"])
             embeddings.append(result.vector)
 
@@ -37,8 +75,6 @@ class QdrantMixin(CommandMixin("qdrant")):
         if not embeddings:
             return []
 
-        qdrant = self._get_qdrant_collection(collection)
-
         if fields is None:
             fields = []
         if filter_field:
@@ -49,46 +85,47 @@ class QdrantMixin(CommandMixin("qdrant")):
             options["filter_field"] = filter_field
             options["filter_values"] = ensure_list(filter_ids)
 
-        return qdrant.search(embeddings, **options)
+        return collection.search(embeddings, **options)
 
-    def create_snapshot(self, collection_name=None):
+    def create_snapshot(self, collection_names=None):
         def _create_snapshot(collection):
             collection.create_snapshot()
             self.success(f"Qdrant snapshot for {collection.name} successfully created")
 
-        results = self.run_list(self.get_qdrant_collections(collection_name), _create_snapshot)
+        results = self.run_list(self.get_qdrant_collections(collection_names), _create_snapshot)
         if results.aborted:
             self.error("Qdrant snapshot creation failed")
 
-    def remove_snapshot(self, collection_name, snapshot_name):
-        collection = self.qdrant(collection_name)
-        if not collection.delete_snapshot(snapshot_name):
-            self.warning(f"Qdrant snapshot {snapshot_name} not removed")
-        self.success(f"Qdrant snapshot {snapshot_name} successfully removed")
+    def remove_snapshot(self, collection_names, snapshot_name):
+        def _remove_snapshot(collection):
+            if not collection.delete_snapshot(snapshot_name):
+                self.warning(f"Qdrant snapshot {snapshot_name} for {collection.name} not removed")
+            self.success(f"Qdrant snapshot {snapshot_name} for {collection.name} successfully removed")
 
-    def clean_snapshots(self, collection_name=None, keep_num=3):
+        results = self.run_list(self.get_qdrant_collections(collection_names), _remove_snapshot)
+        if results.aborted:
+            self.error("Qdrant snapshot removal failed")
+
+    def clean_snapshots(self, collection_names=None, keep_num=3):
         def _clean_snapshots(collection):
             collection.clean_snapshots(keep_num)
             self.success(f"Qdrant snapshots for {collection.name} successfully cleaned")
 
-        results = self.run_list(self.get_qdrant_collections(collection_name), _clean_snapshots)
+        results = self.run_list(self.get_qdrant_collections(collection_names), _clean_snapshots)
         if results.aborted:
             self.error("Qdrant snapshot cleaning failed")
 
-    def restore_snapshot(self, collection_name=None, snapshot_name=None):
+    def restore_snapshot(self, collection_names=None, snapshot_name=None):
         def _restore_snapshot(collection):
-            collection.restore_snapshot()
-            self.success(f"Latest Qdrant snapshot for {collection.name} successfully restored")
+            if snapshot_name:
+                if not collection.restore_snapshot(snapshot_name):
+                    self.error(f"Qdrant snapshot {snapshot_name} for {collection.name} restore failed")
+                self.success(f"Qdrant snapshot {snapshot_name} for {collection.name} successfully restored")
+            else:
+                if not collection.restore_snapshot():
+                    self.error(f"Latest Qdrant snapshot for {collection.name} restore failed")
+                self.success(f"Latest Qdrant snapshot for {collection.name} successfully restored")
 
-        if snapshot_name:
-            if not collection_name:
-                self.error("Collection name required when specifying the snapshot name to restore")
-
-            collection = self.qdrant(collection_name)
-            if not collection.restore_snapshot(snapshot_name):
-                self.error(f"Qdrant snapshot {snapshot_name} restore failed")
-            self.success(f"Qdrant snapshot {snapshot_name} successfully restored")
-        else:
-            results = self.run_list(self.get_qdrant_collections(collection_name), _restore_snapshot)
-            if results.aborted:
-                self.error("Qdrant snapshot restoration failed")
+        results = self.run_list(self.get_qdrant_collections(collection_names), _restore_snapshot)
+        if results.aborted:
+            self.error("Qdrant snapshot restoration failed")
