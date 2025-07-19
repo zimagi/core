@@ -28,7 +28,6 @@ plugin:
       dimension:
         type: int
         help: 'Embedding vector dimension'
-        default: '@settings.QDRANT_DEFAULT_VECTOR_DIMENSION'
       shards:
         type: int
         help: 'Data collection shards'
