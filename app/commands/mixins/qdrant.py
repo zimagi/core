@@ -15,8 +15,13 @@ class QdrantMixin(CommandMixin("qdrant")):
             for name in list(self.manager.index.get_plugin_providers("qdrant_collection").keys())
         ]
 
+    def _get_qdrant_collection(self, collection, **options):
+        if isinstance(collection, str):
+            return self.qdrant(collection, **options)
+        return collection
+
     def get_embeddings(self, collection, **filters):
-        qdrant = self.qdrant(collection)
+        qdrant = self._get_qdrant_collection(collection)
         texts = []
         embeddings = []
 
@@ -32,7 +37,7 @@ class QdrantMixin(CommandMixin("qdrant")):
         if not embeddings:
             return []
 
-        qdrant = self.qdrant(collection)
+        qdrant = self._get_qdrant_collection(collection)
 
         if fields is None:
             fields = []
