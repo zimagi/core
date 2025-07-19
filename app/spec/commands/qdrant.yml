@@ -1,10 +1,4 @@
 command:
-  agent:
-    qdrant:
-      base: agent
-      mixins: [qdrant]
-      worker_type: qdrant
-
   qdrant:
     list:
       base: qdrant_admin
