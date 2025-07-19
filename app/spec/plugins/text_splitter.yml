@@ -11,7 +11,7 @@ plugin:
       max_sentence_length:
         type: int
         help: 'Maximum length of parsed sentence'
-        default: 3500
+        default: 2000
 
     providers:
       spacy:
