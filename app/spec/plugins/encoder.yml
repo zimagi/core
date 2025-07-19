@@ -12,9 +12,9 @@ plugin:
         type: str
         help: 'Encoder model name'
     option:
-      dimensions:
+      dimension:
         type: int
-        help: 'Embedding dimensions'
+        help: 'Embedding dimension'
         default: 768
       format:
         type: str
