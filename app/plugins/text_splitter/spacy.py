@@ -8,12 +8,6 @@ from utility.filesystem import save_file
 
 class Provider(BaseProvider("text_splitter", "spacy")):
 
-    def initialize_model(self):
-        model_state_file = f"/tmp/{self.field_model}.downloaded"
-        if not os.path.exists(model_state_file):
-            spacy.cli.download(self.field_model)
-            save_file(model_state_file, self.command.time.now_string)
-
     @property
     def model(self):
         return spacy.load(self.field_model)
@@ -59,4 +53,11 @@ class Provider(BaseProvider("text_splitter", "spacy")):
                         sentences.append(str(sentence))
             return sentences
 
+        self._load_model()
         return _get_sentences(text.strip())
+
+    def _load_model(self):
+        model_state_file = f"/tmp/{self.field_model}.downloaded"
+        if not os.path.exists(model_state_file):
+            spacy.cli.download(self.field_model)
+            save_file(model_state_file, self.command.time.now_string)
