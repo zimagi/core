@@ -17,5 +17,8 @@ workers:
   encoder:
     <<: *default_worker
 
+  language_model:
+    <<: *default_worker
+
   cell:
     <<: *default_worker
