@@ -22,7 +22,7 @@ plugin:
         type: str
         help: 'Language model name'
     option:
-      max_token_percent:
+      output_token_percent:
         type: float
         help: 'Percentage of total context window allocated to output tokens'
         default: 0.3

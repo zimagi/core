@@ -7,7 +7,7 @@ from utility.data import dump_json
 
 class LanguageModelResult:
 
-    def __init__(self, text, reasoning="", prompt_tokens=0, output_tokens=0, cost=None):
+    def __init__(self, text, reasoning="", prompt_tokens=0, output_tokens=0, cost=None, **unused):
         self.text = text
         self.reasoning = reasoning
         self.prompt_tokens = prompt_tokens
@@ -43,7 +43,7 @@ class BaseProvider(BasePlugin("language_model")):
         raise NotImplementedError("Language Model providers must implement get_context_length method")
 
     def get_max_new_tokens(self):
-        return math.floor(self.get_context_length() * self.field_max_token_percent)
+        return math.floor(self.get_context_length() * self.field_output_token_percent)
 
     def get_max_tokens(self):
         return self.get_context_length() - self.get_max_new_tokens()
