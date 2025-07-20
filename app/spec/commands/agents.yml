@@ -13,3 +13,7 @@ command:
       base: agent
       mixins: [qdrant]
       worker_type: encoder
+
+    language_model:
+      base: agent
+      worker_type: language_model
