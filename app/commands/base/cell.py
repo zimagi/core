@@ -53,13 +53,12 @@ class Cell(BaseCommand("cell")):
             search_min_score=search_min_score,
         )
 
-    def get_actor(self, prompts, search_limit, search_min_score, output_token_percent):
+    def get_actor(self, prompts, search_limit, search_min_score):
         return Actor(
             self,
             prompts=prompts,
             search_limit=search_limit,
             search_min_score=search_min_score,
-            output_token_percent=output_token_percent,
         )
 
     def event_processor(self):
@@ -72,7 +71,6 @@ class Cell(BaseCommand("cell")):
                     "tools": self.command.agent_tools_template,
                     "request": self.command.agent_template,
                 },
-                output_token_percent=self.agent_output_token_percent,
             )
         except Exception as error:
             self.error_handler.handle(error)
@@ -113,11 +111,6 @@ class Cell(BaseCommand("cell")):
                 },
                 search_limit=self.agent_assistant_search_limit,
                 search_min_score=self.agent_assistant_search_min_score,
-                output_token_percent=(
-                    self.agent_assistant_output_token_percent
-                    if self.agent_assistant_output_token_percent
-                    else self.agent_output_token_percent
-                ),
             )
         except Exception as error:
             self.error_handler.handle(error)
@@ -146,7 +139,7 @@ class Cell(BaseCommand("cell")):
             self.communication.send_error(chat_channel, error)
             raise
 
-    def _initialize_cycle(self, sensor_name, prompts, search_limit=None, search_min_score=None, output_token_percent=None):
+    def _initialize_cycle(self, sensor_name, prompts, search_limit=None, search_min_score=None):
         self.manager.load_templates()
 
         if self.agent_user:
@@ -154,9 +147,7 @@ class Cell(BaseCommand("cell")):
 
         self.error_handler = self.get_error_handler()
 
-        self.actor = self.get_actor(
-            prompts, search_limit=search_limit, search_min_score=search_min_score, output_token_percent=output_token_percent
-        )
+        self.actor = self.get_actor(prompts, search_limit=search_limit, search_min_score=search_min_score)
         self.communication = self.get_communication_processor()
         self.communication.set_sensor(sensor_name)
 
