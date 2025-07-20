@@ -1,5 +1,5 @@
 import logging
-import queue
+import multiprocessing
 import re
 import time
 from queue import Empty, Full
@@ -80,28 +80,36 @@ class AgentCommand(exec.ExecCommand):
         return False
 
     def repeat_exec(self):
-        process_queues = {}
-        for process_queue in self.process_queues:
-            process_queues[process_queue] = queue.Queue()
+        process_manager = multiprocessing.Manager()
+        process_queues = process_manager.dict()
+        for queue in self.process_queues:
+            process_queues[queue] = process_manager.Queue()
 
         def exec_process(name):
-            self.system_info(f"Starting process {name}")
-            self._process_queues = process_queues
+            def run_loop(queues):
+                self.system_info(f"Starting process {name}")
+                self._process_queues = queues
 
-            self.exec()
-            self.exec_loop(name, getattr(self, name))
+                self.exec()
+                self.exec_loop(name, getattr(self, name))
+                self.system_info(f"Finished process {name}")
 
-            self.system_info(f"Finished process {name}")
+            process = multiprocessing.Process(name=name, daemon=True, target=run_loop, args=[process_queues])
+            self.process_map[name] = process
+
+            process.start()
+            process.join()
+
+            if process.exitcode != 0:
+                self.error(f"Process {name} failed")
 
         if self.processes:
-            Parallel.list(
-                self.processes,
-                exec_process,
-                thread_count=len(self.processes),
-                disable_parallel=False,
-            )
+            Parallel.list(self.processes, exec_process, thread_count=len(self.processes), disable_parallel=False)
         else:
             self.exec_loop("main", self.exec)
+
+        for name, queue in process_queues.items():
+            queue.close()
 
     def exec_init(self, name):
         # Implement in subclass if needed
