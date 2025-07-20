@@ -1,4 +1,4 @@
-_encoder_channel_message: &encoder_channel_message
+_encoder_save_message: &encoder_save_message
   type: dict
   items:
     data_type:
@@ -80,7 +80,7 @@ channels:
       - ai-user
       - chat-user
     message:
-      <<: *encoder_channel_message
+      <<: *encoder_save_message
 
   'encoder:complete':
     description: 'This channel gets notified of encoding task completions by the encoder agents'
@@ -88,34 +88,76 @@ channels:
       - ai-user
       - chat-user
     message:
-      <<: *encoder_channel_message
+      <<: *encoder_save_message
 
-    'encoder:search':
-      description: 'This channel gets notified with requests to generate search embeddings based on provided text'
-      groups:
-        - ai-user
-        - chat-user
-      message:
-        type: str
-        description: 'Text that should be used to generate and return embeddings for search'
-        required: true
+  'encoder:search':
+    description: 'This channel gets notified with requests to generate search embeddings based on provided text'
+    groups:
+      - ai-user
+      - chat-user
+    message:
+      type: str
+      description: 'Text that should be used to generate and return embeddings for search'
+      required: true
 
-    'encoder:remove':
-      description: 'This channel gets notified with requests to remove embeddings based data instance IDs'
-      groups:
-        - ai-user
-        - chat-user
-      message:
-        type: dict
-        items:
-          collection:
-            type: str
-            description: 'The Qdrant collection to remove embeddings'
-            required: true
-          filters:
-            type: dict
-            description: 'The Qdrant collection filter field values to remove embeddings'
-            required: true
+  'encoder:remove':
+    description: 'This channel gets notified with requests to remove embeddings based data instance IDs'
+    groups:
+      - ai-user
+      - chat-user
+    message:
+      type: dict
+      items:
+        collection:
+          type: str
+          description: 'The Qdrant collection to remove embeddings'
+          required: true
+        filters:
+          type: dict
+          description: 'The Qdrant collection filter field values to remove embeddings'
+          required: true
+
+  'language_model:generate':
+    description: 'This channel gets notified with requests to generate output via a local or remote language model'
+    groups:
+      - ai-user
+      - chat-user
+    message:
+      type: dict
+      items:
+        messages:
+          type: list[dict]
+          description: 'Messages to pass to the language model that provide instructions, data, and context'
+          required: true
+        options:
+          type: dict
+          description: 'Any language model options needed for processing'
+          required: false
+
+  'language_model:complete':
+    description: 'This channel gets notified with language model generation completion metrics'
+    groups:
+      - ai-user
+      - chat-user
+    message:
+      type: dict
+      items:
+        prompt_tokens:
+          type: int
+          description: 'Total number of input tokens for language model generation request'
+          required: true
+        output_tokens:
+          type: int
+          description: 'Total number of output tokens for language model generation request'
+          required: true
+        total_tokens:
+          type: int
+          description: 'Total number of input and output tokens for language model generation request'
+          required: true
+        cost:
+          type: float
+          description: 'The cost in dollars if there is a service cost associated with the request'
+          required: false
 
   'chat:message':
     description: 'This channel receives a sequence of chat messages'
