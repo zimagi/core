@@ -60,12 +60,10 @@ class MemoryManager:
         self.user = self._get_user(user)
 
         self.language_model = self.user.get_language_model(self.command)
-        self.text_splitter = self.user.get_text_splitter(self.command)
-        self.encoder = self.user.get_encoder(self.command)
         self.search_limit = self.user.get_search_limit(search_limit)
         self.search_min_score = self.user.get_search_min_score(search_min_score)
 
-        if not self.language_model or not self.text_splitter or not self.encoder:
+        if not self.language_model:
             self.error(
                 f"User {self.user.name} language model, text splitter, and encoder provider "
                 "configurations required to use memory manager"
@@ -108,10 +106,9 @@ class MemoryManager:
         return self._trim_experience(experience, available_tokens)
 
     def _search_experience(self, text, search_limit, min_score):
-        sections = self.text_splitter.split(text)
         search_results = self.command.search_embeddings(
             self.chat_embeddings,
-            self.encoder.encode(sections),
+            text,
             fields=["dialog_id", "message_id"],
             limit=search_limit or self.search_limit,
             min_score=min_score or self.search_min_score,
@@ -164,7 +161,7 @@ class MemoryManager:
                     None,
                     fields={**memory, "chat": self.chat, "dialog": chat_dialog},
                 )
-                self.command.encode(
+                self.command.save_embeddings(
                     "chat_message",
                     chat_message.id,
                     "content",
