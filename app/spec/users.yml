@@ -2,7 +2,7 @@ user_defaults_ai:
   language_provider: litellm
   language_provider_options:
     model: openrouter/deepseek/deepseek-r1-0528
-    max_token_percent: 0.3
+    output_token_percent: 0.3
 
   text_splitter_provider: spacy
   text_splitter_provider_options:
