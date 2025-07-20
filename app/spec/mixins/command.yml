@@ -145,6 +145,8 @@ command_mixins:
         help: 'state value'
         value_label: VALUE
         tags: [state, value]
+  language_model:
+    class: LanguageModelMixin
   agent:
     class: AgentMixin
     parameters:
