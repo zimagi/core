@@ -1,5 +1,4 @@
 import logging
-import math
 import re
 
 from systems.cell.prompt import PromptEngine
@@ -64,17 +63,14 @@ class Actor:
         prompts,
         search_limit=1000,
         search_min_score=0.3,
-        output_token_percent=0.35,
     ):
         self.command = command
+
         self.state_manager = self.command.get_state_manager()
         self.memory_manager = self.command.get_memory_manager(search_limit=search_limit, search_min_score=search_min_score)
-        self.language_model = self.memory_manager.language_model
 
-        self.max_tokens = self.language_model.get_max_tokens()
-        self.output_token_percent = output_token_percent
-        self.max_new_tokens = math.floor(self.max_tokens * self.output_token_percent)
-        self.available_tokens = self.max_tokens - self.max_new_tokens
+        self.language_model = self.memory_manager.language_model
+        self.available_tokens = self.language_model.get_max_tokens()
 
         self.prompt_engine = PromptEngine(command, **prompts)
 
