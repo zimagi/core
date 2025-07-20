@@ -5,7 +5,7 @@ from utility.data import Collection, ensure_list
 
 class QdrantMixin(CommandMixin("qdrant")):
 
-    def encode(self, data_type, id, field, collection=None, payload=None):
+    def save_embeddings(self, data_type, id, field, collection=None, payload=None):
         if collection is None:
             collection = data_type
         if payload is None:
@@ -14,7 +14,6 @@ class QdrantMixin(CommandMixin("qdrant")):
         self.send(
             "encoder:save",
             {
-                "user": self.active_user.name,
                 "data_type": data_type,
                 "id": id,
                 "field": field,
@@ -22,6 +21,9 @@ class QdrantMixin(CommandMixin("qdrant")):
                 "payload": payload,
             },
         )
+
+    def get_search_embeddings(self, text):
+        return self.submit("encoder:search", text)
 
     @property
     def qdrant_client(self):
@@ -69,9 +71,8 @@ class QdrantMixin(CommandMixin("qdrant")):
 
         return Collection(texts=texts, embeddings=embeddings)
 
-    def search_embeddings(
-        self, collection, embeddings, fields=None, limit=10, min_score=0, filter_field=None, filter_ids=None
-    ):
+    def search_embeddings(self, collection, text, fields=None, limit=10, min_score=0, filter_field=None, filter_ids=None):
+        embeddings = self.get_search_embeddings(text) if text else []
         if not embeddings:
             return []
 
