@@ -79,6 +79,10 @@ command_base:
   gpu:
     groups_allowed: [admin]
     background: true
+  ai:
+    mixins: [language_model, qdrant]
+    groups_allowed: [chat-user]
+    background: false
   chat:
     mixins: [chat, qdrant]
     groups_allowed: [chat-user]
@@ -93,7 +97,7 @@ command_base:
       - pause
   cell:
     base: agent
-    mixins: [cell, chat]
+    mixins: [cell, chat, language_model]
     worker_type: cell
     parse:
       - lifetime
