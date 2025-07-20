@@ -1,10 +1,6 @@
 _encoder_channel_message: &encoder_channel_message
   type: dict
   items:
-    user:
-      type: str
-      description: 'The user name of the user making the encoding request'
-      required: true
     data_type:
       type: str
       description: 'The data type name that needs to be encoded'
@@ -93,6 +89,33 @@ channels:
       - chat-user
     message:
       <<: *encoder_channel_message
+
+    'encoder:search':
+      description: 'This channel gets notified with requests to generate search embeddings based on provided text'
+      groups:
+        - ai-user
+        - chat-user
+      message:
+        type: str
+        description: 'Text that should be used to generate and return embeddings for search'
+        required: true
+
+    'encoder:remove':
+      description: 'This channel gets notified with requests to remove embeddings based data instance IDs'
+      groups:
+        - ai-user
+        - chat-user
+      message:
+        type: dict
+        items:
+          collection:
+            type: str
+            description: 'The Qdrant collection to remove embeddings'
+            required: true
+          filters:
+            type: dict
+            description: 'The Qdrant collection filter field values to remove embeddings'
+            required: true
 
   'chat:message':
     description: 'This channel receives a sequence of chat messages'
