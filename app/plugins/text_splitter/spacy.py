@@ -38,14 +38,14 @@ class Provider(BaseProvider("text_splitter", "spacy")):
                             interjection_count = 0
 
                             for token in sentence:
-                                if token.pos_ in ["NOUN", "PROPN"]:
+                                if token.pos_ in ["NOUN", "PROPN", "PRON"]:
                                     noun_count += 1
                                 elif token.pos_ in ["VERB", "AUX"]:
                                     verb_count += 1
                                 elif token.pos_ == "INTJ":
                                     interjection_count += 1
 
-                            if (noun_count > 0 and verb_count > 0) or interjection_count > 0:
+                            if noun_count > 0 or verb_count > 0 or interjection_count > 0:
                                 sentence = re.sub(r"\n+", " ", str(sentence)).strip()
                                 if len(sentence) < self.field_max_sentence_length:
                                     sentences.append(str(sentence))
