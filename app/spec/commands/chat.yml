@@ -54,7 +54,7 @@ _chat_directive: &chat_directive
   agent_channel_field_map:
     user: user
     name: message__name
-    message: response__text
+    message: response__message
     time: time
 
 command:
