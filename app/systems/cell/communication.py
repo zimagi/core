@@ -44,19 +44,21 @@ class CommunicationProcessor:
                 # self.send(self.sensor_name, package.message, package.sender)
                 raise
 
-    def send(self, channel, event, response):
+    def send(self, channel, event, response, field_map):
         channel = event.package.sender if channel == "sender" else channel
         message = self._translate_message(
             {
                 "self": self.command.service_id,
                 "user": self.user if self.user else settings.ADMIN_USER,
+                "time": self.command.time.now_string,
                 "sensor": self.sensor_name,
                 "sender": event.package.sender,
                 "message": event.message,
                 "response": response.result,
-                "time": response.time,
+                "duration": response.time,
                 "memory": response.memory,
-            }
+            },
+            field_map,
         )
         logger.info(f"Sending data to channel {channel}: {message}")
         self.command.send(channel, message)
