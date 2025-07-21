@@ -1,3 +1,5 @@
+import re
+
 from systems.commands.index import Agent
 from utility.data import Collection
 
@@ -14,6 +16,8 @@ class EncodingProviders:
 
 class Encoder(Agent("encoder")):
     processes = ("encoder_save", "encoder_search", "encoder_remove")
+
+    prefix_ignore_pattern = r"^(\@[a-zA-Z0-9]+(\s*\,)?\s*)+\s*\:\s*"
 
     def encoder_save(self):
         for package in self.listen("encoder:save", state_key="encoder"):
@@ -60,7 +64,7 @@ class Encoder(Agent("encoder")):
             raise EncodingError(f"Encoding request is missing input value for field {request.field}")
 
         provider = self._get_encoding_providers(user)
-        sections = provider.text.split(field_value)
+        sections = provider.text.split(re.sub(self.prefix_ignore_pattern, "", field_value).capitalize())
         embeddings = provider.encoder.encode(sections)
         collection = user.get_qdrant_collection(self, request.collection)
         schema = collection.get_info().schema
@@ -77,7 +81,7 @@ class Encoder(Agent("encoder")):
             raise EncodingError("Encoding request is missing input text")
 
         provider = self._get_encoding_providers(user)
-        return provider.encoder.encode(provider.text.split(text))
+        return provider.encoder.encode(provider.text.split(re.sub(self.prefix_ignore_pattern, "", text).capitalize()))
 
     def _process_delete_request(self, user, request):
         collection = user.get_qdrant_collection(self, request.collection)
