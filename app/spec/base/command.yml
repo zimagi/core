@@ -97,7 +97,7 @@ command_base:
       - pause
   cell:
     base: agent
-    mixins: [cell, chat, language_model]
+    mixins: [cell, chat, qdrant, language_model]
     worker_type: cell
     parse:
       - lifetime
