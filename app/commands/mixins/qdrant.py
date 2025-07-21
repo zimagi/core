@@ -5,26 +5,6 @@ from utility.data import Collection, ensure_list
 
 class QdrantMixin(CommandMixin("qdrant")):
 
-    def save_embeddings(self, data_type, id, field, collection=None, payload=None):
-        if collection is None:
-            collection = data_type
-        if payload is None:
-            payload = {}
-
-        self.send(
-            "encoder:save",
-            {
-                "data_type": data_type,
-                "id": id,
-                "field": field,
-                "collection": collection,
-                "payload": payload,
-            },
-        )
-
-    def get_search_embeddings(self, text):
-        return self.submit("encoder:search", text)
-
     @property
     def qdrant_client(self):
         if not getattr(self, "_qdrant_client", None):
@@ -61,6 +41,23 @@ class QdrantMixin(CommandMixin("qdrant")):
 
         return collections
 
+    def save_embeddings(self, user, collection, data_type, id, field, payload=None):
+        with self.run_as(user) as user:
+            self.send(
+                "encoder:save",
+                {
+                    "data_type": data_type,
+                    "id": id,
+                    "field": field,
+                    "collection": collection if isinstance(collection, str) else collection.name,
+                    "payload": payload or {},
+                },
+            )
+
+    def get_search_embeddings(self, user, text):
+        with self.run_as(user) as user:
+            return self.submit("encoder:search", text)
+
     def get_embeddings(self, collection, **filters):
         texts = []
         embeddings = []
@@ -71,8 +68,10 @@ class QdrantMixin(CommandMixin("qdrant")):
 
         return Collection(texts=texts, embeddings=embeddings)
 
-    def search_embeddings(self, collection, text, fields=None, limit=10, min_score=0, filter_field=None, filter_ids=None):
-        embeddings = self.get_search_embeddings(text) if text else []
+    def search_embeddings(
+        self, user, collection, text, fields=None, limit=10, min_score=0, filter_field=None, filter_ids=None
+    ):
+        embeddings = self.get_search_embeddings(user, text) if text else []
         if not embeddings:
             return []
 
