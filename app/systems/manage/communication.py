@@ -5,7 +5,6 @@ import time
 import redis
 from django.conf import settings
 from utility.data import Collection, dump_json, load_json
-from utility.mutex import MutexError, MutexTimeoutError, check_mutex
 from utility.time import Time
 from utility.validation import TypeValidator
 
@@ -72,41 +71,36 @@ class ManagerCommunicationMixin:
                 connection.set(state_key, 0)
 
             while not terminate_callback(channel):
-                try:
-                    with check_mutex(f"manager-listen-{channel}-{state_key}", force_remove=True):
-                        last_id = connection.get(state_key)
-                        stream_data = connection.xread(
-                            count=1, block=(block_sec * 1000), streams={communication_key: last_id if last_id else 0}
+                last_id = connection.get(state_key)
+                stream_data = connection.xread(
+                    count=1, block=(block_sec * 1000), streams={communication_key: last_id if last_id else 0}
+                )
+                if stream_data:
+                    message = stream_data[0][1][-1]
+                    last_id = message[0]
+                    package = message[1]
+
+                    connection.set(state_key, last_id)
+
+                if stream_data:
+                    try:
+                        message = load_json(package["message"]) if int(package["json"]) else package["message"]
+                        message = self._validate_channel_message(channel, message)
+                        yield Collection(
+                            time=Time().to_datetime(package["time"]),
+                            sender=package["sender"],
+                            user=package["user"],
+                            message=message,
                         )
-                        if stream_data:
-                            message = stream_data[0][1][-1]
-                            last_id = message[0]
-                            package = message[1]
+                        start_time = time.time()
 
-                            connection.set(state_key, last_id)
+                    except ChannelValidationError as error:
+                        logger.error(f"Communication listener validation error: {error}")
 
-                    if stream_data:
-                        try:
-                            message = load_json(package["message"]) if int(package["json"]) else package["message"]
-                            message = self._validate_channel_message(channel, message)
-                            yield Collection(
-                                time=Time().to_datetime(package["time"]),
-                                sender=package["sender"],
-                                user=package["user"],
-                                message=message,
-                            )
-                            start_time = time.time()
+                current_time = time.time()
 
-                        except ChannelValidationError as error:
-                            logger.error(f"Communication listener validation error: {error}")
-
-                    current_time = time.time()
-
-                    if timeout and ((current_time - start_time) > timeout):
-                        break
-
-                except (MutexError, MutexTimeoutError):
-                    continue
+                if timeout and ((current_time - start_time) > timeout):
+                    break
 
     def send(self, channel, message, sender="", user=None):
         connection = self.communication_connection()
