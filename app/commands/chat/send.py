@@ -15,4 +15,4 @@ class Send(Command("chat.send")):
                     "time": time,
                 },
             )
-            self.save_user_message(self.chat_name, self.chat_text, time=time)
+            self.save_user_message(self.chat_name, self.chat_text)

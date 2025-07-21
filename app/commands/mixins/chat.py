@@ -12,12 +12,6 @@ class ChatMixin(CommandMixin("chat")):
             search_min_score=search_min_score,
         )
 
-    def save_user_message(self, chat_name, message, time=None, user=None, role="user"):
+    def save_user_message(self, chat_name, message, user=None, role="user"):
         user = user if user else self.active_user.name
-        time = time if time else self.time.now
-        (
-            self.get_memory_manager()
-            .set_chat(chat_name)
-            .add({"role": role, "content": message, "sender": user, "created": self.time.to_datetime(time)})
-            .save()
-        )
+        (self.get_memory_manager().set_chat(chat_name).add({"role": role, "content": message, "sender": user}).save())
