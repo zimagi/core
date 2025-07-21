@@ -318,7 +318,7 @@ class ExecCommand(
 
         return tokens
 
-    def listen(self, channel, timeout=None, block_sec=10, state_key=None, terminate_callback=None):
+    def listen(self, channel, timeout=None, block_sec=1, state_key=None, terminate_callback=None):
         self.check_channel_access(channel)
 
         if not timeout:
