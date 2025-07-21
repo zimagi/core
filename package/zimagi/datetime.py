@@ -40,7 +40,10 @@ class Time:
                 date_time = datetime.datetime.strptime(date_time, self.time_format)
             except ValueError:
                 try:
-                    date_time = datetime.datetime.strptime(date_time, f"{self.time_format}Z")
+                    try:
+                        date_time = datetime.datetime.strptime(date_time, f"{self.time_format}Z")
+                    except ValueError:
+                        date_time = datetime.datetime.strptime(date_time, f"{self.time_format}.%fZ")
                 except ValueError:
                     date_time = datetime.datetime.strptime(date_time, self.date_format)
 
