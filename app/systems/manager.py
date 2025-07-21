@@ -74,7 +74,7 @@ class Manager(
 
     def cleanup(self, log_key):
         self.cleanup_task(log_key)
-        self.cleanup_communication(log_key)
+        # self.cleanup_communication(log_key)
 
     def get_spec(self, location=None, default=None):
         spec = self.index.spec

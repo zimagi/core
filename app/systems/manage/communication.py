@@ -48,12 +48,12 @@ class ManagerCommunicationMixin:
 
         return self._communication_connection
 
-    def cleanup_communication(self, key):
-        connection = self.communication_connection()
-        if connection:
-            connection.close()
+    # def cleanup_communication(self, key):
+    #     connection = self.communication_connection()
+    #     if connection:
+    #         connection.close()
 
-    def listen(self, channel, timeout=0, block_sec=0.5, state_key=None, terminate_callback=None):
+    def listen(self, channel, timeout=0, block_sec=1, state_key=None, terminate_callback=None):
         communication_key = channel_communication_key(channel)
         state_key = channel_listen_state_key(channel, state_key)
 
@@ -73,7 +73,7 @@ class ManagerCommunicationMixin:
 
             while not terminate_callback(channel):
                 try:
-                    with check_mutex(f"manager-listen-{channel}", force_remove=True):
+                    with check_mutex(f"manager-listen-{channel}-{state_key}", force_remove=True):
                         last_id = connection.get(state_key)
                         stream_data = connection.xread(
                             count=1, block=(block_sec * 1000), streams={communication_key: last_id if last_id else 0}
