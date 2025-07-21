@@ -40,13 +40,6 @@ data:
         options:
           on_delete: '@django.CASCADE'
           related_name: dialogs
-      previous:
-        type: '@django.ForeignKey'
-        relation: chat_dialog
-        options:
-          'null': true
-          on_delete: '@django.CASCADE'
-          related_name: '+'
     meta:
       ordering: [chat_id, 'created']
 
