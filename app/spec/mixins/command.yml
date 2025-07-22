@@ -230,7 +230,7 @@ command_mixins:
         optional: true
         tags: [agent, communication]
       agent_memory_search_field:
-        parser: variables
+        parser: variable
         type: str
         optional: false
         help: 'cell memory search field for searching memories'
