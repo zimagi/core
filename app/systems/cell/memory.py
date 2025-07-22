@@ -1,5 +1,7 @@
 import logging
 
+from utility.data import ensure_list
+
 logger = logging.getLogger(__name__)
 
 
@@ -64,21 +66,21 @@ class MemoryManager:
         self.search_min_score = self.user.get_search_min_score(search_min_score)
 
         if not self.language_model:
-            self.error(
-                f"User {self.user.name} language model, text splitter, and encoder provider "
-                "configurations required to use memory manager"
-            )
-        self.memory_collection = "chat"
-        self.chat_embeddings = self.user.get_qdrant_collection(self.command, self.memory_collection)
+            self.error(f"User {self.user.name} language model configurations required to use memory manager")
+
+        self.embedding_db = self.user.get_qdrant_collection(self.command, "chat")
         self.new_messages = []
 
     def _get_user(self, user):
         if isinstance(user, str):
-            return self._user.retrieve(user)
+            return self.command._user.retrieve(user)
         return user
 
     def _get_chat(self, user, chat_key):
-        return self.command._chat.retrieve(None, user=user, name=chat_key)
+        chat = self.command._chat.retrieve(None, user=user, name=chat_key)
+        if not chat:
+            chat, created = self.command._chat.store(None, {"user": user, "name": chat_key})
+        return chat
 
     def set_chat(self, chat_key):
         self.chat = self._get_chat(self.user, chat_key)
@@ -98,16 +100,29 @@ class MemoryManager:
         _add_list(messages)
         return self
 
-    def load(self, text, available_tokens, search_limit=None, min_score=None):
+    def load(self, text, system_messages=None, search_limit=None, min_score=None):
+        available_tokens = self.language_model.get_max_tokens()
         experience = self._search_experience(text, search_limit, min_score)
+        messages = []
+
+        if system_messages:
+            system_messages = ensure_list(system_messages)
+            available_tokens -= self.language_model.get_token_count(system_messages)
+            messages.extend(system_messages)
+
         if self.new_messages:
             new_tokens = self.language_model.get_token_count(self.new_messages)
-            return self._trim_experience(experience, (available_tokens - new_tokens)) + self.new_messages
-        return self._trim_experience(experience, available_tokens)
+            messages.extend(self._trim_experience(experience, (available_tokens - new_tokens)))
+            messages.extend(self.new_messages)
+        else:
+            messages.extend(self._trim_experience(experience, available_tokens))
+
+        return messages
 
     def _search_experience(self, text, search_limit, min_score):
         search_results = self.command.search_embeddings(
-            self.chat_embeddings,
+            self.user,
+            self.embedding_db,
             text,
             fields=["dialog_id", "message_id"],
             limit=search_limit or self.search_limit,
@@ -153,7 +168,7 @@ class MemoryManager:
                         chat_dialog = self.command.save_instance(
                             self.command._chat_dialog,
                             None,
-                            fields={"chat": self.chat, "previous": chat_dialog if chat_dialog else None},
+                            fields={"chat": self.chat},
                         )
 
                 chat_message = self.command.save_instance(
@@ -162,13 +177,14 @@ class MemoryManager:
                     fields={**memory, "chat": self.chat, "dialog": chat_dialog},
                 )
                 self.command.save_embeddings(
+                    self.user,
+                    self.embedding_db,
                     "chat_message",
                     chat_message.id,
                     "content",
-                    collection=self.memory_collection,
                     payload={
                         "chat_id": self.chat.id,
-                        "user_id": self.chat.user.name,
+                        "user_id": chat_message.sender,
                         "dialog_id": chat_dialog.id,
                         "message_id": chat_message.id,
                         "role": chat_message.role,
