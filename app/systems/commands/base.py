@@ -478,6 +478,8 @@ class BaseCommand(
                 user_groups.append(group)
 
         if len(user_groups):
+            user_groups = list(set(user_groups))
+
             if not self.active_user.groups.filter(name__in=user_groups).exists():
                 self.warning(
                     "Operation {} {} {} access requires at least one of the following roles in environment: {}".format(
