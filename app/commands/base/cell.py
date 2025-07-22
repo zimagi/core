@@ -45,21 +45,11 @@ class Cell(BaseCommand("cell")):
             },
         )
 
-    def get_memory_manager(self, search_limit, search_min_score):
-        return MemoryManager(
-            self,
-            self.agent_user,
-            search_limit=search_limit,
-            search_min_score=search_min_score,
-        )
+    def get_memory_manager(self, **kwargs):
+        return MemoryManager(self, self.agent_user, **kwargs)
 
-    def get_actor(self, prompts, search_limit, search_min_score):
-        return Actor(
-            self,
-            prompts=prompts,
-            search_limit=search_limit,
-            search_min_score=search_min_score,
-        )
+    def get_actor(self, **kwargs):
+        return Actor(self, **kwargs)
 
     def event_processor(self):
         # Initialize cycle
@@ -89,6 +79,7 @@ class Cell(BaseCommand("cell")):
 
         except Exception as error:
             self.error_handler.handle(error)
+            self.communication.send_error(self.agent_channel, error)
             raise
 
         # Finalize cycle
@@ -142,6 +133,7 @@ class Cell(BaseCommand("cell")):
 
         except Exception as error:
             self.error_handler.handle(error)
+            self.communication.send_error(chat_channel, error)
             raise
 
         # Finalize cycle
@@ -152,15 +144,14 @@ class Cell(BaseCommand("cell")):
             self.communication.send_error(chat_channel, error)
             raise
 
-    def _initialize_cycle(self, sensor_name, prompts, search_limit=None, search_min_score=None):
+    def _initialize_cycle(self, sensor_name, prompts, **kwargs):
         self.error_handler = self.get_error_handler()
-
         self.manager.load_templates()
 
         if self.agent_user:
             self._user.set_active_user(self.get_instance(self._user, self.agent_user, required=True))
 
-        self.actor = self.get_actor(prompts, search_limit=search_limit, search_min_score=search_min_score)
+        self.actor = self.get_actor(prompts=prompts, **kwargs)
         self.communication = self.get_communication_processor()
         self.communication.set_sensor(sensor_name)
 
