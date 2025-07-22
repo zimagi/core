@@ -67,9 +67,9 @@ class Cell(BaseCommand("cell")):
             self._initialize_cycle(
                 self.agent_sensor,
                 prompts={
-                    "system": self.command.agent_system_template,
-                    "tools": self.command.agent_tools_template,
-                    "request": self.command.agent_template,
+                    "system": self.agent_system_template,
+                    "tools": self.agent_tools_template,
+                    "request": self.agent_template,
                 },
             )
         except Exception as error:
@@ -83,8 +83,9 @@ class Cell(BaseCommand("cell")):
                 self.agent_sensor_filters, self.agent_message_fields, self.agent_sensor_id_field
             ):
                 response = self.profile(self.process_sensory_event, event)
-                self.communication.send(self.agent_channel, event, response.export())
+                self.communication.send(self.agent_channel, event, response, self.agent_channel_field_map)
                 self.finalize_event_response(event, response)
+                self.data("Completed", response)
 
         except Exception as error:
             self.error_handler.handle(error)
@@ -99,6 +100,8 @@ class Cell(BaseCommand("cell")):
             raise
 
     def assistant(self):
+        self.notice("Starting cell assistant ...")
+
         chat_channel = "chat:message"
 
         # Initialize cycle
@@ -106,8 +109,8 @@ class Cell(BaseCommand("cell")):
             self._initialize_cycle(
                 chat_channel,
                 prompts={
-                    "system": self.command.agent_system_template,
-                    "assistant": self.command.agent_assistant_template,
+                    "system": self.agent_system_template,
+                    "assistant": self.agent_assistant_template,
                 },
                 search_limit=self.agent_assistant_search_limit,
                 search_min_score=self.agent_assistant_search_min_score,
@@ -124,7 +127,17 @@ class Cell(BaseCommand("cell")):
                 ["user", "name", "message", "time"],
             ):
                 response = self.profile(self.process_chat_message, event)
-                self.communication.send(chat_channel, event, response.export())
+                self.communication.send(
+                    chat_channel,
+                    event,
+                    response,
+                    {
+                        "user": "user",
+                        "name": "message__name",
+                        "message": "response__message",
+                        "time": "time",
+                    },
+                )
                 self.finalize_event_response(event, response)
 
         except Exception as error:
@@ -140,12 +153,12 @@ class Cell(BaseCommand("cell")):
             raise
 
     def _initialize_cycle(self, sensor_name, prompts, search_limit=None, search_min_score=None):
+        self.error_handler = self.get_error_handler()
+
         self.manager.load_templates()
 
         if self.agent_user:
             self._user.set_active_user(self.get_instance(self._user, self.agent_user, required=True))
-
-        self.error_handler = self.get_error_handler()
 
         self.actor = self.get_actor(prompts, search_limit=search_limit, search_min_score=search_min_score)
         self.communication = self.get_communication_processor()
