@@ -59,18 +59,12 @@ class Actor:
 
     chat_field_pattern = r"^\<\<(.+)\>\>$"
 
-    def __init__(
-        self,
-        command,
-        prompts,
-        search_limit=1000,
-        search_min_score=0.3,
-    ):
+    def __init__(self, command, prompts, search_limit=1000, search_min_score=0.3, keep_previous=5):
         self.command = command
-
         self.state_manager = self.command.get_state_manager()
-        self.memory_manager = self.command.get_memory_manager(search_limit=search_limit, search_min_score=search_min_score)
-
+        self.memory_manager = self.command.get_memory_manager(
+            search_limit=search_limit, search_min_score=search_min_score, keep_previous=keep_previous
+        )
         self.prompt_engine = PromptEngine(command, **prompts)
 
     @property
@@ -121,8 +115,12 @@ class Actor:
         )
         for cycle in range(self.get_max_cycles()):
             try:
+                messages = self._get_message_sequence(prompts, event.package.user, event.message[search_field])
+                logger.info(f"Context messages: {dump_json(messages, indent=2)}")
+
                 model_response = self.command.instruct(
-                    event.package.user, self._get_message_sequence(event.package.user, prompts, event.message[search_field])
+                    self.memory_manager.user,
+                    messages,
                 )
                 logger.debug(f"Response success: {model_response.text}")
 
@@ -143,7 +141,7 @@ class Actor:
                     for index, value in enumerate(results):
                         response.add_message(value.result, "tool")
                 else:
-                    response.add_message(response.text)
+                    response.add_message(model_response.text)
                     break
 
             except Exception as error:
@@ -166,8 +164,10 @@ class Actor:
         )
         for cycle in range(self.get_max_cycles()):
             try:
+                messages = self._get_message_sequence(prompts, event.package.user, event.message[search_field])
                 model_response = self.command.instruct(
-                    event.package.user, self._get_message_sequence(event.package.user, prompts, event.message[search_field])
+                    self.memory_manager.user,
+                    messages,
                 )
                 logger.debug(f"Response success: {model_response.text}")
                 response.add_message(model_response.text)
@@ -212,13 +212,12 @@ class Actor:
         return f"Tool executed: {tool_data['tool']}\n\n{response_text}"
 
     def _handle_error(self, error):
-        logger.warning(f"Actor encountered error: {error}")
-        traceback = "\n".join([item.strip() for item in format_traceback()])
-        logger.debug(traceback)
+        logger.error(f"Actor encountered error: {error}")
+        logger.error("\n".join([item.strip() for item in format_exception_info()]))
         return {
             "error": str(error),
-            "traceback": traceback,
-            "info": "\n".join([item.strip() for item in format_exception_info()]),
+            "traceback": format_traceback(),
+            "info": format_exception_info(),
         }
 
     def _parse_data_objects(self, markdown_text):
