@@ -2,7 +2,7 @@ import logging
 import re
 
 from systems.cell.prompt import PromptEngine
-from utility.data import dump_json, ensure_list, load_json, load_yaml
+from utility.data import dump_json, load_json, load_yaml
 from utility.display import format_exception_info, format_traceback
 
 logger = logging.getLogger(__name__)
@@ -22,6 +22,8 @@ class Response:
     def __init__(self, memory_manager):
         self.memory_manager = memory_manager
         self.messages = []
+        self.data = {}
+        self.references = {}
 
     def __str__(self):
         return (
@@ -69,9 +71,6 @@ class Actor:
         self.state_manager = self.command.get_state_manager()
         self.memory_manager = self.command.get_memory_manager(search_limit=search_limit, search_min_score=search_min_score)
 
-        self.language_model = self.memory_manager.language_model
-        self.available_tokens = self.language_model.get_max_tokens()
-
         self.prompt_engine = PromptEngine(command, **prompts)
 
     @property
@@ -81,13 +80,11 @@ class Actor:
     def get_max_cycles(self):
         return 3
 
-    def get_token_count(self, messages):
-        return self.language_model.get_token_count(ensure_list(messages))
-
     def set_chat(self, message, chat_key):
         match = re.match(self.chat_field_pattern, chat_key)
         if match and match[1] in message:
             chat_key = message[match[1]]
+
         self.memory_manager.set_chat(chat_key)
 
     def _get_message_sequence(self, prompts, user, text):
@@ -108,10 +105,7 @@ class Actor:
                 extra_messages.append({"role": "user", "content": prompt_text, "sender": user})
 
         self.memory_manager.add(extra_messages, request_messages)
-        return [
-            *system_messages,
-            *self.memory_manager.load(text, (self.available_tokens - self.get_token_count(system_messages))),
-        ]
+        return self.memory_manager.load(text, system_messages)
 
     def respond(self, event, chat_key, search_field, field_labels=None):
         self.set_chat(event.message, chat_key)
@@ -127,8 +121,8 @@ class Actor:
         )
         for cycle in range(self.get_max_cycles()):
             try:
-                model_response = self.language_model.exec(
-                    self._get_message_sequence(event.package.user, prompts, event.message[search_field])
+                model_response = self.command.instruct(
+                    event.package.user, self._get_message_sequence(event.package.user, prompts, event.message[search_field])
                 )
                 logger.debug(f"Response success: {model_response.text}")
 
@@ -157,7 +151,7 @@ class Actor:
                 logger.debug(f"Internal actor traceback: {format_traceback()}")
                 return self._handle_error(error)
 
-        return response
+        return response.export()
 
     def assist(self, event, chat_key, search_field, field_labels=None):
         self.set_chat(event.message, chat_key)
@@ -172,8 +166,8 @@ class Actor:
         )
         for cycle in range(self.get_max_cycles()):
             try:
-                model_response = self.language_model.exec(
-                    self._get_message_sequence(event.package.user, prompts, event.message[search_field])
+                model_response = self.command.instruct(
+                    event.package.user, self._get_message_sequence(event.package.user, prompts, event.message[search_field])
                 )
                 logger.debug(f"Response success: {model_response.text}")
                 response.add_message(model_response.text)
@@ -185,7 +179,7 @@ class Actor:
                 if cycle == (self.get_max_cycles() - 1):
                     return self._handle_error(error)
 
-        return response
+        return response.export()
 
     def memorize(self):
         self.memory_manager.save()
