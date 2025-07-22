@@ -1,46 +1,63 @@
 import logging
 
-from utility.data import ensure_list
+from utility.data import dump_json, ensure_list
 
 logger = logging.getLogger(__name__)
 
 
 class DialogResult:
-    def __init__(self, score, scores, messages):
+    def __init__(self, score, scores, messages=None):
         self.score = score
         self.scores = scores
-        self.messages = messages
+        self.messages = messages or []
+
+    def __str__(self):
+        return (
+            f"Score: {self.score}\n"
+            f"Scores: {", ".join([str(score) for score in self.scores])}\n"
+            f"Messages: {", ".join(self.messages)}"
+        )
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class Experience:
 
-    def __init__(self, command, language_model, search_results):
+    def __init__(self, command, language_model, chat, search_results, keep_previous=5):
         self.command = command
         self.language_model = language_model
+        self.chat = chat
         self.search_results = search_results
 
         self.dialogs = {}
         self.messages = {}
         self.tokens = {}
 
-        self.load()
+        self._load(keep_previous)
 
-    def load(self):
+    def _load(self, keep_previous):
         message_ids = []
 
-        for result in self.search_results:
-            dialog_id = result.payload["dialog_id"]
-            message_id = result.payload["message_id"]
-            score = result.score
+        for dialog_id in (
+            self.command._chat_dialog.set_order("-created").set_limit(keep_previous).field_values("id", chat=self.chat)
+        ):
+            self.dialogs[dialog_id] = DialogResult(score=1, scores=[1])
 
-            if dialog_id not in self.dialogs:
-                self.dialogs[dialog_id] = DialogResult(score=score, scores=[score], messages=[message_id])
-            else:
-                self.dialogs[dialog_id].messages.append(message_id)
-                self.dialogs[dialog_id].scores.append(score)
-                self.dialogs[dialog_id].score = max(self.dialogs[dialog_id].score, score)
+        for sentence_results in self.search_results:
+            for scored_point in sentence_results:
+                dialog_id = scored_point.payload["dialog_id"]
+                score = scored_point.score
 
-            message_ids.append(message_id)
+                if dialog_id not in self.dialogs:
+                    self.dialogs[dialog_id] = DialogResult(score=score, scores=[score])
+                else:
+                    self.dialogs[dialog_id].scores.append(score)
+                    self.dialogs[dialog_id].score = max(self.dialogs[dialog_id].score, score)
+
+        for dialog_id, dialog_result in self.dialogs.items():
+            self.dialogs[dialog_id].messages = self.command._chat_message.field_values("id", dialog_id=dialog_id)
+            message_ids.extend(self.dialogs[dialog_id].messages)
 
         for instance in self.command._chat_message.filter(id__in=message_ids):
             self.messages[instance.id] = instance
@@ -48,22 +65,20 @@ class Experience:
                 {"role": instance.role, "content": instance.content}
             )
 
+        logger.info("Matching dialogs:")
+        logger.info(dump_json(self.dialogs, indent=2))
+
 
 class MemoryManager:
 
-    def __init__(
-        self,
-        command,
-        user,
-        search_limit=None,
-        search_min_score=None,
-    ):
+    def __init__(self, command, user, search_limit=None, search_min_score=None, keep_previous=5):
         self.command = command
         self.user = self._get_user(user)
 
         self.language_model = self.user.get_language_model(self.command)
         self.search_limit = self.user.get_search_limit(search_limit)
         self.search_min_score = self.user.get_search_min_score(search_min_score)
+        self.keep_previous = keep_previous
 
         if not self.language_model:
             self.error(f"User {self.user.name} language model configurations required to use memory manager")
@@ -100,9 +115,9 @@ class MemoryManager:
         _add_list(messages)
         return self
 
-    def load(self, text, system_messages=None, search_limit=None, min_score=None):
+    def load(self, text, system_messages=None, search_limit=None, min_score=None, keep_previous=None):
         available_tokens = self.language_model.get_max_tokens()
-        experience = self._search_experience(text, search_limit, min_score)
+        experience = self._search_experience(text, search_limit, min_score, keep_previous)
         messages = []
 
         if system_messages:
@@ -119,7 +134,7 @@ class MemoryManager:
 
         return messages
 
-    def _search_experience(self, text, search_limit, min_score):
+    def _search_experience(self, text, search_limit, min_score, keep_previous):
         search_results = self.command.search_embeddings(
             self.user,
             self.embedding_db,
@@ -130,7 +145,7 @@ class MemoryManager:
             filter_field="chat_id",
             filter_ids=self.chat.id,
         )
-        return Experience(self.language_model, search_results)
+        return Experience(self.command, self.language_model, self.chat, search_results, keep_previous or self.keep_previous)
 
     def _trim_experience(self, experience, available_tokens):
         selected_messages = []
