@@ -46,9 +46,6 @@ class StateManager:
             self._state[name] = value
             self.save(self._state)
 
-    def __setattr__(self, name, value):
-        self.__setitem__(name, value)
-
     def set(self, name, value):
         self.__setitem__(name, value)
 
@@ -56,9 +53,6 @@ class StateManager:
         with self.lock:
             del self._state[name]
             self.save(self._state)
-
-    def __delattr__(self, name):
-        self.__delitem__(name)
 
     def delete(self, name):
         self.__delitem__(name)
@@ -76,9 +70,6 @@ class StateManager:
         if name not in self._state:
             return None
         return self._state[name]
-
-    def __getattr__(self, name):
-        return self.__getitem__(name)
 
     def get(self, name, default=None):
         if name not in self._state:
