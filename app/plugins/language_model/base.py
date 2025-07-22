@@ -2,7 +2,7 @@ import copy
 import math
 
 from systems.plugins.index import BasePlugin
-from utility.data import dump_json
+from utility.data import dump_json, ensure_list
 
 
 class LanguageModelResult:
@@ -56,7 +56,7 @@ class BaseProvider(BasePlugin("language_model")):
 
     def _get_messages(self, messages, default_role="user"):
         processed_messages = []
-        for message in messages:
+        for message in ensure_list(messages):
             content = None
             if isinstance(message, str):
                 content = message
