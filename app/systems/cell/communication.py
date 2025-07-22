@@ -1,7 +1,7 @@
 import logging
 
 from django.conf import settings
-from utility.data import flatten_dict, normalize_value
+from utility.data import dump_json, flatten_dict, normalize_value
 from utility.display import format_exception_info, format_traceback
 from utility.validation import validate_flattened_dict
 
@@ -36,6 +36,7 @@ class CommunicationProcessor:
         logger.debug(f"Starting to listen for {self.sensor_name}")
         for package in self.command.listen(self.sensor_name, state_key=self.sensor_key):
             try:
+                self.command.notice(f"Received new event: {package}")
                 message = self._load_message(package, filters, fields, id_field)
                 if message:
                     yield SensoryEvent(package, message)
@@ -74,8 +75,8 @@ class CommunicationProcessor:
                 "sender": package.sender if package else None,
                 "message": package.message if package else None,
                 "error": str(error),
-                "traceback": "\n".join([item.strip() for item in format_traceback()]),
-                "info": "\n".join([item.strip() for item in format_exception_info()]),
+                "traceback": format_traceback(),
+                "info": format_exception_info(),
             },
         )
 
@@ -126,10 +127,13 @@ class CommunicationProcessor:
         flattened_message = flatten_dict(normalize_value(message))
         translation = {}
 
+        logger.info(f"Flattened output: {dump_json(flattened_message, indent=2)}")
+
         if field_map:
             for field, flattened_field in field_map.items():
                 translation[field] = flattened_message[flattened_field]
         else:
             translation = message
 
+        logger.info(f"Translated output: {dump_json(translation, indent=2)}")
         return translation
