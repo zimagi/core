@@ -38,6 +38,7 @@ VERSION = load_file(os.path.join(APP_DIR, "VERSION")).strip()
 
 PROJECT_PATH_MAP = {
     "dataset_path": "datasets",
+    "file_storage_path": "storage",
     "st_model_cache": {
         "directory": "st_models",
         "backup": False,
