@@ -45,6 +45,7 @@ doc_sequence = [
     "app/systems/commands/mixins",
     "app/systems/commands/factory",
     "app/systems/commands",
+    "app/systems/cell",
     "app/systems/celery",
     "app/systems/cache",
     "app/systems/api",
@@ -74,6 +75,7 @@ doc_sequence = [
     "app/plugins",
     "app/plugins/mixins",
     "app/plugins/calculation",
+    "app/plugins/channel_token",
     "app/plugins/data_processor",
     "app/plugins/dataset",
     "app/plugins/encoder",
@@ -83,8 +85,10 @@ doc_sequence = [
     "app/plugins/formatter",
     "app/plugins/function",
     "app/plugins/language_model",
+    "app/plugins/message_filter",
     "app/plugins/module",
     "app/plugins/parser",
+    "app/plugins/qdrant_collection",
     "app/plugins/source",
     "app/plugins/task",
     "app/plugins/text_splitter",
@@ -102,6 +106,7 @@ doc_sequence = [
     "app/commands/log",
     "app/commands/module",
     "app/commands/notification",
+    "app/commands/qdrant",
     "app/commands/service",
     "app/commands/template",
     "app/commands/user",
@@ -421,7 +426,7 @@ class Aider:
         self,
         write_files=None,
         read_files=None,
-        model="openrouter/deepseek/deepseek-r1-0528",
+        model="openrouter/qwen/qwen3-coder",
         io=None,
         commit=False,
         **kwargs,
@@ -499,63 +504,60 @@ class Aider:
 class DocGenerator:
     """Generates documentation for directories while skipping specified patterns."""
 
-    def __init__(self, doc_sequence, output_token_context=3000):
+    def __init__(self, doc_sequence, output_token_context=3000, max_tokens=200000):
         self.doc_sequence = doc_sequence
         self.output_token_context = output_token_context
-
-    def find_directories(self, base_path: str = ".") -> list[Path]:
-        """Find all directories to document, excluding skipped patterns."""
-        directories = []
-        base_path = Path(base_path)
-
-        def walk_dir(current_path: Path):
-            """Recursively walk directories while checking skip patterns."""
-            try:
-                rel_path = str(current_path.relative_to(base_path))
-            except ValueError:
-                rel_path = str(current_path)
-
-            if rel_path != ".":
-                # Skip if this directory matches any pattern
-                for pattern in self.skip_patterns:
-                    if re.match(pattern, rel_path):
-                        return
-
-            directories.append(current_path)
-
-            # Continue walking subdirectories
-            try:
-                for entry in current_path.iterdir():
-                    if entry.is_dir():
-                        walk_dir(entry)
-            except PermissionError:
-                pass  # Skip directories we can't access
-
-        walk_dir(base_path)
-        return sorted([directory for directory in directories if directory != base_path])
+        self.max_tokens = max_tokens
 
     def generate_docs(self):
         """Main documentation generation workflow."""
         readme_context = {}
+        docs_state_file = os.path.join(".", ".docs-index")
 
-        for dir_path in self.doc_sequence:
+        try:
+            with open(docs_state_file) as file:
+                docs_index = int(file.read())
+        except FileNotFoundError:
+            docs_index = None
+
+        for dir_index, dir_path in enumerate(self.doc_sequence):
             if os.path.isdir(dir_path):
                 readme_file = os.path.join(dir_path, "README.md")
                 readme_files = list(readme_context.values())
+                readme_generated = False
 
-                session = Aider(write_files=readme_file, read_files=[dir_path, *readme_files])
-                if session.info.remaining_tokens < self.output_token_context:
-                    session = Aider(write_files=readme_file, read_files=readme_files)
-                if session.info.remaining_tokens < self.output_token_context:
-                    session = Aider(write_files=readme_file, read_files=self._get_readme_files(dir_path, readme_context))
+                if docs_index is None or dir_index >= docs_index:
+                    while not readme_generated or os.stat(readme_file).st_size == 0:
+                        session = Aider(write_files=readme_file, read_files=[dir_path, *readme_files])
+                        if (
+                            session.info.total_tokens > self.max_tokens
+                            or session.info.remaining_tokens < self.output_token_context
+                        ):
+                            session = Aider(write_files=readme_file, read_files=readme_files)
+                        if (
+                            session.info.total_tokens > self.max_tokens
+                            or session.info.remaining_tokens < self.output_token_context
+                        ):
+                            session = Aider(
+                                write_files=readme_file, read_files=self._get_readme_files(dir_path, readme_context)
+                            )
+                        if (
+                            session.info.total_tokens <= self.max_tokens
+                            and session.info.remaining_tokens >= self.output_token_context
+                        ):
+                            print(f"Documenting directory: {dir_path}")
+                            print("----------------------------------------------------------------------")
+                            print(session.code(directory_docs_prompt(dir_path)))
+                            with open(docs_state_file, "w") as file:
+                                file.write(str(dir_index))
 
-                if session.info.remaining_tokens >= self.output_token_context:
-                    print(f"Documenting directory: {dir_path}")
-                    print("----------------------------------------------------------------------")
-                    print(session.code(directory_docs_prompt(dir_path)))
-                    readme_context[dir_path] = readme_file
+                            readme_generated = True
+
+                readme_context[dir_path] = readme_file
             else:
                 print(f"Directory does not exist: {dir_path}")
+
+        os.remove(docs_state_file)
 
     def _get_readme_files(self, search_path, readme_context):
         parent_path = str(search_path)
