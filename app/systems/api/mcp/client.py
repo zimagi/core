@@ -41,6 +41,19 @@ class MCPClient:
         elif settings.MCP_SERVICE_NAME:
             self.servers[settings.MCP_LOCAL_SERVER_NAME] = MCPLocalServer(self, f"http://{settings.MCP_SERVICE_NAME}:5000")
 
+        for name, config in command.manager.get_spec("mcp").items():
+            url = config.get("url", None)
+            token_variable = config.get("token", None)
+
+            if not url or not token_variable:
+                self.command.error(f"MCP requires url and token (variable) configurations for server {name}")
+
+            token = getattr(settings, token_variable, None)
+            if not token:
+                self.command.error(f"MCP token setting {token_variable} does not exist for server {name}")
+
+            self.add_server(name, url, token)
+
     def add_server(self, name, url, token):
         self.servers[name] = MCPServer(self, name, url, token)
 
