@@ -4,8 +4,5 @@ from systems.commands.index import Command
 class Upload(Command("file.upload")):
 
     def exec(self):
-        self.info(self.library_name)
-        self.info(self.file_path)
-        self.info(self.file_type)
-        self.info(self.file_content)
-        self.success("We are successful")
+        file_path = self.upload_file(self.library_name, self.file_path, self.file_content, self.file_type)
+        self.success(f"File uploaded successfully to {file_path}")
