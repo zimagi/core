@@ -48,7 +48,12 @@ _chat_directive: &chat_directive
 
   agent_chat_key: <<name>>
   agent_template: chat
-  agent_tools: []
+  agent_tools:
+    - 'chat:send@local'
+    - 'file:search@local'
+    - 'file:fetch@local'
+    - 'web:search@local'
+    - 'web:fetch@local'
 
   agent_channel: chat:message
   agent_channel_field_map:
@@ -67,6 +72,7 @@ command:
         listen_state_key:
     send:
       base: chat
+      mcp_enabled: true
       priority: 800
       parse:
         chat_name:

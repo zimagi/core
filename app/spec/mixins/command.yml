@@ -84,6 +84,60 @@ command_mixins:
         help: 'JSON encoded database record objects'
         value_label: JSON
         tags: [database]
+  library:
+    class: LibraryMixin
+    parameters:
+      library_name:
+        parser: variable
+        type: str
+        optional: false
+        help: 'user library name'
+        value_label: NAME
+        tags: [mcp, library]
+      file_path:
+        parser: variable
+        type: str
+        optional: true
+        help: 'relative file path of file document within library'
+        value_label: PATH
+        tags: [mcp, library]
+      file_type:
+        parser: variable
+        type: str
+        default: markdown
+        optional: true
+        help: 'file content type'
+        value_label: TYPE
+        tags: [mcp, library]
+      file_url:
+        parser: variable
+        type: str
+        optional: false
+        help: 'file remote URL'
+        value_label: URL
+        tags: [mcp, library]
+      file_content:
+        parser: variable
+        type: str
+        optional: false
+        help: 'Base 64 encoded file content'
+        value_label: CONTENT
+        tags: [mcp, library]
+      search_text:
+        parser: variable
+        type: str
+        optional: false
+        help: 'search query or text'
+        value_label: TEXT
+        tags: [mcp, library]
+      max_results:
+        parser: variable
+        type: int
+        optional: true
+        default: 100
+        help: 'maximum number of results to return'
+        value_label: NUM
+        tags: [mcp, library]
   qdrant:
     class: QdrantMixin
     parameters:
@@ -419,31 +473,6 @@ command_mixins:
         help: 'user group names to notify of command failures'
         value_label: GROUP_NAME
         tags: [notification, groups]
-  message:
-    class: MessageMixin
-    parameters:
-      communication_channel:
-        parser: variable
-        type: str
-        optional: false
-        help: 'communication channel on which to send and receive messages'
-        value_label: 'NAME'
-        tags: [message, key]
-      communication_message:
-        parser: variable
-        type: str
-        optional: false
-        help: 'stringified message to send to subscribers (use JSON for complex objects)'
-        value_label: MESSAGE
-        tags: [message]
-      communication_timeout:
-        parser: variable
-        type: int
-        default: 0
-        optional: '--timeout'
-        help: 'number of seconds after which command times out waiting for messages (set to 0 for no limit)'
-        value_label: SEC
-        tags: [message]
   chat:
     class: ChatMixin
     meta:
@@ -464,7 +493,7 @@ command_mixins:
         default: default
         help: 'chat sequence name'
         value_label: NAME
-        tags: [chat, key]
+        tags: [mcp, chat, key]
       chat_text:
         parser: variable
         type: str
@@ -472,7 +501,7 @@ command_mixins:
         help: 'chat message text sent to server'
         value_label: MESSAGE
         api_only: true
-        tags: [message, chat]
+        tags: [mcp, message, chat]
       listen_timeout:
         parser: variable
         type: int

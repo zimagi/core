@@ -38,10 +38,6 @@ command_base:
     # notification mixin included with base action command
     groups_allowed: [notification-admin]
     background: false
-  message:
-    mixins: [message]
-    groups_allowed: false
-    background: false
   service:
     mixins: [service]
     groups_allowed: [admin]
@@ -87,6 +83,10 @@ command_base:
     mixins: [chat, qdrant]
     groups_allowed: [chat-user]
     background: false
+  mcp:
+    mixins: [language_model, chat, qdrant]
+    groups_allowed: [ai-user]
+    mcp_enabled: true
   agent:
     # base command for service agents (run by controller)
     mixins: [agent]
@@ -123,3 +123,7 @@ command_base:
       - agent_tools
       - agent_channel
       - agent_channel_field_map
+  library:
+    mixins: [library]
+    groups_allowed: [ai-user, chat-user]
+    background: false
