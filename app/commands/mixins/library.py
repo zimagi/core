@@ -11,6 +11,7 @@ class LibraryMixin(CommandMixin("library")):
         """Get the base path for a library"""
         return os.path.join(self.manager.file_storage_path, self.active_user.name, library_name)
 
+    # File operations
     def download_file(self, library_name, file_path, file_url, file_type=None):
         """Download a file from URL and save to library"""
         library_base_path = self.get_library_path(library_name)
@@ -80,3 +81,57 @@ class LibraryMixin(CommandMixin("library")):
         """Determine file type based on extension"""
         _, ext = os.path.splitext(file_path)
         return ext.lower()[1:] if ext else "unknown"
+
+    # Web operations
+    def fetch_web_content(self, url, content_type="text"):
+        """Fetch content from a web URL"""
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+
+        if content_type == "json":
+            return response.json()
+        else:
+            return response.text
+
+    def search_web(self, query, search_engine="google", max_results=10):
+        """Search the web using a search engine"""
+        # This is a simplified implementation
+        # In practice, you might use a search API like Google Custom Search API
+        search_urls = {
+            "google": f"https://www.google.com/search?q={query}",
+            "duckduckgo": f"https://duckduckgo.com/html/?q={query}",
+        }
+
+        # For demonstration, we'll return mock results
+        # In a real implementation, you'd parse search results
+        mock_results = []
+        for i in range(min(max_results, 5)):
+            mock_results.append(
+                {
+                    "title": f"Search Result {i+1} for {query}",
+                    "url": f"https://example.com/result{i+1}",
+                    "snippet": f"This is a sample snippet for search result {i+1}",
+                }
+            )
+
+        return mock_results
+
+    def extract_text_from_html(self, html_content):
+        """Extract text content from HTML"""
+        try:
+            from bs4 import BeautifulSoup
+
+            soup = BeautifulSoup(html_content, "html.parser")
+            # Remove script and style elements
+            for script in soup(["script", "style"]):
+                script.decompose()
+            return soup.get_text()
+        except ImportError:
+            # Fallback if BeautifulSoup is not available
+            import re
+
+            # Simple regex to remove HTML tags
+            clean = re.compile("<.*?>")
+            return re.sub(clean, "", html_content)
