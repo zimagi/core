@@ -96,15 +96,22 @@ def index_tools(user, server):
                         output.append(types.TextContent(type="text", text=response.message))
 
                     elif isinstance(response, messages.DataMessage) and response.data:
-                        if isinstance(response.data, (list, tuple, dict)):
-                            data_text = f"{response.message} JSON: {dump_json(response.data)}"
-                        else:
-                            data_text = f"{response.message}: {response.data}"
-
-                        output.append(types.TextContent(type="text", text=data_text))
+                        response_message = f"{response.message}\n" if response.message else ""
+                        response_id = f"json:{response.name}" if response.name else "json"
+                        output.append(
+                            types.TextContent(
+                                type="text",
+                                text=f"{response_message}```{response_id}\n{dump_json(response.data, indent=2)}\n```",
+                            )
+                        )
 
                     elif isinstance(response, messages.TableMessage) and response.message:
-                        output.append(types.TextContent(type="text", text=f"Table JSON: {dump_json(response.message)}"))
+                        response_id = f"json:{response.name}" if response.name else "json"
+                        output.append(
+                            types.TextContent(
+                                type="text", text=f"```{response_id}\n{dump_json(response.message, indent=2)}\n```"
+                            )
+                        )
 
                     elif isinstance(response, messages.ImageMessage) and response.data:
                         output.append(types.ImageContent(type="image", data=response.data, mimeType=response.mimetype))
