@@ -1,0 +1,13 @@
+command:
+  tools:
+    base: platform
+    background: false
+    parameters:
+      servers:
+        parser: variables
+        type: str
+        optional: true
+        help: 'Filter by MCP server names'
+        value_label: NAME
+        tags: [mcp, servers]
+    parse: servers
