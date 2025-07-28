@@ -1,0 +1,47 @@
+command:
+  file:
+    search:
+      base: mcp
+      mixins: [library]
+      priority: 1000
+      parse:
+        - library_name
+        - search_text
+        - max_results
+    download:
+      base: mcp
+      mixins: [library]
+      priority: 1000
+      parse:
+        - library_name
+        - file_path
+        - file_type
+        - file_url
+    upload:
+      base: mcp
+      mixins: [library]
+      priority: 1000
+      parse:
+        - library_name
+        - file_path
+        - file_type
+        - file_content
+
+  web:
+    search:
+      base: mcp
+      mixins: [library]
+      priority: 1000
+      parse:
+        - library_name
+        - search_text
+        - max_results
+    fetch:
+      base: mcp
+      mixins: [library]
+      priority: 1000
+      parse:
+        - library_name
+        - file_path
+        - file_type
+        - file_url
