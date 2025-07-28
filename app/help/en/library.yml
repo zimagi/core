@@ -1,0 +1,48 @@
+file:
+  overview: |
+    Commands for managing and querying user file libraries
+
+  description: |
+    These commands allow AI models to interact with user-maintained document libraries for knowledge retrieval and enrichment. add-library-file downloads and indexes remote files into the library, while upload-library-file lets you directly add custom file content. search-library enables intelligent querying across these indexed files, returning relevant passages with references. Together, they allow AI models to expand, manage, and leverage structured information from user-supplied documents for context-aware reasoning and assistance.
+
+  search:
+    overview: |
+      Search documents in a library for relevant information
+
+    description: |
+      Use this command to search through the contents of a document library identified by <library_name> using the query text <search_text>. Optionally, specify <max_results> to limit the number of returned passages. The command returns a set of relevant text excerpts along with their corresponding file references, enabling AI models to retrieve knowledge from uploaded or downloaded files. This is especially useful for grounding responses in existing documentation, specifications, or project resources.
+
+  download:
+    overview: |
+      Download and index a file in the library for search
+
+    description: |
+      Use this command to download a document from <file_url> and save it to <file_path> within the specified <library_name>. The <file_type> indicates how the file should be parsed (e.g., markdown, pdf, code). Once added, the file is indexed and becomes searchable using search-library, enabling AI models to incorporate new knowledge from external or internal sources into their reasoning. This is useful for expanding the knowledge base with specifications, manuals, research, or reference documentation.
+
+  upload:
+    overview: |
+      Upload and index a file in the library for search
+
+    description: |
+      Use this command to upload a document with the given <file_content> to <file_path> within the specified <library_name>. The <file_type> determines how the content will be parsed and indexed (e.g., markdown, json, txt). Once uploaded, the file becomes part of the library's searchable knowledge base, allowing AI models to access and retrieve information from the content using search-library. This is useful for incorporating custom data, specifications, or notes into the AI’s accessible memory.
+
+web:
+  overview: |
+    Commands for searching and retrieving web content for knowledge enrichment
+
+  description: |
+    These commands allow AI models to access and incorporate information from the internet. search-web performs a search engine query using a given text prompt and returns relevant passages with URLs, storing the results in a specified library. add-website-file retrieves the content of a specific webpage from a given URL, saves it to a library, and indexes it for future querying. Together, these tools help AI models stay informed, reference live web content, and expand their knowledge with up-to-date online sources.
+
+  search:
+    overview: |
+      Search the web for relevant content and save it to a library
+
+    description: |
+      Use this command to perform a web search for <search_text> and retrieve content from relevant websites. The results, limited optionally by <max_results>, are returned as passages with associated URL references. Retrieved content is stored in the specified <library_name>, making it available for future search and reasoning. This command enables AI models to gain new knowledge from current online sources, enhancing responses with up-to-date information or external context.
+
+  fetch:
+    overview: |
+      Retrieve and index a webpage in the library for search
+
+    description: |
+      Use this command to fetch a webpage from <file_url> and save its content to <file_path> within the specified <library_name>. The <file_type> determines how the webpage will be parsed (e.g., html, markdown, txt) before being indexed for search. Once added, the content becomes part of the searchable library, allowing AI models to extract insights and reference online knowledge as part of their reasoning and assistance processes. This is useful for preserving and leveraging web-based documentation, research, or examples.
