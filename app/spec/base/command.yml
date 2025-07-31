@@ -107,7 +107,6 @@ command_base:
       - agent_user
       - agent_chat_key
       - agent_sensor
-      - agent_sensor_id_field
       - agent_sensor_filters
       - agent_message_fields
       - agent_message_field_labels
@@ -115,9 +114,11 @@ command_base:
       - agent_assistant_search_limit
       - agent_assistant_search_min_score
       - agent_system_template
+      - agent_request_template
       - agent_tools_template
-      - agent_assistant_template
-      - agent_template
+      - agent_data_template
+      - agent_reference_template
+      - agent_assistant_template      -
       - agent_output_token_percent
       - agent_assistant_output_token_percent
       - agent_tools
@@ -126,4 +127,7 @@ command_base:
   library:
     mixins: [library]
     groups_allowed: [ai-user, chat-user]
+    background: false
+  browser:
+    groups_allowed: [browser-user]
     background: false
