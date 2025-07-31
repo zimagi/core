@@ -331,22 +331,6 @@ command_mixins:
         help: 'cell instruction tools prompt template'
         value_label: NAME
         tags: [agent, template]
-      agent_data_template:
-        parser: variable
-        type: str
-        optional: true
-        default: data
-        help: 'cell instruction data prompt template'
-        value_label: NAME
-        tags: [agent, template]
-      agent_reference_template:
-        parser: variable
-        type: str
-        optional: true
-        default: reference
-        help: 'cell instruction reference prompt template'
-        value_label: NAME
-        tags: [agent, template]
       agent_assistant_template:
         parser: variable
         type: str

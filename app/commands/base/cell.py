@@ -58,8 +58,8 @@ class Cell(BaseCommand("cell")):
                 self.agent_sensor,
                 prompts={
                     "system": self.agent_system_template,
+                    "request": self.agent_request_template,
                     "tools": self.agent_tools_template,
-                    "request": self.agent_template,
                 },
             )
         except Exception as error:
@@ -69,9 +69,7 @@ class Cell(BaseCommand("cell")):
 
         # Execute cycle
         try:
-            for event in self.communication.listen(
-                self.agent_sensor_filters, self.agent_message_fields, self.agent_sensor_id_field
-            ):
+            for event in self.communication.listen(self.agent_sensor_filters, self.agent_message_fields):
                 response = self.profile(self.process_sensory_event, event)
                 self.communication.send(self.agent_channel, event, response, self.agent_channel_field_map)
                 self.finalize_event_response(event, response)

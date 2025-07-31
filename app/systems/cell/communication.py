@@ -32,12 +32,12 @@ class CommunicationProcessor:
         self._sensor_tokens = self.command.get_channel_tokens(self.sensor_name)
         logger.debug(f"Set sensor to: {self.sensor_name}")
 
-    def listen(self, filters, fields, id_field=None):
+    def listen(self, filters, fields):
         logger.debug(f"Starting to listen for {self.sensor_name}")
         for package in self.command.listen(self.sensor_name, state_key=self.sensor_key):
             try:
                 self.command.notice(f"Received new event: {package}")
-                message = self._load_message(package, filters, fields, id_field)
+                message = self._load_message(package, filters, fields)
                 if message:
                     yield SensoryEvent(package, message)
             except Exception as error:
@@ -80,7 +80,7 @@ class CommunicationProcessor:
             },
         )
 
-    def _load_message(self, package, filters, fields, id_field=None):
+    def _load_message(self, package, filters, fields):
         message_filters = self.command.manager.index.get_plugin_providers("message_filter")
         message = package.message
         plugin_filters = {}
@@ -97,10 +97,10 @@ class CommunicationProcessor:
                 token_parser = self.command.get_provider(
                     "channel_token",
                     token,
-                    value=token_value,
+                    value=token.value,
                     fields=fields,
                     filters=query_filters,
-                    id_field=id_field,
+                    id_field=token.field,
                 )
                 message = token_parser.load(message)
 

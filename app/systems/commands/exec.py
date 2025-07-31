@@ -13,7 +13,7 @@ from systems.commands.index import CommandMixin
 from systems.commands.mixins import exec
 from systems.manage.task import CommandAborted
 from utility import display
-from utility.data import create_token, ensure_list
+from utility.data import Collection, create_token, ensure_list
 
 import zimagi
 
@@ -310,11 +310,15 @@ class ExecCommand(
             match = token_pattern.fullmatch(pattern_part)
             if match:
                 token_name = match.group(1)
+                token_components = token_name.split("->")
+                token_name = token_components[0]
+                token_value_field = token_components[1] if len(token_components) > 1 else None
+
                 if not re.match(r"^\w+$", token_name):
                     self.error(
                         f"Invalid token name '{token_name}' - must contain only alphanumeric chars and underscores",
                     )
-                tokens[token_name] = channel_part
+                tokens[token_name] = Collection(value=channel_part, field=token_value_field)
 
         return tokens
 
