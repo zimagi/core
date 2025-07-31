@@ -47,7 +47,7 @@ _chat_directive: &chat_directive
     message: 'User Message'
 
   agent_chat_key: <<name>>
-  agent_template: chat
+  agent_request_template: chat
   agent_tools:
     - 'chat:send@local'
     - 'file:search@local'
