@@ -33,7 +33,7 @@ command:
       mixins: [library]
       priority: 1000
       parse:
-        - library_name
+        - search_provider
         - search_text
         - max_results
     fetch:
