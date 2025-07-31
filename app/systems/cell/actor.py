@@ -19,11 +19,15 @@ class EmbeddedData:
 
 
 class Response:
-    def __init__(self, memory_manager):
+    def __init__(self, memory_manager, mcp):
         self.memory_manager = memory_manager
+        self.mcp = mcp
+
         self.messages = []
         self.data = {}
+        self.data_index = 1
         self.references = {}
+        self.reference_index = 1
 
     def __str__(self):
         return (
@@ -36,16 +40,33 @@ class Response:
         return "\n\n".join([message["content"] for message in self.messages])
 
     def add_message(self, message, role="assistant"):
+        tool_calls = self._parse_message(message)
         message = {"role": role, "content": message}
+
         self.memory_manager.add(message)
         if role == "assistant":
             self.messages.append(message)
+        return tool_calls
 
     def add_data(self, identifier, data):
-        self.data[identifier] = data
+        if identifier:
+            if identifier in self.data:
+                if isinstance(self.data[identifier], (list, tuple)):
+                    self.data[identifier].append(data)
+                else:
+                    self.data[identifier] = [self.data[identifier], data]
+            else:
+                self.data[identifier] = data
+        else:
+            self.data[f"data-{self.data_index}"] = data
+            self.data_index += 1
 
     def add_reference(self, identifier, reference):
-        self.references[identifier] = reference
+        if identifier:
+            self.references[identifier] = reference
+        else:
+            self.references[f"[{self.reference_index}]"] = reference
+            self.reference_index += 1
 
     def export(self):
         return {
@@ -54,171 +75,18 @@ class Response:
             "references": self.references,
         }
 
+    def _parse_message(self, message_text):
+        tool_calls = []
 
-class Actor:
+        for data_object in self._parse_data_objects(message_text):
+            if self._validate_tool(data_object.data):
+                tool_calls.append(data_object.data)
+            elif self._validate_reference(data_object.data):
+                self.add_reference(data_object.identifier, data_object.data)
+            else:
+                self.add_data(data_object.identifier, data_object.data)
 
-    chat_field_pattern = r"^\<\<(.+)\>\>$"
-
-    def __init__(self, command, prompts, search_limit=1000, search_min_score=0.3, keep_previous=5):
-        self.command = command
-        self.state_manager = self.command.get_state_manager()
-        self.memory_manager = self.command.get_memory_manager(
-            search_limit=search_limit, search_min_score=search_min_score, keep_previous=keep_previous
-        )
-        self.prompt_engine = PromptEngine(command, **prompts)
-
-    @property
-    def mcp(self):
-        return self.command.mcp
-
-    def get_max_cycles(self):
-        return 3
-
-    def set_chat(self, message, chat_key):
-        match = re.match(self.chat_field_pattern, chat_key)
-        if match and match[1] in message:
-            chat_key = message[match[1]]
-
-        self.memory_manager.set_chat(chat_key)
-
-    def _get_message_sequence(self, prompts, user, text):
-        system_messages = []
-        request_messages = []
-        extra_messages = []
-
-        if "system" in prompts:
-            system_messages.append({"role": "system", "content": prompts["system"]})
-
-        if "request" in prompts:
-            tools_prompt = [prompts["tools"]] if "tools" in prompts else []
-            request_prompt = "\n\n".join([prompts["request"], *tools_prompt])
-            request_messages.append({"role": "user", "content": request_prompt, "sender": user})
-
-        for prompt_name, prompt_text in prompts.items():
-            if prompt_name not in ["system", "tools", "request"]:
-                extra_messages.append({"role": "user", "content": prompt_text, "sender": user})
-
-        self.memory_manager.add(extra_messages, request_messages)
-        return self.memory_manager.load(text, system_messages)
-
-    def respond(self, event, chat_key, search_field, field_labels=None):
-        self.set_chat(event.message, chat_key)
-
-        response = Response(self.memory_manager)
-        prompts = self.prompt_engine.render(
-            {
-                **self.state_manager.export(),
-                "message": event.message,
-                "field_labels": field_labels or {},
-                "tools": self.mcp.list_tools(self.state_manager["tools"]) if self.state_manager["tools"] else [],
-            }
-        )
-        for cycle in range(self.get_max_cycles()):
-            try:
-                messages = self._get_message_sequence(prompts, event.package.user, event.message[search_field])
-                logger.info(f"Context messages: {dump_json(messages, indent=2)}")
-
-                model_response = self.command.instruct(
-                    self.memory_manager.user,
-                    messages,
-                )
-                logger.debug(f"Response success: {model_response.text}")
-
-                data_objects = []
-                tool_calls = []
-                for data_object in self._parse_data_objects(model_response.text):
-                    if self._validate_tool(data_object):
-                        tool_calls.append(data_object)
-                    else:
-                        data_objects.append(data_object)
-
-                if data_objects:
-                    for data_object in data_objects:
-                        response.add_data(data_object.identifier, data_object.data)
-
-                if tool_calls:
-                    results = self.command.run_list(tool_calls, self._exec_tool)
-                    for index, value in enumerate(results):
-                        response.add_message(value.result, "tool")
-                else:
-                    response.add_message(model_response.text)
-                    break
-
-            except Exception as error:
-                logger.error("Actor response generation failed")
-                logger.debug(f"Internal actor traceback: {format_traceback()}")
-                return self._handle_error(error)
-
-        return response.export()
-
-    def assist(self, event, chat_key, search_field, field_labels=None):
-        self.set_chat(event.message, chat_key)
-
-        response = Response(self.memory_manager)
-        prompts = self.prompt_engine.render(
-            {
-                **self.state_manager.export(),
-                "message": event.message,
-                "field_labels": field_labels or {},
-            }
-        )
-        for cycle in range(self.get_max_cycles()):
-            try:
-                messages = self._get_message_sequence(prompts, event.package.user, event.message[search_field])
-                model_response = self.command.instruct(
-                    self.memory_manager.user,
-                    messages,
-                )
-                logger.debug(f"Response success: {model_response.text}")
-                response.add_message(model_response.text)
-                break
-
-            except Exception as error:
-                logger.error("Actor response generation failed")
-                logger.debug(f"Internal actor traceback: {format_traceback()}")
-                if cycle == (self.get_max_cycles() - 1):
-                    return self._handle_error(error)
-
-        return response.export()
-
-    def memorize(self):
-        self.memory_manager.save()
-
-    def refine_state(self):
-        pass
-
-    def _validate_tool(self, tool_data):
-        if not tool_data or "tool" not in tool_data or not tool_data["tool"]:
-            return False
-
-        fields = self.mcp.get_tool_fields(tool_data["tool"])
-
-        if fields.index and ("parameters" not in tool_data or not tool_data["parameters"]):
-            return False
-
-        for required_field in fields.required:
-            if required_field not in tool_data["parameters"]:
-                return False
-
-        for input_field in tool_data["parameters"].keys():
-            if input_field not in fields.index:
-                return False
-
-        return True
-
-    def _exec_tool(self, tool_data):
-        logger.info(f"Executing tool: {tool_data['tool']}")
-        response_text = self.mcp.exec_tool(tool_data["tool"], tool_data.get("parameters", {}))
-        return f"Tool executed: {tool_data['tool']}\n\n{response_text}"
-
-    def _handle_error(self, error):
-        logger.error(f"Actor encountered error: {error}")
-        logger.error("\n".join([item.strip() for item in format_exception_info()]))
-        return {
-            "error": str(error),
-            "traceback": format_traceback(),
-            "info": format_exception_info(),
-        }
+        return tool_calls
 
     def _parse_data_objects(self, markdown_text):
         return self._parse_markdown_json(markdown_text) + self._parse_markdown_yaml(markdown_text)
@@ -252,3 +120,175 @@ class Actor:
                 continue  # Skip invalid YAML
 
         return results
+
+    def _validate_reference(self, reference_data):
+        if not reference_data or len(reference_data.keys()) != 2:
+            return False
+        if "location" not in reference_data or not reference_data["location"]:
+            return False
+        if "type" not in reference_data or not reference_data["type"] or reference_data["type"] not in ["file", "web"]:
+            return False
+        if reference_data["type"] == "file" and ("library" not in reference_data or not reference_data["library"]):
+            return False
+        return True
+
+    def _validate_tool(self, tool_data):
+        if not tool_data or "tool" not in tool_data or not tool_data["tool"]:
+            return False
+
+        fields = self.mcp.get_tool_fields(tool_data["tool"])
+        if fields.index and ("parameters" not in tool_data or not tool_data["parameters"]):
+            return False
+
+        for required_field in fields.required:
+            if required_field not in tool_data["parameters"]:
+                return False
+
+        for input_field in tool_data["parameters"].keys():
+            if input_field not in fields.index:
+                return False
+        return True
+
+
+class Actor:
+
+    chat_field_pattern = r"^\<\<(.+)\>\>$"
+
+    def __init__(self, command, prompts, search_limit=1000, search_min_score=0.3, keep_previous=5):
+        self.command = command
+        self.state_manager = self.command.get_state_manager()
+        self.memory_manager = self.command.get_memory_manager(
+            search_limit=search_limit, search_min_score=search_min_score, keep_previous=keep_previous
+        )
+        self.prompt_engine = PromptEngine(command, **prompts)
+
+    @property
+    def mcp(self):
+        return self.command.mcp
+
+    def get_max_cycles(self):
+        return 10
+
+    def set_chat(self, message, chat_key):
+        match = re.match(self.chat_field_pattern, chat_key)
+        if match and match[1] in message:
+            chat_key = message[match[1]]
+
+        self.memory_manager.set_chat(chat_key)
+
+    def _get_message_sequence(self, prompts, user, text):
+        system_messages = []
+        request_messages = []
+        extra_messages = []
+
+        if "system" in prompts:
+            system_messages.append({"role": "system", "content": prompts["system"]})
+
+        if "request" in prompts:
+            tools_prompt = [prompts["tools"]] if "tools" in prompts else []
+            request_prompt = "\n\n".join([prompts["request"], *tools_prompt])
+            request_messages.append({"role": "user", "content": request_prompt, "sender": user})
+
+        for prompt_name, prompt_text in prompts.items():
+            if prompt_name not in ["system", "tools", "request"]:
+                extra_messages.append({"role": "user", "content": prompt_text, "sender": user})
+
+        self.memory_manager.add(extra_messages, request_messages)
+        return self.memory_manager.load(text, system_messages)
+
+    def respond(self, event, chat_key, search_field, field_labels=None):
+        response = Response(self.memory_manager, self.mcp)
+        tools = self.mcp.list_tools(self.state_manager["tools"]) if self.state_manager["tools"] else []
+
+        self.set_chat(event.message, chat_key)
+        for cycle in range(self.get_max_cycles()):
+            try:
+                messages = self._get_message_sequence(
+                    self.prompt_engine.render(
+                        {
+                            **self.state_manager.export(),
+                            "max_cycles": self.get_max_cycles(),
+                            "user": self.memory_manager.user.name,
+                            "message": event.message,
+                            "field_labels": field_labels or {},
+                            "data": response.data,
+                            "references": response.references,
+                            "tools": tools,
+                        }
+                    ),
+                    event.package.user,
+                    event.message[search_field],
+                )
+                tool_calls = response.add_message(self._instruct(messages).text)
+                if not tool_calls:
+                    break
+                for index, value in enumerate(self.command.run_list(tool_calls, self._exec_tool)):
+                    response.add_message(value.result, "tool")
+
+            except Exception as error:
+                logger.error("Actor response generation failed")
+                logger.debug(f"Internal actor traceback: {format_traceback()}")
+                return self._handle_error(error)
+
+        return response.export()
+
+    def assist(self, event, chat_key, search_field, field_labels=None):
+        response = Response(self.memory_manager, self.mcp)
+
+        self.set_chat(event.message, chat_key)
+        for cycle in range(self.get_max_cycles()):
+            try:
+                messages = self._get_message_sequence(
+                    self.prompt_engine.render(
+                        {
+                            **self.state_manager.export(),
+                            "max_cycles": self.get_max_cycles(),
+                            "user": self.memory_manager.user.name,
+                            "message": event.message,
+                            "field_labels": field_labels or {},
+                        }
+                    ),
+                    event.package.user,
+                    event.message[search_field],
+                )
+                response.add_message(self._instruct(messages).text)
+                break
+
+            except Exception as error:
+                logger.error("Actor response generation failed")
+                logger.debug(f"Internal actor traceback: {format_traceback()}")
+                if cycle == (self.get_max_cycles() - 1):
+                    return self._handle_error(error)
+
+        return response.export()
+
+    def memorize(self):
+        self.memory_manager.save()
+
+    def refine_state(self):
+        pass
+
+    def _instruct(self, messages):
+        if self.command.manager.runtime.debug():
+            logger.info(f"Context messages: {dump_json(messages, indent=2)}")
+
+        model_response = self.command.instruct(
+            self.memory_manager.user,
+            messages,
+        )
+        logger.info(f"Response success: {model_response.text}")
+        return model_response
+
+    def _exec_tool(self, tool_data):
+        logger.info(f"Executing tool: {tool_data['tool']}")
+        response_text = self.mcp.exec_tool(tool_data["tool"], tool_data.get("parameters", {}))
+        return f"Tool executed: {tool_data['tool']}\n\n{response_text}"
+
+    def _handle_error(self, error):
+        logger.error(f"Actor encountered error: {error}")
+        logger.error("\n".join([item.strip() for item in format_exception_info()]))
+        return {
+            "error": str(error),
+            "traceback": format_traceback(),
+            "info": format_exception_info(),
+        }
