@@ -237,3 +237,32 @@ channels:
       type: int
       description: 'The number of snapshots that are being kept'
       required: true
+
+  'browser:request':
+    description: 'This channel gets requests to download Javascript rendered webpages'
+    groups: browser-user
+    message:
+      type: str
+      description: 'The URL of the webpage to request'
+      required: true
+
+  'library:save':
+    description: 'This channel receives save events for library files'
+    groups:
+      - ai-user
+      - chat-user
+    message:
+      type: dict
+      items:
+        user:
+          type: str
+          description: 'User that saved the library file'
+          required: true
+        library:
+          type: str
+          description: 'Library name'
+          required: true
+        path:
+          type: str
+          description: 'File path within library directory of file to process'
+          required: true
