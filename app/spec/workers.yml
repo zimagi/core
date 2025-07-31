@@ -22,3 +22,6 @@ workers:
 
   cell:
     <<: *default_worker
+
+  browser:
+    <<: *default_worker
