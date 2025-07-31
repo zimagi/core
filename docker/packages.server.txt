@@ -12,3 +12,4 @@ postgresql-client
 
 # Service clients
 docker-ce
+google-chrome-stable
