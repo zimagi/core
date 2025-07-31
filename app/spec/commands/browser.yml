@@ -1,0 +1,18 @@
+command:
+  browser:
+    base: browser
+    parameters:
+      url:
+        parser: variable
+        type: str
+        optional: false
+        help: 'URL to fetch Javascript rendered webpage'
+        value_label: URL
+        tags: [browser]
+    parse:
+      - url
+
+  agent:
+    browser:
+      base: agent
+      worker_type: browser
