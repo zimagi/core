@@ -246,8 +246,8 @@ channels:
       description: 'The URL of the webpage to request'
       required: true
 
-  'library:save':
-    description: 'This channel receives save events for library files'
+  'library:index':
+    description: 'This channel receives index events for library files'
     groups:
       - ai-user
       - chat-user
