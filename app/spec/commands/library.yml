@@ -13,19 +13,17 @@ command:
       mixins: [library]
       priority: 1000
       parse:
-        - library_name
-        - file_path
-        - file_type
-        - file_url
+        library_name: false
+        file_path: false
+        file_url: false
     upload:
       base: mcp
       mixins: [library]
       priority: 1000
       parse:
-        - library_name
-        - file_path
-        - file_type
-        - file_content
+        library_name: false
+        file_path: false
+        file_content: true
 
   web:
     search:
@@ -41,7 +39,6 @@ command:
       mixins: [library]
       priority: 1000
       parse:
-        - library_name
-        - file_path
-        - file_type
-        - file_url
+        file_url: false
+        library_name: true
+        file_path: true

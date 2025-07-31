@@ -88,7 +88,7 @@ command_mixins:
     class: BrowserMixin
   library:
     class: LibraryMixin
-    mixins: [browser]
+    mixins: [browser, qdrant]
     parameters:
       library_name:
         parser: variable
@@ -103,14 +103,6 @@ command_mixins:
         optional: true
         help: 'relative file path of file document within library'
         value_label: PATH
-        tags: [mcp, library, file]
-      file_type:
-        parser: variable
-        type: str
-        default: markdown
-        optional: true
-        help: 'file content type'
-        value_label: TYPE
         tags: [mcp, library, file]
       file_url:
         parser: variable
