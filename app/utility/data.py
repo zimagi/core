@@ -1,3 +1,4 @@
+import base64
 import codecs
 import copy
 import datetime
@@ -342,6 +343,28 @@ def normalize_index(index):
         return int(index)
     except ValueError:
         return index
+
+
+def check_base64(text):
+    try:
+        if isinstance(text, str):
+            text_bytes = text.encode("ascii")
+        elif isinstance(text, bytes):
+            text_bytes = text
+        else:
+            raise TypeError("Input must be a string or bytes object.")
+
+        return base64.b64encode(base64.b64decode(text_bytes)) == text_bytes
+    except (TypeError, ValueError, base64.binascii.Error):
+        return False
+
+
+def encode_base64(text):
+    return base64.b64encode(text)
+
+
+def decode_base64(base64_bytes):
+    return base64.b64decode(base64_bytes)
 
 
 def number(data):
