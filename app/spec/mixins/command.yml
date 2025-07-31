@@ -84,8 +84,11 @@ command_mixins:
         help: 'JSON encoded database record objects'
         value_label: JSON
         tags: [database]
+  browser:
+    class: BrowserMixin
   library:
     class: LibraryMixin
+    mixins: [browser]
     parameters:
       library_name:
         parser: variable
@@ -100,7 +103,7 @@ command_mixins:
         optional: true
         help: 'relative file path of file document within library'
         value_label: PATH
-        tags: [mcp, library]
+        tags: [mcp, library, file]
       file_type:
         parser: variable
         type: str
@@ -108,36 +111,44 @@ command_mixins:
         optional: true
         help: 'file content type'
         value_label: TYPE
-        tags: [mcp, library]
+        tags: [mcp, library, file]
       file_url:
         parser: variable
         type: str
         optional: false
         help: 'file remote URL'
         value_label: URL
-        tags: [mcp, library]
+        tags: [mcp, library, file]
       file_content:
         parser: variable
         type: str
         optional: false
         help: 'Base 64 encoded file content'
         value_label: CONTENT
-        tags: [mcp, library]
+        tags: [mcp, library, file]
+      search_provider:
+        parser: variable
+        type: str
+        optional: '--search-provider'
+        default: google
+        help: 'web search engine'
+        value_label: NAME
+        tags: [library, search]
       search_text:
         parser: variable
         type: str
         optional: false
         help: 'search query or text'
         value_label: TEXT
-        tags: [mcp, library]
+        tags: [mcp, library, search]
       max_results:
         parser: variable
         type: int
         optional: true
-        default: 100
+        default: 10
         help: 'maximum number of results to return'
         value_label: NUM
-        tags: [mcp, library]
+        tags: [library, search]
   qdrant:
     class: QdrantMixin
     parameters:
@@ -260,14 +271,6 @@ command_mixins:
         help: 'cell sensory communication channel'
         value_label: CHANNEL
         tags: [agent, communication]
-      agent_sensor_id_field:
-        parser: variable
-        type: str
-        default: id
-        optional: true
-        help: 'cell sensory data type id field (if sensor data and multi-field message)'
-        value_label: TYPE
-        tags: [agent, communication]
       agent_sensor_filters:
         parser: fields
         optional: true
@@ -312,6 +315,14 @@ command_mixins:
         help: 'cell instruction system prompt template'
         value_label: NAME
         tags: [agent, template]
+      agent_request_template:
+        parser: variable
+        type: str
+        optional: true
+        default: default
+        help: 'cell instruction prompt template'
+        value_label: NAME
+        tags: [agent, template]
       agent_tools_template:
         parser: variable
         type: str
@@ -320,20 +331,28 @@ command_mixins:
         help: 'cell instruction tools prompt template'
         value_label: NAME
         tags: [agent, template]
+      agent_data_template:
+        parser: variable
+        type: str
+        optional: true
+        default: data
+        help: 'cell instruction data prompt template'
+        value_label: NAME
+        tags: [agent, template]
+      agent_reference_template:
+        parser: variable
+        type: str
+        optional: true
+        default: reference
+        help: 'cell instruction reference prompt template'
+        value_label: NAME
+        tags: [agent, template]
       agent_assistant_template:
         parser: variable
         type: str
         optional: true
         default: assistant
         help: 'cell instruction assistant prompt template'
-        value_label: NAME
-        tags: [agent, template]
-      agent_template:
-        parser: variable
-        type: str
-        optional: true
-        default: default
-        help: 'cell instruction prompt template'
         value_label: NAME
         tags: [agent, template]
       agent_output_token_percent:
