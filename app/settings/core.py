@@ -292,3 +292,14 @@ GITHUB_ORG = Config.value("ZIMAGI_GITHUB_ORG", None)
 # HuggingFace Account
 #
 HUGGINGFACE_TOKEN = Config.string("ZIMAGI_HUGGINGFACE_TOKEN")
+
+#
+# Google Account
+#
+GOOGLE_SEARCH_ID = Config.value("ZIMAGI_GOOGLE_SEARCH_ID", None)
+GOOGLE_SEARCH_API_KEY = Config.value("ZIMAGI_GOOGLE_SEARCH_API_KEY", None)
+
+#
+# Browser configuration
+#
+WEBCRAWLER_FILTERED_DOMAINS = Config.list("ZIMAGI_WEBCRAWLER_FILTERED_DOMAINS", [])
