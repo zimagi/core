@@ -155,7 +155,7 @@ export class BaseAPIClient {
    */
   _cacheData(cacheName, generatorFunction, cacheLifetime = 3600000) {
     const cacheKey = `zimagi_${cacheName}`;
-    let cachedData = this.cache.get(cacheKey);
+    const cachedData = this.cache.get(cacheKey);
 
     if (cachedData) {
       return cachedData;

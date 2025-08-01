@@ -4,7 +4,6 @@
 
 import fetch from 'node-fetch';
 import { ConnectionError, ResponseError, ClientError } from '../exceptions.js';
-import { formatError } from '../utility.js';
 
 /**
  * Base transport class
@@ -114,26 +113,25 @@ If restarting, retry in a few minutes...
     const useAuth = options.useAuth !== false;
     const disableCallbacks = options.disableCallbacks || false;
 
-    const [request, response] = await this._request('GET', url, {
+    const result = await this._request('GET', url, {
       headers: headers,
       params: params,
       encrypted: encrypted,
-      stream: false,
       useAuth: useAuth,
       disableCallbacks: disableCallbacks,
     });
 
     console.debug(`Page ${url} request headers: ${JSON.stringify(headers)}`);
 
-    if (response.status >= 400) {
+    if (result[1].status >= 400) {
       const error = this._formatResponseError(
-        response,
+        result[1],
         encrypted && this.client ? this.client.cipher : null
       );
-      throw new ResponseError(error.message, response.status, error.data);
+      throw new ResponseError(error.message, result[1].status, error.data);
     }
 
-    return this.decodeMessage(request, response, decoders, null, encrypted, disableCallbacks);
+    return this.decodeMessage(result[0], result[1], decoders, null, encrypted, disableCallbacks);
   }
 
   /**
@@ -148,7 +146,6 @@ If restarting, retry in a few minutes...
       headers = {},
       params = null,
       encrypted = true,
-      stream = false,
       useAuth = true,
       disableCallbacks = false,
     } = options;

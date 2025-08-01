@@ -61,8 +61,7 @@ export class CommandHTTPTransport extends BaseTransport {
   async requestCommand(url, headers, params, decoders) {
     const commandResponse = new CommandResponse();
 
-    const [request, requestResponse] = await this._request('POST', url, {
-      stream: true,
+    const result = await this._request('POST', url, {
       headers: headers,
       params: params,
       encrypted: true,
@@ -71,48 +70,51 @@ export class CommandHTTPTransport extends BaseTransport {
 
     console.debug(`Stream ${url} request headers: ${JSON.stringify(headers)}`);
 
-    if (requestResponse.status >= 400) {
-      const error = this._formatResponseError(requestResponse, this.client && this.client.cipher);
-      throw new ResponseError(error.message, requestResponse.status, error.data);
+    if (result[1].status >= 400) {
+      const error = this._formatResponseError(result[1], this.client && this.client.cipher);
+      throw new ResponseError(error.message, result[1].status, error.data);
     }
 
     try {
       // Process streaming response
-      const reader = requestResponse.body.getReader();
+      const reader = result[1].body.getReader();
       const decoder = new TextDecoder();
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      let done = false;
+      while (!done) {
+        const { done: readerDone, value } = await reader.read();
+        done = readerDone;
 
-        const text = decoder.decode(value);
-        const lines = text.split('\n');
+        if (value) {
+          const text = decoder.decode(value);
+          const lines = text.split('\n');
 
-        for (const line of lines) {
-          if (line.trim()) {
-            const messageData = JSON.parse(line);
-            const message = Message.get(messageData, this.client && this.client.cipher);
+          for (const line of lines) {
+            if (line.trim()) {
+              const messageData = JSON.parse(line);
+              const message = Message.get(messageData, this.client && this.client.cipher);
 
-            if (this._messageCallback && typeof this._messageCallback === 'function') {
-              this._messageCallback(message);
+              if (this._messageCallback && typeof this._messageCallback === 'function') {
+                this._messageCallback(message);
+              }
+
+              commandResponse.add(message);
             }
-
-            commandResponse.add(message);
           }
         }
       }
     } catch (error) {
       console.debug(
         `Stream ${url} error response headers: ${JSON.stringify(
-          Object.fromEntries(requestResponse.headers.entries())
+          Object.fromEntries(result[1].headers.entries())
         )}`
       );
-      console.debug(`Stream ${url} error status code: ${requestResponse.status}`);
+      console.debug(`Stream ${url} error status code: ${result[1].status}`);
       throw error;
     }
 
     if (commandResponse.error) {
-      throw new ResponseError(commandResponse.errorMessage(), requestResponse.status);
+      throw new ResponseError(commandResponse.errorMessage(), result[1].status);
     }
 
     return commandResponse;

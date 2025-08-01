@@ -84,7 +84,6 @@ export class Message {
    * @returns {string} Formatted message
    */
   format(options = {}) {
-    const { debug = false, width = null } = options;
     return `${this.prefix}${this.message}`;
   }
 
@@ -93,9 +92,8 @@ export class Message {
    * @param {Object} options - Display options
    */
   display(options = {}) {
-    const { debug = false, width = null } = options;
     if (!this.silent) {
-      console.log(this.format({ debug, width }));
+      console.log(this.format());
     }
   }
 
@@ -151,7 +149,6 @@ export class StatusMessage extends Message {
    * @returns {string} Formatted message
    */
   format(options = {}) {
-    const { debug = false, disableColor = false, width = null } = options;
     return `Success: ${this.message}`;
   }
 
@@ -203,7 +200,6 @@ export class DataMessage extends Message {
    * @returns {string} Formatted message
    */
   format(options = {}) {
-    const { debug = false, width = null } = options;
     let data = this.data;
 
     if (typeof this.data === 'object' && this.data !== null) {
@@ -245,8 +241,7 @@ export class WarningMessage extends Message {
    */
   display(options = {}) {
     if (!this.silent) {
-      const formattedWarning = this.format(options);
-      console.warn(formattedWarning);
+      console.warn(this.format());
     }
   }
 }
@@ -288,9 +283,7 @@ export class ErrorMessage extends Message {
    * @returns {string} Formatted message
    */
   format(options = {}) {
-    const { debug = false, width = null } = options;
-
-    if (debug && this.traceback) {
+    if (this.traceback) {
       const traceback = Array.isArray(this.traceback)
         ? this.traceback.map((item) => item.trim()).join('\n')
         : this.traceback;
@@ -305,9 +298,8 @@ export class ErrorMessage extends Message {
    * @param {Object} options - Display options
    */
   display(options = {}) {
-    const { debug = false, width = null } = options;
     if (!this.silent && this.message) {
-      console.error(this.format({ debug, width }));
+      console.error(this.format());
     }
   }
 }
