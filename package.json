@@ -5,7 +5,16 @@
   },
   "scripts": {
     "check:prettier": "prettier --check .",
-    "fix:prettier": "prettier -w ."
+    "fix:prettier": "prettier -w .",
+    "sdk:install": "cd sdk/javascript; npm install",
+    "sdk:build": "cd sdk/javascript; npx rollup -c",
+    "sdk:dev": "cd sdk/javascript; npx rollup -c -w",
+    "sdk:test": "cd sdk/javascript; npx jest",
+    "sdk:test:watch": "cd sdk/javascript; npx jest --watch",
+    "sdk:test:coverage": "cd sdk/javascript; npx jest --coverage",
+    "sdk:lint": "cd sdk/javascript; npx eslint src/**/*.js",
+    "sdk:lint:fix": "cd sdk/javascript; npx eslint src/**/*.js --fix",
+    "sdk:prepublishOnly": "cd sdk/javascript; npm run build"
   },
   "dependencies": {
     "prettier": "^3.5.3"
