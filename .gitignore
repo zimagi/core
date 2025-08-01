@@ -19,6 +19,8 @@ __pycache__
 /sdk/python/dist/
 /sdk/python/*.egg-info
 /sdk/python/VERSION
+/sdk/javascript/dist/
+/sdk/javascript/node_modules/
 
 # Application files
 /.env
