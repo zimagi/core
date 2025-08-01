@@ -12,9 +12,9 @@
   "scripts": {
     "build": "npx rollup -c",
     "dev": "npx rollup -c -w",
-    "test": "npx jest",
-    "test:watch": "npx jest --watch",
-    "test:coverage": "npx jest --coverage",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch",
+    "test:coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
     "lint": "npx eslint src/**/*.js",
     "lint:fix": "npx eslint src/**/*.js --fix",
     "prepublishOnly": "npm run build"
