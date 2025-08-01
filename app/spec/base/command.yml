@@ -116,9 +116,7 @@ command_base:
       - agent_system_template
       - agent_request_template
       - agent_tools_template
-      - agent_assistant_template      -
-      - agent_output_token_percent
-      - agent_assistant_output_token_percent
+      - agent_assistant_template
       - agent_tools
       - agent_channel
       - agent_channel_field_map

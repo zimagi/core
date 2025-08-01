@@ -331,21 +331,6 @@ command_mixins:
         help: 'cell instruction assistant prompt template'
         value_label: NAME
         tags: [agent, template]
-      agent_output_token_percent:
-        parser: variable
-        type: float
-        optional: true
-        default: 0.35
-        help: 'cell output message context token percentage reservation'
-        value_label: PERCENT
-        tags: [agent, model]
-      agent_assistant_output_token_percent:
-        parser: variable
-        type: float
-        optional: true
-        help: 'cell output message context token percentage reservation (defaults to primary)'
-        value_label: PERCENT
-        tags: [agent, model]
       agent_tools:
         parser: variables
         type: str
