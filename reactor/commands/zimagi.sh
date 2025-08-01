@@ -18,7 +18,7 @@ function zimagi_command () {
     "--network" "host"
     "--user" "$(id -u):zimagi"
     "--volume" "${__zimagi_app_dir}:/usr/local/share/zimagi"
-    "--volume" "${__zimagi_package_dir}:/usr/local/share/zimagi-client"
+    "--volume" "${__zimagi_sdk_dir}:/usr/local/share/zimagi-client"
     "--volume" "${__zimagi_data_dir}:/var/local/zimagi"
   )
   while IFS= read -r variable; do

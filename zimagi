@@ -25,7 +25,7 @@ ZIMAGI_COMMON_ARGS=(
   "--tty"
   "--user" "$(id -u):zimagi"
   "--volume" "${__zimagi_app_dir}:/usr/local/share/zimagi"
-  "--volume" "${__zimagi_package_dir}:/usr/local/share/zimagi-client"
+  "--volume" "${__zimagi_sdk_dir}:/usr/local/share/zimagi-client"
   "--volume" "${__zimagi_data_dir}:/var/local/zimagi"
   "--volume" "${__zimagi_lib_dir}:/usr/local/lib/zimagi"
   "--env-file" "${__zimagi_env_dir}/public.${ZIMAGI_ENV_PROFILE}"

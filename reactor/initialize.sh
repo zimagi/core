@@ -8,7 +8,7 @@ export __zimagi_project_dir="${2}"
 
 export __zimagi_docker_dir="${__zimagi_project_dir}/docker"
 export __zimagi_app_dir="${__zimagi_project_dir}/app"
-export __zimagi_package_dir="${__zimagi_project_dir}/package"
+export __zimagi_sdk_dir="${__zimagi_project_dir}/sdk/python"
 export __zimagi_env_dir="${__zimagi_project_dir}/env"
 export __zimagi_data_dir="${__zimagi_project_dir}/data"
 export __zimagi_lib_dir="${__zimagi_project_dir}/lib"
@@ -16,7 +16,7 @@ export __zimagi_module_dir="${__zimagi_lib_dir}/modules"
 
 # Default environment configuration
 export ZIMAGI_HOST_APP_DIR="${__zimagi_app_dir}"
-export ZIMAGI_HOST_PACKAGE_DIR="${__zimagi_package_dir}"
+export ZIMAGI_HOST_SDK_DIR="${__zimagi_sdk_dir}"
 export ZIMAGI_HOST_DATA_DIR="${__zimagi_data_dir}"
 export ZIMAGI_HOST_LIB_DIR="${__zimagi_lib_dir}"
 

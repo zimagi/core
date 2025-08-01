@@ -88,7 +88,7 @@ ENV LIB_DIR=/usr/local/lib/zimagi
 ENV MODULE_DIR=${LIB_DIR}/modules
 ENV FILE_DIR=${LIB_DIR}/files
 ENV APP_DIR=/usr/local/share/zimagi
-ENV PACKAGE_DIR=/usr/local/share/zimagi-client
+ENV SDK_DIR=/usr/local/share/zimagi-client
 
 ENV PATH="${VIRTUAL_ENV_DIR}/bin:${PATH}"
 #
@@ -102,10 +102,10 @@ RUN pip3 install --no-cache-dir -r /home/zimagi/requirements.server.txt
 RUN test ! -f /home/zimagi/requirements.${ZIMAGI_ENVIRONMENT}.txt \
   || pip3 install --no-cache-dir -r /home/zimagi/requirements.${ZIMAGI_ENVIRONMENT}.txt
 
-COPY --chown=zimagi:zimagi ./package ${PACKAGE_DIR}
-COPY --chown=zimagi:zimagi ./app/VERSION ${PACKAGE_DIR}/VERSION
-VOLUME ${PACKAGE_DIR}
-RUN cd ${PACKAGE_DIR} \
+COPY --chown=zimagi:zimagi ./sdk/python ${SDK_DIR}
+COPY --chown=zimagi:zimagi ./app/VERSION ${SDK_DIR}/VERSION
+VOLUME ${SDK_DIR}
+RUN cd ${SDK_DIR} \
   && rm -Rf build dist \
   && pip3 install -U pip setuptools \
   && python3 setup.py sdist bdist_wheel --universal \

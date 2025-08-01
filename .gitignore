@@ -14,11 +14,11 @@
 # Python files
 __pycache__
 
-# Package files
-/package/build/
-/package/dist/
-/package/*.egg-info
-/package/VERSION
+# SDK files
+/sdk/python/build/
+/sdk/python/dist/
+/sdk/python/*.egg-info
+/sdk/python/VERSION
 
 # Application files
 /.env

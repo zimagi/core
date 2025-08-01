@@ -389,12 +389,12 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Copy package version
-          command: cp -f ./app/VERSION ./package/VERSION
+          name: Copy SDK version
+          command: cp -f ./app/VERSION ./sdk/python/VERSION
 
       - run:
-          name: Deploy Pip package
-          command: ./package/deploy.sh
+          name: Deploy Pip release
+          command: ./sdk/python/deploy.sh
 
   deploy-docs:
     docker:

@@ -134,13 +134,15 @@ doc_sequence = [
     "app",
     "app/help",
     "app",
-    "package",
-    "package/bin",
-    "package/zimagi",
-    "package/zimagi/data",
-    "package/zimagi/command",
-    "package/zimagi",
-    "package",
+    "sdk",
+    "sdk/python",
+    "sdk/python/bin",
+    "sdk/python/zimagi",
+    "sdk/python/zimagi/data",
+    "sdk/python/zimagi/command",
+    "sdk/python/zimagi",
+    "sdk/python",
+    "sdk",
     "reactor",
     "reactor/utilities",
     "reactor/build",
@@ -187,8 +189,9 @@ For a general reference, this project contains the following top level directori
     - app/templates: The templates directory contains various Jinja2 templates for various component systems
     - app/tests: The tests directory contains the test frameworks and various test libraries
 - docker: The docker directory contains the server and client Dockerfiles, as well as build and deploy scripts
-- env: The env directory contains the environment variables loaded into Docker Compose manifests in the top level directory.
-- package: The package directory contains a Python SDK client library for interacting with the Zimagi server API endpoints and a CLI executable
+- env: The env directory contains the environment variables loaded into Docker Compose manifests in the top level directory
+- sdk:  The sdk directory contains various language sdks for the Zimagi platform
+    - python: The python sdk directory contains a Python SDK client library for interacting with the Zimagi server API endpoints and a CLI executable
 - reactor: The reactor directory contains file that integrate with the Reactor Kubernetes development and management platform, which includes Docker build argument files, utility libraries, and a zimagi executable that integrates with the reactor CLI.
 
 ---
