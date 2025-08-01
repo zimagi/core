@@ -7,5 +7,8 @@ module.exports = {
   transform: {
     '^.+\\.js$': 'babel-jest',
   },
-  transformIgnorePatterns: ['/node_modules/'],
+  transformIgnorePatterns: ['/node_modules/(?!node-fetch)/'],
+  moduleNameMapper: {
+    '^node-fetch$': '<rootDir>/node_modules/node-fetch/src/index.js',
+  },
 };

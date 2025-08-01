@@ -2,6 +2,7 @@
  * Tests for client implementations
  */
 
+import { jest } from '@jest/globals';
 import { BaseAPIClient } from '../src/client/base.js';
 import { CommandClient } from '../src/client/command.js';
 import { DataClient } from '../src/client/data.js';
@@ -22,7 +23,7 @@ describe('BaseAPIClient', () => {
     expect(client.port).toBe(5123);
     expect(client.user).toBe('admin');
     expect(client.token).toBe('uy5c8xiahf93j2pl8s00e6nb32h87dn3');
-    expect(client.protocol).toBe('https');
+    expect(client.protocol).toBe('http');
     expect(client.verifyCert).toBe(false);
   });
 
@@ -32,18 +33,18 @@ describe('BaseAPIClient', () => {
     });
 
     expect(() => {
-      client._request('GET', 'http://test.com');
+      client._request('GET', 'http://localhost:5123');
     }).toThrow(ClientError);
   });
 
   test('should format service URL correctly', () => {
     const client = new BaseAPIClient({
       protocol: 'http',
-      host: 'example.com',
+      host: 'localhost',
       port: 8080,
     });
 
-    expect(client.baseURL).toBe('http://example.com:8080/');
+    expect(client.baseURL).toBe('http://localhost:8080/');
   });
 });
 

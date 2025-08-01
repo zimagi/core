@@ -2,6 +2,7 @@
  * Tests for message implementations
  */
 
+import { jest } from '@jest/globals';
 import {
   Message,
   StatusMessage,

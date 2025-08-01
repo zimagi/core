@@ -2,17 +2,25 @@
  * Tests for schema implementations
  */
 
-import { Root, Router, Action, Field, Error, Object, Array } from '../src/schema/index.js';
+import {
+  Root,
+  Router,
+  Action,
+  Field,
+  Error,
+  SchemaObject,
+  SchemaArray,
+} from '../src/schema/index.js';
 
 describe('Schema Classes', () => {
   test('Root should initialize with options', () => {
     const root = new Root({
-      url: 'http://test.com',
+      url: 'http://localhost',
       title: 'Test Root',
       description: 'Test description',
     });
 
-    expect(root.url).toBe('http://test.com');
+    expect(root.url).toBe('http://localhost');
     expect(root.title).toBe('Test Root');
     expect(root.description).toBe('Test description');
     expect(root.mediaType).toBe('application/vnd.zimagi+json');
@@ -38,7 +46,7 @@ describe('Schema Classes', () => {
 
   test('Action should initialize with options', () => {
     const action = new Action({
-      url: 'http://test.com/action',
+      url: 'http://localhost/action',
       name: 'Test Action',
       overview: 'Test overview',
       description: 'Test description',
@@ -49,7 +57,7 @@ describe('Schema Classes', () => {
       fields: [],
     });
 
-    expect(action.url).toBe('http://test.com/action');
+    expect(action.url).toBe('http://localhost/action');
     expect(action.name).toBe('Test Action');
     expect(action.overview).toBe('Test overview');
     expect(action.description).toBe('Test description');
@@ -103,7 +111,7 @@ describe('Schema Classes', () => {
   });
 
   test('Object should initialize with items', () => {
-    const obj = new Object({
+    const obj = new SchemaObject({
       key1: 'value1',
       key2: 'value2',
     });
@@ -113,7 +121,7 @@ describe('Schema Classes', () => {
   });
 
   test('Array should initialize with items', () => {
-    const arr = new Array([1, 2, 3]);
+    const arr = new SchemaArray([1, 2, 3]);
 
     expect(arr[0]).toBe(1);
     expect(arr[1]).toBe(2);

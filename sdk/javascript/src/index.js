@@ -24,7 +24,7 @@ export { DataHTTPTransport } from './transports/data.js';
 export { BaseAPIClient } from './client/base.js';
 export { CommandClient } from './client/command.js';
 export { DataClient } from './client/data.js';
-export { Root, Router, Action, Field, Error, Object, Array } from './schema/index.js';
+export { Root, Router, Action, Field, Error, SchemaObject, SchemaArray } from './schema/index.js';
 export {
   Message,
   StatusMessage,

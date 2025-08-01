@@ -2,6 +2,7 @@
  * Tests for transport layer implementations
  */
 
+import { jest } from '@jest/globals';
 import { BaseTransport } from '../src/transports/base.js';
 import { CommandHTTPTransport } from '../src/transports/command.js';
 import { DataHTTPTransport } from '../src/transports/data.js';
@@ -33,12 +34,13 @@ const mockResponse = {
 
 describe('BaseTransport', () => {
   test('should initialize with options', () => {
+    const mockFn = jest.fn();
     const transport = new BaseTransport({
       client: mockClient,
       verifyCert: true,
-      optionsCallback: jest.fn(),
-      requestCallback: jest.fn(),
-      responseCallback: jest.fn(),
+      optionsCallback: mockFn,
+      requestCallback: mockFn,
+      responseCallback: mockFn,
     });
 
     expect(transport.client).toBe(mockClient);
@@ -51,7 +53,7 @@ describe('BaseTransport', () => {
   test('should throw error for unimplemented handleRequest', async () => {
     const transport = new BaseTransport();
     await expect(
-      transport.handleRequest('GET', 'http://test.com', '/', {}, {}, [])
+      transport.handleRequest('GET', 'http://localhost', '/', {}, {}, [])
     ).rejects.toThrow('Method handleRequest(...) must be overridden in all subclasses');
   });
 

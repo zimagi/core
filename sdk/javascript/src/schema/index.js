@@ -269,7 +269,7 @@ export class Field {
 /**
  * Error schema class
  */
-export class Error extends SortedItemsMixin {
+export class Error extends CommandIndexMixin {
   /**
    * Create a new error
    * @param {Object} options - Error options
@@ -336,25 +336,69 @@ export class Error extends SortedItemsMixin {
 /**
  * Object schema class
  */
-export class Object extends Map {
+export class SchemaObject {
   /**
    * Create a new object
    * @param {Object} items - Object items
    */
   constructor(items = {}) {
-    super(Object.entries(items));
+    for (const [key, value] of Object.entries(items)) {
+      this.set(key, value);
+    }
+  }
+
+  /**
+   * Set a key-value pair
+   * @param {string} key - Key
+   * @param {*} value - Value
+   * @returns {SchemaObject} This instance
+   */
+  set(key, value) {
+    this[key] = value;
+    return this;
+  }
+
+  /**
+   * Get a value by key
+   * @param {string} key - Key
+   * @returns {*} Value
+   */
+  get(key) {
+    return this[key];
+  }
+
+  /**
+   * Get all entries
+   * @returns {Array} Entries
+   */
+  entries() {
+    const entries = [];
+    for (const key of Object.keys(this)) {
+      entries.push([key, this[key]]);
+    }
+    return entries;
   }
 }
 
 /**
  * Array schema class
  */
-export class Array extends Array {
+export class SchemaArray extends Array {
   /**
    * Create a new array
    * @param {Array} items - Array items
    */
   constructor(items = []) {
+    // Call the parent constructor with the items
     super(...items);
+
+    // Copy items to this array instance
+    items.forEach((item, index) => {
+      this[index] = item;
+    });
   }
 }
+
+// Export classes with proper aliases
+export { SchemaObject as Object };
+export { SchemaArray as Array };
