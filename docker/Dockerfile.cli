@@ -34,6 +34,10 @@ RUN apt-get update -y \
   && apt-get upgrade -y \
   && sed '/^\s*\#.*$/d' /root/packages.core.txt | xargs -r apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends nodejs npm \
+  && rm -rf /var/lib/apt/lists/*
 #
 # User initialization
 #
