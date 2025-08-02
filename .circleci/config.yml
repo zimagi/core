@@ -87,6 +87,60 @@ jobs:
               echo "===================================================="
             done
 
+  test-javascript-sdk:
+    machine:
+      image: ubuntu-2404:current
+    steps:
+      - checkout
+      - run: *volumes
+      - run:
+          name: Initialize Zimagi Docker runtime
+          command: |
+            source start standard test api
+            echo "export COMPOSE_FILE='${COMPOSE_FILE}'" >> $BASH_ENV
+      - run:
+          name: Run API Javascript SDK tests
+          command: ./js-sdk run test
+      - run:
+          name: Scheduler log entries
+          when: always
+          command: docker compose logs scheduler --tail=1000
+      - run:
+          name: Data API log entries
+          when: always
+          command: docker compose logs data-api --tail=5000
+      - run:
+          name: Command API log entries
+          when: always
+          command: docker compose logs command-api --tail=5000
+
+  test-javascript-encrypted-sdk:
+    machine:
+      image: ubuntu-2404:current
+    steps:
+      - checkout
+      - run: *volumes
+      - run:
+          name: Initialize Zimagi Docker runtime
+          command: |
+            source start standard test api.encrypted
+            echo "export COMPOSE_FILE='${COMPOSE_FILE}'" >> $BASH_ENV
+      - run:
+          name: Run API Javascript encrypted SDK tests
+          command: ./js-sdk run test
+      - run:
+          name: Scheduler log entries
+          when: always
+          command: docker compose logs scheduler --tail=1000
+      - run:
+          name: Data API log entries
+          when: always
+          command: docker compose logs data-api --tail=5000
+      - run:
+          name: Command API log entries
+          when: always
+          command: docker compose logs command-api --tail=5000
+
   test-python-sdk:
     machine:
       image: ubuntu-2404:current
@@ -383,6 +437,15 @@ jobs:
           name: Deploy versioned Nvidia Docker platform manifest (zimagi/server:nvidia-x.x.x)
           command: ./docker/deploy_server_manifest.sh nvidia
 
+  deploy-npm:
+    docker:
+      - image: cimg/node:20.14
+    steps:
+      - checkout
+      - run:
+          name: Deploy NPM release
+          command: ./sdk/javascript/deploy.sh
+
   deploy-pip:
     docker:
       - image: python:3.12
@@ -453,6 +516,15 @@ workflows:
             tags:
               only: /.*/
 
+      - test-javascript-sdk:
+          filters:
+            tags:
+              only: /.*/
+      - test-javascript-encrypted-sdk:
+          filters:
+            tags:
+              only: /.*/
+
       - test-python-sdk:
           filters:
             tags:
@@ -484,6 +556,8 @@ workflows:
             - test-api-commands
             - test-api-encrypted-commands
             - test-worker-commands
+            - test-javascript-sdk
+            - test-javascript-encrypted-sdk
             - test-python-sdk
             - test-python-encrypted-sdk
             - test-schedule
@@ -497,6 +571,8 @@ workflows:
             - test-api-commands
             - test-api-encrypted-commands
             - test-worker-commands
+            - test-javascript-sdk
+            - test-javascript-encrypted-sdk
             - test-python-sdk
             - test-python-encrypted-sdk
             - test-schedule
@@ -520,6 +596,8 @@ workflows:
             - test-api-commands
             - test-api-encrypted-commands
             - test-worker-commands
+            - test-javascript-sdk
+            - test-javascript-encrypted-sdk
             - test-python-sdk
             - test-python-encrypted-sdk
             - test-api-schema
@@ -534,6 +612,8 @@ workflows:
             - test-api-commands
             - test-api-encrypted-commands
             - test-worker-commands
+            - test-javascript-sdk
+            - test-javascript-encrypted-sdk
             - test-python-sdk
             - test-python-encrypted-sdk
             - test-api-schema
@@ -558,6 +638,8 @@ workflows:
             - test-api-commands
             - test-api-encrypted-commands
             - test-worker-commands
+            - test-javascript-sdk
+            - test-javascript-encrypted-sdk
             - test-python-sdk
             - test-python-encrypted-sdk
             - test-schedule
@@ -571,6 +653,8 @@ workflows:
             - test-api-commands
             - test-api-encrypted-commands
             - test-worker-commands
+            - test-javascript-sdk
+            - test-javascript-encrypted-sdk
             - test-python-sdk
             - test-python-encrypted-sdk
             - test-schedule
@@ -594,6 +678,8 @@ workflows:
             - test-api-commands
             - test-api-encrypted-commands
             - test-worker-commands
+            - test-javascript-sdk
+            - test-javascript-encrypted-sdk
             - test-python-sdk
             - test-python-encrypted-sdk
             - test-schedule
@@ -616,6 +702,8 @@ workflows:
             - test-api-commands
             - test-api-encrypted-commands
             - test-worker-commands
+            - test-javascript-sdk
+            - test-javascript-encrypted-sdk
             - test-python-sdk
             - test-python-encrypted-sdk
             - test-api-schema
@@ -630,6 +718,8 @@ workflows:
             - test-api-commands
             - test-api-encrypted-commands
             - test-worker-commands
+            - test-javascript-sdk
+            - test-javascript-encrypted-sdk
             - test-python-sdk
             - test-python-encrypted-sdk
             - test-api-schema
@@ -654,6 +744,8 @@ workflows:
             - test-api-commands
             - test-api-encrypted-commands
             - test-worker-commands
+            - test-javascript-sdk
+            - test-javascript-encrypted-sdk
             - test-python-sdk
             - test-python-encrypted-sdk
             - test-api-schema
@@ -666,6 +758,21 @@ workflows:
               ignore: /.*/
           requires:
             - deploy-server-docker-nvidia-amd64-version
+
+      - deploy-npm:
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/
+          requires:
+            - test-api-commands
+            - test-api-encrypted-commands
+            - test-worker-commands
+            - test-javascript-sdk
+            - test-javascript-encrypted-sdk
+            - test-api-schema
+            - test-schedule
 
       - deploy-pip:
           filters:
