@@ -24,22 +24,19 @@ export class JSONCodec extends BaseCodec {
    * @returns {*} Decoded data
    */
   decode(bytestring, options = {}) {
-    const convert = (data) => {
-      if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
-        // Convert plain objects to a map-like structure if needed
-        return data;
-      } else if (Array.isArray(data)) {
-        return data.map((value, index) => {
-          data[index] = convert(value);
-        });
-      }
-      return data;
-    };
-
     try {
+      // Handle empty responses
+      if (!bytestring || bytestring.length === 0) {
+        return {};
+      }
+
       const data = JSON.parse(bytestring.toString());
-      return convert(data);
+      return data;
     } catch (error) {
+      // Only log if we're still in a test context and not after tests are done
+      if (typeof jest !== 'undefined' && !jest) {
+        console.debug(`[Zimagi SDK] JSON parsing failed: ${error.message}`);
+      }
       throw new ParseError(`Malformed JSON: ${error.message}`);
     }
   }

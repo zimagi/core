@@ -34,6 +34,16 @@ export class BaseAPIClient {
     this.performanceMonitor = options.performanceMonitor || defaultMonitor;
 
     this.auth = new ClientTokenAuthentication(this.user, this.token, this);
+
+    // Reduce logging in test environment
+    if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
+      console.debug(`[Zimagi SDK] BaseAPIClient initialized with:`, {
+        host: this.host,
+        port: this.port,
+        protocol: this.protocol,
+        baseURL: this.baseURL,
+      });
+    }
   }
 
   /**
@@ -60,6 +70,12 @@ export class BaseAPIClient {
     const timingId = this.performanceMonitor.startTiming(`${method}_${url}`);
 
     try {
+      // Reduce logging in test environment
+      if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
+        console.debug(`[Zimagi SDK] Making client request: ${method} ${url}`);
+        console.debug(`[Zimagi SDK] Request params:`, params);
+      }
+
       const result = this.transport.request(method, url, this.decoders, params, {
         retries: 20,
         retryWait: 3,
@@ -69,6 +85,10 @@ export class BaseAPIClient {
       this.performanceMonitor.endTiming(timingId);
       return result;
     } catch (error) {
+      // Reduce logging in test environment
+      if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
+        console.debug(`${type} API error: ${this._formatError(path, error, params)}`);
+      }
       this.performanceMonitor.endTiming(timingId);
       throw error;
     }
@@ -79,14 +99,27 @@ export class BaseAPIClient {
    * @returns {*} Status data
    */
   getStatus() {
+    // Reduce logging in test environment
+    if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
+      console.debug(`[Zimagi SDK] Getting status`);
+    }
+
     if (!this._status) {
       const statusURL = `${this.baseURL}status`;
+      // Reduce logging in test environment
+      if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
+        console.debug(`[Zimagi SDK] Status URL: ${statusURL}`);
+      }
 
       const processor = () => {
         return this._request('GET', statusURL);
       };
 
       this._status = this._wrapAPICall('status', statusURL, processor);
+      // Reduce logging in test environment
+      if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
+        console.debug(`[Zimagi SDK] Status result:`, this._status);
+      }
     }
     return this._status;
   }
@@ -96,6 +129,11 @@ export class BaseAPIClient {
    * @returns {*} Schema data
    */
   getSchema() {
+    // Reduce logging in test environment
+    if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
+      console.debug(`[Zimagi SDK] Getting schema`);
+    }
+
     if (!this._schema) {
       const schemaGenerator = () => {
         const processor = () => {
@@ -109,6 +147,10 @@ export class BaseAPIClient {
         schemaGenerator,
         86400000 // 24 hours
       );
+      // Reduce logging in test environment
+      if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
+        console.debug(`[Zimagi SDK] Schema result:`, this._schema);
+      }
     }
     return this._schema;
   }
@@ -123,9 +165,16 @@ export class BaseAPIClient {
    */
   _wrapAPICall(type, path, processor, params = null) {
     try {
+      // Reduce logging in test environment
+      if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
+        console.debug(`[Zimagi SDK] Wrapping API call: ${type} ${path}`);
+      }
       return processor();
     } catch (error) {
-      console.debug(`${type} API error: ${this._formatError(path, error, params)}`);
+      // Reduce logging in test environment
+      if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
+        console.debug(`${type} API error: ${this._formatError(path, error, params)}`);
+      }
       throw error;
     }
   }
@@ -157,12 +206,26 @@ export class BaseAPIClient {
     const cacheKey = `zimagi_${cacheName}`;
     const cachedData = this.cache.get(cacheKey);
 
+    // Reduce logging in test environment
+    if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
+      console.debug(`[Zimagi SDK] Checking cache for: ${cacheKey}`);
+      console.debug(`[Zimagi SDK] Cache hit: ${!!cachedData}`);
+    }
+
     if (cachedData) {
       return cachedData;
     }
 
+    // Reduce logging in test environment
+    if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
+      console.debug(`[Zimagi SDK] Generating data for cache: ${cacheKey}`);
+    }
     const data = generatorFunction();
     this.cache.set(cacheKey, data, cacheLifetime);
+    // Reduce logging in test environment
+    if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
+      console.debug(`[Zimagi SDK] Data cached: ${cacheKey}`);
+    }
 
     return data;
   }

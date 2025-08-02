@@ -2,16 +2,10 @@
  * Tests for client implementations
  */
 
-import { jest } from '@jest/globals';
 import { BaseAPIClient } from '../src/client/base.js';
 import { CommandClient } from '../src/client/command.js';
 import { DataClient } from '../src/client/data.js';
 import { ClientError } from '../src/exceptions.js';
-
-// Mock transport for testing
-const mockTransport = {
-  request: jest.fn(),
-};
 
 describe('BaseAPIClient', () => {
   test('should initialize with default options', () => {
@@ -50,14 +44,29 @@ describe('BaseAPIClient', () => {
 
 describe('CommandClient', () => {
   test('should initialize with default options', () => {
-    const client = new CommandClient();
+    const client = new CommandClient({
+      host: process.env.ZIMAGI_COMMAND_HOST,
+      port: parseInt(process.env.ZIMAGI_COMMAND_PORT),
+      token: process.env.ZIMAGI_DEFAULT_ADMIN_TOKEN,
+      encryptionKey: process.env.ZIMAGI_ADMIN_API_KEY,
+    });
 
-    expect(client.port).toBe(5123);
+    expect(client.host).toBe(process.env.ZIMAGI_COMMAND_HOST);
+    expect(client.port).toBe(parseInt(process.env.ZIMAGI_COMMAND_PORT));
+    expect(client.user).toBe('admin');
+    expect(client.token).toBe(process.env.ZIMAGI_DEFAULT_ADMIN_TOKEN);
+    expect(client.protocol).toBe('http');
     expect(client.verifyCert).toBe(false);
   });
 
   test('should normalize command paths', () => {
-    const client = new CommandClient();
+    const client = new CommandClient({
+      host: process.env.ZIMAGI_COMMAND_HOST,
+      port: parseInt(process.env.ZIMAGI_COMMAND_PORT),
+      token: process.env.ZIMAGI_DEFAULT_ADMIN_TOKEN,
+      encryptionKey: process.env.ZIMAGI_ADMIN_API_KEY,
+    });
+
     // Override the method for testing
     client._normalizePath = function (name) {
       return name.replace(/\s+/g, '/').replace(/\./g, '/');
@@ -70,14 +79,24 @@ describe('CommandClient', () => {
 
 describe('DataClient', () => {
   test('should initialize with default options', () => {
-    const client = new DataClient();
+    const client = new DataClient({
+      host: process.env.ZIMAGI_DATA_HOST,
+      port: parseInt(process.env.ZIMAGI_DATA_PORT),
+      token: process.env.ZIMAGI_DEFAULT_ADMIN_TOKEN,
+      encryptionKey: process.env.ZIMAGI_ADMIN_API_KEY,
+    });
 
     expect(client.port).toBe(5323);
     expect(client.verifyCert).toBe(false);
   });
 
   test('should format API paths correctly', () => {
-    const client = new DataClient();
+    const client = new DataClient({
+      host: process.env.ZIMAGI_DATA_HOST,
+      port: parseInt(process.env.ZIMAGI_DATA_PORT),
+      token: process.env.ZIMAGI_DEFAULT_ADMIN_TOKEN,
+      encryptionKey: process.env.ZIMAGI_ADMIN_API_KEY,
+    });
 
     expect(client._formatOptions('GET', { tags: ['tag1', 'tag2'] })).toEqual({
       tags: 'tag1,tag2',

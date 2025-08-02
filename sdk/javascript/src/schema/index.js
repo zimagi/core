@@ -116,6 +116,7 @@ export class Root extends CommandIndexMixin {
    */
   constructor(options = {}) {
     super();
+    this._items = new Map();
     this.url = options.url || '';
     this.title = options.title || '';
     this.description = options.description || '';
@@ -124,7 +125,7 @@ export class Root extends CommandIndexMixin {
     // Initialize with commands
     const commands = options.commands || {};
     for (const [key, value] of Object.entries(commands)) {
-      this.set(key, value);
+      this._items.set(key, value);
     }
   }
 
@@ -135,7 +136,7 @@ export class Root extends CommandIndexMixin {
    * @returns {Root} This instance
    */
   set(key, value) {
-    this[key] = value;
+    this._items.set(key, value);
     return this;
   }
 
@@ -145,7 +146,7 @@ export class Root extends CommandIndexMixin {
    * @returns {*} Value
    */
   get(key) {
-    return this[key];
+    return this._items.get(key);
   }
 
   /**
@@ -153,12 +154,7 @@ export class Root extends CommandIndexMixin {
    * @returns {Array} Entries
    */
   entries() {
-    const entries = [];
-    for (const key of Object.keys(this)) {
-      if (['url', 'title', 'description', 'mediaType'].includes(key)) continue;
-      entries.push([key, this[key]]);
-    }
-    return entries;
+    return [...this._items.entries()];
   }
 }
 
@@ -172,6 +168,7 @@ export class Router extends CommandIndexMixin {
    */
   constructor(options = {}) {
     super();
+    this._items = new Map();
     this.name = options.name || '';
     this.overview = options.overview || '';
     this.description = options.description || '';
@@ -182,7 +179,7 @@ export class Router extends CommandIndexMixin {
     // Initialize with commands
     const commands = options.commands || {};
     for (const [key, value] of Object.entries(commands)) {
-      this.set(key, value);
+      this._items.set(key, value);
     }
   }
 
@@ -193,7 +190,7 @@ export class Router extends CommandIndexMixin {
    * @returns {Router} This instance
    */
   set(key, value) {
-    this[key] = value;
+    this._items.set(key, value);
     return this;
   }
 
@@ -203,7 +200,7 @@ export class Router extends CommandIndexMixin {
    * @returns {*} Value
    */
   get(key) {
-    return this[key];
+    return this._items.get(key);
   }
 
   /**
@@ -211,13 +208,7 @@ export class Router extends CommandIndexMixin {
    * @returns {Array} Entries
    */
   entries() {
-    const entries = [];
-    for (const key of Object.keys(this)) {
-      if (['name', 'overview', 'description', 'epilog', 'priority', 'resource'].includes(key))
-        continue;
-      entries.push([key, this[key]]);
-    }
-    return entries;
+    return [...this._items.entries()];
   }
 }
 
@@ -276,12 +267,13 @@ export class Error extends CommandIndexMixin {
    */
   constructor(options = {}) {
     super();
+    this._items = new Map();
     this.title = options.title || '';
 
     // Initialize with content
     const content = options.content || {};
     for (const [key, value] of Object.entries(content)) {
-      this.set(key, value);
+      this._items.set(key, value);
     }
   }
 
@@ -292,7 +284,7 @@ export class Error extends CommandIndexMixin {
    * @returns {Error} This instance
    */
   set(key, value) {
-    this[key] = value;
+    this._items.set(key, value);
     return this;
   }
 
@@ -302,7 +294,7 @@ export class Error extends CommandIndexMixin {
    * @returns {*} Value
    */
   get(key) {
-    return this[key];
+    return this._items.get(key);
   }
 
   /**
@@ -310,12 +302,7 @@ export class Error extends CommandIndexMixin {
    * @returns {Array} Entries
    */
   entries() {
-    const entries = [];
-    for (const key of Object.keys(this)) {
-      if (key === 'title') continue;
-      entries.push([key, this[key]]);
-    }
-    return entries;
+    return [...this._items.entries()];
   }
 
   /**
@@ -342,8 +329,9 @@ export class SchemaObject {
    * @param {Object} items - Object items
    */
   constructor(items = {}) {
+    this._items = new Map();
     for (const [key, value] of Object.entries(items)) {
-      this.set(key, value);
+      this._items.set(key, value);
     }
   }
 
@@ -354,7 +342,7 @@ export class SchemaObject {
    * @returns {SchemaObject} This instance
    */
   set(key, value) {
-    this[key] = value;
+    this._items.set(key, value);
     return this;
   }
 
@@ -364,7 +352,7 @@ export class SchemaObject {
    * @returns {*} Value
    */
   get(key) {
-    return this[key];
+    return this._items.get(key);
   }
 
   /**
@@ -372,11 +360,7 @@ export class SchemaObject {
    * @returns {Array} Entries
    */
   entries() {
-    const entries = [];
-    for (const key of Object.keys(this)) {
-      entries.push([key, this[key]]);
-    }
-    return entries;
+    return [...this._items.entries()];
   }
 }
 

@@ -45,6 +45,10 @@ export class ZimagiJSONCodec extends BaseCodec {
 
       return document;
     } catch (error) {
+      // Only log if we're still in a test context and not after tests are done
+      if (typeof jest !== 'undefined' && !jest) {
+        console.debug(`[Zimagi SDK] JSON parsing failed: ${error.message}`);
+      }
       throw new ParseError(`Malformed JSON. ${error.message}`);
     }
   }

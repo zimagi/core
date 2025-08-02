@@ -49,6 +49,10 @@ export class CSVCodec extends BaseCodec {
         results: results,
       };
     } catch (error) {
+      // Only log if we're still in a test context and not after tests are done
+      if (typeof jest !== 'undefined' && !jest) {
+        console.debug(`[Zimagi SDK] CSV parsing failed: ${error.message}`);
+      }
       throw new ParseError(`Malformed CSV: ${error.message}`);
     }
   }
