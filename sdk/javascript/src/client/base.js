@@ -23,7 +23,7 @@ export class BaseAPIClient {
     this.user = options.user || 'admin';
     this.token = options.token || 'uy5c8xiahf93j2pl8s00e6nb32h87dn3';
     this.encryptionKey = options.encryptionKey || null;
-    this.protocol = options.protocol || 'https';
+    this.protocol = options.protocol || (this.host == 'localhost' ? 'http' : 'https');
     this.verifyCert = options.verifyCert !== undefined ? options.verifyCert : false;
 
     this.baseURL = this._getServiceURL();

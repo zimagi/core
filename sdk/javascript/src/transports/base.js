@@ -56,11 +56,6 @@ If restarting, retry in a few minutes...
       if (this.optionsCallback && typeof this.optionsCallback === 'function') {
         this.optionsCallback(params);
       }
-
-      if (options.validateCallback && typeof options.validateCallback === 'function') {
-        options.validateCallback(url, params);
-      }
-
       return await this.handleRequest(
         method,
         url,
@@ -115,12 +110,11 @@ If restarting, retry in a few minutes...
 
     const result = await this._request('GET', url, {
       headers: headers,
-      params: params,
+      params: params || {},
       encrypted: encrypted,
       useAuth: useAuth,
       disableCallbacks: disableCallbacks,
     });
-
     console.debug(`Page ${url} request headers: ${JSON.stringify(headers)}`);
 
     if (result[1].status >= 400) {
@@ -191,7 +185,6 @@ If restarting, retry in a few minutes...
     }
 
     const response = await fetch(requestUrl, fetchOptions);
-
     return [{ url: requestUrl, method, headers: requestHeaders }, response];
   }
 
