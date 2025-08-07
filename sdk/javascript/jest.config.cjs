@@ -1,11 +1,11 @@
 module.exports = {
   testEnvironment: 'node',
-  collectCoverageFrom: ['src/**/*.js', '!src/index.js'],
-  testMatch: ['**/__tests__/**/*.js', '**/?(*.)+(spec|test).js'],
+  collectCoverageFrom: ['src/**/*.ts', '!src/index.ts'],
+  testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   transform: {
-    '^.+\\.js$': 'babel-jest',
+    '^.+\\.ts$': 'babel-jest',
   },
   transformIgnorePatterns: ['/node_modules/(?!node-fetch)/'],
   moduleNameMapper: {

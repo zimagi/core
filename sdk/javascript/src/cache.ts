@@ -10,7 +10,10 @@ export class Cache {
    * Create a new cache
    * @param {number} defaultTTL - Default time-to-live in milliseconds
    */
-  constructor(defaultTTL = 3600000) {
+  defaultTTL: number;
+  storage: Map<string, { value: any; expiry: number }>;
+
+  constructor(defaultTTL: number = 3600000) {
     // 1 hour default
     this.defaultTTL = defaultTTL;
     this.storage = new Map();
@@ -22,7 +25,7 @@ export class Cache {
    * @param {*} value - Value to cache
    * @param {number} ttl - Time-to-live in milliseconds
    */
-  set(key, value, ttl = this.defaultTTL) {
+  set(key: string, value: any, ttl: number = this.defaultTTL): void {
     const expiry = Date.now() + ttl;
     this.storage.set(key, {
       value: value,
@@ -35,7 +38,7 @@ export class Cache {
    * @param {string} key - Cache key
    * @returns {*} Cached value or null if not found/expired
    */
-  get(key) {
+  get(key: string): any {
     const item = this.storage.get(key);
     if (!item) {
       return null;
@@ -54,7 +57,7 @@ export class Cache {
    * @param {string} key - Cache key
    * @returns {boolean} Whether key exists and is not expired
    */
-  has(key) {
+  has(key: string): boolean {
     return this.get(key) !== null;
   }
 
@@ -62,14 +65,14 @@ export class Cache {
    * Delete a key from the cache
    * @param {string} key - Cache key
    */
-  delete(key) {
+  delete(key: string): void {
     this.storage.delete(key);
   }
 
   /**
    * Clear all expired entries
    */
-  clearExpired() {
+  clearExpired(): void {
     for (const [key, item] of this.storage.entries()) {
       if (Date.now() > item.expiry) {
         this.storage.delete(key);
@@ -80,7 +83,7 @@ export class Cache {
   /**
    * Clear all entries
    */
-  clear() {
+  clear(): void {
     this.storage.clear();
   }
 
@@ -88,7 +91,7 @@ export class Cache {
    * Get cache size
    * @returns {number} Number of entries in cache
    */
-  size() {
+  size(): number {
     this.clearExpired();
     return this.storage.size;
   }

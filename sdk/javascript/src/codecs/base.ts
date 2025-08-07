@@ -9,6 +9,8 @@ export class BaseCodec {
   /**
    * Create a new codec
    */
+  mediaTypes: string[];
+
   constructor() {
     this.mediaTypes = [];
   }
@@ -19,7 +21,7 @@ export class BaseCodec {
    * @param {Object} options - Decoding options
    * @returns {*} Decoded data
    */
-  decode(bytestring, options = {}) {
+  decode(bytestring: string, options: any = {}): any {
     throw new Error('Method decode(...) must be implemented in subclasses');
   }
 }

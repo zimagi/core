@@ -2,8 +2,8 @@
  * Zimagi JSON codec for the Zimagi JavaScript SDK
  */
 
-import { BaseCodec } from './base.js';
-import { ParseError, CommandParseError } from '../exceptions.js';
+import { BaseCodec } from './base';
+import { ParseError, CommandParseError } from '../exceptions';
 import {
   Root,
   Error as SchemaError,
@@ -12,31 +12,44 @@ import {
   Field,
   Object as SchemaObject,
   Array as SchemaArray,
-} from '../schema/index.js';
+} from '../schema/index';
 
-/**
- * Zimagi JSON codec implementation
- */
 export class ZimagiJSONCodec extends BaseCodec {
-  /**
-   * Create a new Zimagi JSON codec
-   */
+  mediaTypes: string[];
+
   constructor() {
     super();
     this.mediaTypes = ['application/vnd.zimagi+json', 'application/x-zimagi+json'];
   }
 
-  /**
-   * Decode a byte string as Zimagi JSON
-   * @param {string} bytestring - Byte string to decode
-   * @param {Object} options - Decoding options
-   * @returns {*} Decoded data
-   */
-  decode(bytestring, options = {}) {
+  encode(data: any, _options: any): string {
+    try {
+      return JSON.stringify(data);
+    } catch (error: any) {
+      if (typeof jest !== 'undefined' && !jest) {
+        console.debug(`[Zimagi SDK] Zimagi JSON encoding failed: ${error.message}`);
+      }
+      throw new ParseError(`Zimagi JSON encoding error: ${error.message}`);
+    }
+  }
+
+  decode(bytestring: string | Buffer, options: any = {}): any {
     const baseURL = options.baseURL || '';
 
     try {
-      const data = JSON.parse(bytestring.toString());
+      // Handle empty responses
+      if (!bytestring || (typeof bytestring === 'string' && bytestring.length === 0)) {
+        return {};
+      }
+
+      let jsonString: string;
+      if (bytestring instanceof Buffer) {
+        jsonString = bytestring.toString();
+      } else {
+        jsonString = bytestring as string;
+      }
+
+      const data = JSON.parse(jsonString);
       const document = this._convertToSchema(data, baseURL);
 
       if (!(document instanceof Root || document instanceof SchemaError)) {
@@ -44,22 +57,16 @@ export class ZimagiJSONCodec extends BaseCodec {
       }
 
       return document;
-    } catch (error) {
+    } catch (error: any) {
       // Only log if we're still in a test context and not after tests are done
       if (typeof jest !== 'undefined' && !jest) {
         console.debug(`[Zimagi SDK] JSON parsing failed: ${error.message}`);
       }
-      throw new ParseError(`Malformed JSON. ${error.message}`);
+      throw new ParseError(`Malformed JSON: ${error.message}`);
     }
   }
 
-  /**
-   * Convert data to schema objects
-   * @param {*} data - Data to convert
-   * @param {string} baseURL - Base URL for resolving relative URLs
-   * @returns {*} Converted schema object
-   */
-  _convertToSchema(data, baseURL = '') {
+  _convertToSchema(data: any, baseURL: string = ''): any {
     if (typeof data === 'object' && data !== null && data._type === 'root') {
       const meta = data._meta || {};
       // Resolve URL relative to baseURL
@@ -113,7 +120,7 @@ export class ZimagiJSONCodec extends BaseCodec {
         confirm: !!data.confirm,
         fields: Array.isArray(data.fields)
           ? data.fields
-              .map((item) => {
+              .map((item: any) => {
                 if (typeof item === 'object' && item !== null) {
                   return new Field({
                     method: item.method || '',
@@ -132,7 +139,7 @@ export class ZimagiJSONCodec extends BaseCodec {
                 }
                 return null;
               })
-              .filter((item) => item !== null)
+              .filter((item: any) => item !== null)
           : [],
       });
     }
@@ -148,14 +155,8 @@ export class ZimagiJSONCodec extends BaseCodec {
     return data;
   }
 
-  /**
-   * Get document content
-   * @param {Object} item - Item to process
-   * @param {string} baseURL - Base URL for resolving relative URLs
-   * @returns {Object} Document content
-   */
-  _getDocumentContent(item, baseURL = '') {
-    const content = {};
+  _getDocumentContent(item: any, baseURL: string = ''): any {
+    const content: any = {};
     for (const [key, value] of Object.entries(item)) {
       if (key !== '_type' && key !== '_meta') {
         const unescapedKey = this._unescapeKey(key);
@@ -165,12 +166,7 @@ export class ZimagiJSONCodec extends BaseCodec {
     return content;
   }
 
-  /**
-   * Unescape special keys
-   * @param {string} string - String to unescape
-   * @returns {string} Unescaped string
-   */
-  _unescapeKey(string) {
+  _unescapeKey(string: string): string {
     if (string.startsWith('__') && ['type', 'meta'].includes(string.substring(2))) {
       return string.substring(1);
     }

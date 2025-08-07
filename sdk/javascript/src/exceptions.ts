@@ -6,7 +6,7 @@
  * Base exception class for all Zimagi client errors
  */
 export class ClientError extends Error {
-  constructor(message) {
+  constructor(message: string) {
     super(message);
     this.name = 'ClientError';
   }
@@ -16,7 +16,7 @@ export class ClientError extends Error {
  * Exception for connection errors
  */
 export class ConnectionError extends ClientError {
-  constructor(message) {
+  constructor(message: string) {
     super(message);
     this.name = 'ConnectionError';
   }
@@ -26,7 +26,7 @@ export class ConnectionError extends ClientError {
  * Exception for parsing errors
  */
 export class ParseError extends ClientError {
-  constructor(message) {
+  constructor(message: string) {
     super(message);
     this.name = 'ParseError';
   }
@@ -36,7 +36,10 @@ export class ParseError extends ClientError {
  * Exception for response errors
  */
 export class ResponseError extends ClientError {
-  constructor(message, code = null, result = null) {
+  code: number | null;
+  result: any;
+
+  constructor(message: string, code: number | null = null, result: any = null) {
     super(message);
     this.name = 'ResponseError';
     this.code = code;
@@ -48,7 +51,7 @@ export class ResponseError extends ClientError {
  * Exception for command parsing errors
  */
 export class CommandParseError extends Error {
-  constructor(message) {
+  constructor(message: string) {
     super(message);
     this.name = 'CommandParseError';
   }

@@ -9,7 +9,7 @@
  * @param {number} port - Port number
  * @returns {string} Service URL
  */
-export function getServiceURL(protocol, host, port) {
+export function getServiceURL(protocol: string, host: string, port: number): string {
   return `${protocol}://${host}:${port}/`;
 }
 
@@ -20,7 +20,11 @@ export function getServiceURL(protocol, host, port) {
  * @param {boolean} parseJSON - Whether to parse JSON strings
  * @returns {*} Normalized value
  */
-export function normalizeValue(value, stripQuotes = false, parseJSON = false) {
+export function normalizeValue(
+  value: any,
+  stripQuotes: boolean = false,
+  parseJSON: boolean = false
+): any {
   if (value !== null && value !== undefined) {
     if (typeof value === 'string') {
       if (stripQuotes) {
@@ -55,7 +59,7 @@ export function normalizeValue(value, stripQuotes = false, parseJSON = false) {
     } else if (Array.isArray(value)) {
       return value.map((item) => normalizeValue(item, stripQuotes, parseJSON));
     } else if (typeof value === 'object' && value !== null) {
-      const normalized = {};
+      const normalized: any = {};
       for (const [key, item] of Object.entries(value)) {
         normalized[key] = normalizeValue(item, stripQuotes, parseJSON);
       }
@@ -71,16 +75,16 @@ export function normalizeValue(value, stripQuotes = false, parseJSON = false) {
  * @param {Object} options - Options object
  * @returns {Object} Formatted options
  */
-export function formatOptions(method, options) {
+export function formatOptions(method: string, options: any): any {
   if (options === null) {
     options = {};
   }
 
-  const formatted = { ...options };
+  const formatted: any = { ...options };
   for (const [key, value] of Object.entries(formatted)) {
     if (typeof value === 'object' && value !== null) {
       if (Array.isArray(value) && method === 'GET') {
-        formatted[key] = value.join(',');
+        formatted[key] = (value as any[]).join(',');
       } else {
         formatted[key] = JSON.stringify(value);
       }
@@ -97,7 +101,7 @@ export function formatOptions(method, options) {
  * @param {Object} params - Request parameters
  * @returns {string} Formatted error message
  */
-export function formatError(path, error, params = null) {
+export function formatError(path: string | any[], error: Error, params: any = null): string {
   let paramRender = '';
   if (params) {
     paramRender = JSON.stringify(params, null, 2);

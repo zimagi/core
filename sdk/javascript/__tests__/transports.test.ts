@@ -3,33 +3,23 @@
  */
 
 import { jest } from '@jest/globals';
-import { BaseTransport } from '../src/transports/base.js';
-import { CommandHTTPTransport } from '../src/transports/command.js';
-import { DataHTTPTransport } from '../src/transports/data.js';
-import { ClientError, ConnectionError, ResponseError } from '../src/exceptions.js';
+import { BaseTransport } from '../src/transports/base';
+import { CommandHTTPTransport } from '../src/transports/command';
+import { DataHTTPTransport } from '../src/transports/data';
+import { ClientError, ConnectionError, ResponseError } from '../src/exceptions';
 
 // Mock client for testing
-const mockClient = {
+const mockClient: any = {
   auth: {
-    apply: (headers) => {
+    apply: (headers: any) => {
       headers['Authorization'] = 'Token testuser testtoken';
       return headers;
     },
   },
   cipher: {
-    encrypt: (text) => `encrypted_${text}`,
-    decrypt: (text) => text.replace('encrypted_', ''),
+    encrypt: (text: string) => `encrypted_${text}`,
+    decrypt: (text: string) => text.replace('encrypted_', ''),
   },
-};
-
-// Mock response for testing
-const mockResponse = {
-  status: 200,
-  statusText: 'OK',
-  headers: {
-    get: (name) => (name === 'content-type' ? 'application/json' : null),
-  },
-  text: () => Promise.resolve('{"test": "value"}'),
 };
 
 describe('BaseTransport', () => {
@@ -43,17 +33,17 @@ describe('BaseTransport', () => {
       responseCallback: mockFn,
     });
 
-    expect(transport.client).toBe(mockClient);
-    expect(transport.verifyCert).toBe(true);
-    expect(transport.optionsCallback).toBeDefined();
-    expect(transport.requestCallback).toBeDefined();
-    expect(transport.responseCallback).toBeDefined();
+    expect((transport as any).client).toBe(mockClient);
+    expect((transport as any).verifyCert).toBe(true);
+    expect((transport as any).optionsCallback).toBeDefined();
+    expect((transport as any).requestCallback).toBeDefined();
+    expect((transport as any).responseCallback).toBeDefined();
   });
 
-  test('should throw error for unimplemented handleRequest', async () => {
+  test('should throw error for unimplemented handleRequest', () => {
     const transport = new BaseTransport();
-    await expect(
-      transport.handleRequest('GET', 'http://localhost', '/', {}, {}, [])
+    expect(
+      (transport as any).handleRequest('GET', 'http://localhost', '/', {}, {}, [])
     ).rejects.toThrow('Method handleRequest(...) must be overridden in all subclasses');
   });
 
@@ -61,19 +51,20 @@ describe('BaseTransport', () => {
     const transport = new BaseTransport();
 
     class MockCodec {
+      mediaTypes: string[];
       constructor() {
         this.mediaTypes = ['application/json'];
       }
     }
 
     expect(() => {
-      transport._getDecoder('text/html', [new MockCodec()]);
+      (transport as any)._getDecoder('text/html', [new MockCodec()]);
     }).toThrow(ClientError);
   });
 
   test('_sleep should return a promise', () => {
     const transport = new BaseTransport();
-    const promise = transport._sleep(1);
+    const promise = (transport as any)._sleep(1);
     expect(promise).toBeInstanceOf(Promise);
   });
 });
@@ -85,7 +76,7 @@ describe('CommandHTTPTransport', () => {
       messageCallback: callback,
     });
 
-    expect(transport._messageCallback).toBe(callback);
+    expect((transport as any)._messageCallback).toBe(callback);
   });
 });
 

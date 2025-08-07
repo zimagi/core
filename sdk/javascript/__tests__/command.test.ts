@@ -2,8 +2,8 @@
  * Tests for command response functionality
  */
 
-import { CommandResponse } from '../src/command/response.js';
-import { StatusMessage, DataMessage, ErrorMessage } from '../src/messages/index.js';
+import { CommandResponse } from '../src/command/response';
+import { StatusMessage, DataMessage, ErrorMessage } from '../src/messages/index';
 
 describe('CommandResponse', () => {
   test('should initialize with default values', () => {
@@ -49,7 +49,7 @@ describe('CommandResponse', () => {
 
     expect(response.messages).toEqual([message]);
     expect(response.errors).toEqual([message]);
-    expect(response.error).toBe(true);
+    expect(response.error()).toBe(true);
   });
 
   test('should get named data', () => {
@@ -83,8 +83,8 @@ describe('CommandResponse', () => {
 
     response.add([userMessage, logMessage]);
 
-    expect(response.activeUser).toEqual({ username: 'testuser' });
-    expect(response.logKey).toBe('test-log-key');
+    expect((response as any).activeUser).toEqual({ username: 'testuser' });
+    expect((response as any).logKey).toBe('test-log-key');
   });
 
   test('should generate error message', () => {

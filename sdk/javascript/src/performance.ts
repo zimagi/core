@@ -6,6 +6,25 @@
  * Performance metrics collector
  */
 export class PerformanceMonitor {
+  metrics: Map<
+    string,
+    Array<{
+      operation: string;
+      duration: number;
+      startTime: Date;
+      endTime: Date;
+      durationFormatted: string;
+    }>
+  >;
+  timings: Map<
+    string,
+    {
+      operation: string;
+      startTime: number;
+      startTimeStamp: Date;
+    }
+  >;
+
   /**
    * Create a new performance monitor
    */
@@ -19,7 +38,7 @@ export class PerformanceMonitor {
    * @param {string} operation - Operation name
    * @returns {string} Timing ID
    */
-  startTiming(operation) {
+  startTiming(operation: string): string {
     const timingId = `${operation}_${Date.now()}_${Math.random()}`;
     this.timings.set(timingId, {
       operation: operation,
@@ -34,7 +53,13 @@ export class PerformanceMonitor {
    * @param {string} timingId - Timing ID
    * @returns {Object} Timing result
    */
-  endTiming(timingId) {
+  endTiming(timingId: string): {
+    operation: string;
+    duration: number;
+    startTime: Date;
+    endTime: Date;
+    durationFormatted: string;
+  } {
     const timing = this.timings.get(timingId);
     if (!timing) {
       throw new Error(`Timing ID ${timingId} not found`);
@@ -57,7 +82,7 @@ export class PerformanceMonitor {
     if (!this.metrics.has(timing.operation)) {
       this.metrics.set(timing.operation, []);
     }
-    this.metrics.get(timing.operation).push(result);
+    this.metrics.get(timing.operation)!.push(result);
 
     return result;
   }
@@ -67,7 +92,13 @@ export class PerformanceMonitor {
    * @param {string} operation - Operation name
    * @returns {Array} Metrics array
    */
-  getMetrics(operation) {
+  getMetrics(operation: string): Array<{
+    operation: string;
+    duration: number;
+    startTime: Date;
+    endTime: Date;
+    durationFormatted: string;
+  }> {
     return this.metrics.get(operation) || [];
   }
 
@@ -76,7 +107,7 @@ export class PerformanceMonitor {
    * @param {string} operation - Operation name
    * @returns {number} Average duration in milliseconds
    */
-  getAverageDuration(operation) {
+  getAverageDuration(operation: string): number {
     const metrics = this.getMetrics(operation);
     if (metrics.length === 0) return 0;
 
@@ -89,7 +120,16 @@ export class PerformanceMonitor {
    * @param {string} operation - Operation name
    * @returns {Object} Statistics object
    */
-  getStatistics(operation) {
+  getStatistics(operation: string): {
+    operation: string;
+    count: number;
+    min: number;
+    max: number;
+    average: number;
+    minFormatted: string;
+    maxFormatted: string;
+    averageFormatted: string;
+  } | null {
     const metrics = this.getMetrics(operation);
     if (metrics.length === 0) return null;
 
@@ -113,7 +153,7 @@ export class PerformanceMonitor {
   /**
    * Clear all metrics
    */
-  clear() {
+  clear(): void {
     this.metrics.clear();
     this.timings.clear();
   }
@@ -122,8 +162,8 @@ export class PerformanceMonitor {
    * Get all statistics
    * @returns {Object} All statistics
    */
-  getAllStatistics() {
-    const stats = {};
+  getAllStatistics(): { [key: string]: any } {
+    const stats: { [key: string]: any } = {};
     for (const operation of this.metrics.keys()) {
       stats[operation] = this.getStatistics(operation);
     }

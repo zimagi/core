@@ -2,20 +2,23 @@
  * Data client for the Zimagi JavaScript SDK
  */
 
-import { BaseAPIClient } from './base.js';
-import { DataHTTPTransport } from '../transports/data.js';
-import { OpenAPIJSONCodec, CSVCodec, JSONCodec } from '../codecs/index.js';
-import { ResponseError } from '../exceptions.js';
+import { BaseAPIClient } from './base';
+import { DataHTTPTransport } from '../transports/data';
+import { OpenAPIJSONCodec, CSVCodec, JSONCodec } from '../codecs/index';
+import { ResponseError } from '../exceptions';
 
 /**
  * Data client class
  */
 export class DataClient extends BaseAPIClient {
+  schema: any;
+  _dataInfo: any;
+
   /**
    * Create a new data client
    * @param {Object} options - Client options
    */
-  constructor(options = {}) {
+  constructor(options: any = {}) {
     super({
       port: options.port || 5323,
       verifyCert: options.verifyCert !== undefined ? options.verifyCert : false,
@@ -41,7 +44,7 @@ export class DataClient extends BaseAPIClient {
    * Get API paths
    * @returns {Object} API paths
    */
-  getPaths() {
+  getPaths(): any {
     return this.schema.paths;
   }
 
@@ -50,7 +53,7 @@ export class DataClient extends BaseAPIClient {
    * @param {string} path - Path to get
    * @returns {*} Path definition
    */
-  getPath(path) {
+  getPath(path: string): any {
     const normalizedPath = `/${path.replace(/^\/+|\/+$/g, '')}/`;
     return this.getPaths()[normalizedPath];
   }
@@ -60,7 +63,7 @@ export class DataClient extends BaseAPIClient {
    * @param {string} dataType - Data type
    * @returns {string} ID field name
    */
-  getIdField(dataType) {
+  getIdField(dataType: string): string {
     return this._dataInfo[dataType]?.id || null;
   }
 
@@ -69,7 +72,7 @@ export class DataClient extends BaseAPIClient {
    * @param {string} dataType - Data type
    * @returns {string} Key field name
    */
-  getKeyField(dataType) {
+  getKeyField(dataType: string): string {
     return this._dataInfo[dataType]?.key || null;
   }
 
@@ -78,7 +81,7 @@ export class DataClient extends BaseAPIClient {
    * @param {string} dataType - Data type
    * @returns {Array} System fields
    */
-  getSystemFields(dataType) {
+  getSystemFields(dataType: string): string[] {
     return this._dataInfo[dataType]?.system || [];
   }
 
@@ -87,7 +90,7 @@ export class DataClient extends BaseAPIClient {
    * @param {string} dataType - Data type
    * @returns {Array} Unique fields
    */
-  getUniqueFields(dataType) {
+  getUniqueFields(dataType: string): string[] {
     return this._dataInfo[dataType]?.unique || [];
   }
 
@@ -96,7 +99,7 @@ export class DataClient extends BaseAPIClient {
    * @param {string} dataType - Data type
    * @returns {Array} Dynamic fields
    */
-  getDynamicFields(dataType) {
+  getDynamicFields(dataType: string): string[] {
     return this._dataInfo[dataType]?.dynamic || [];
   }
 
@@ -105,7 +108,7 @@ export class DataClient extends BaseAPIClient {
    * @param {string} dataType - Data type
    * @returns {Array} Atomic fields
    */
-  getAtomicFields(dataType) {
+  getAtomicFields(dataType: string): string[] {
     return this._dataInfo[dataType]?.atomic || [];
   }
 
@@ -114,7 +117,7 @@ export class DataClient extends BaseAPIClient {
    * @param {string} dataType - Data type
    * @returns {Object} Scope fields
    */
-  getScopeFields(dataType) {
+  getScopeFields(dataType: string): any {
     return this._dataInfo[dataType]?.scope || {};
   }
 
@@ -123,7 +126,7 @@ export class DataClient extends BaseAPIClient {
    * @param {string} dataType - Data type
    * @returns {Object} Relation fields
    */
-  getRelationFields(dataType) {
+  getRelationFields(dataType: string): any {
     return this._dataInfo[dataType]?.relations || {};
   }
 
@@ -132,7 +135,7 @@ export class DataClient extends BaseAPIClient {
    * @param {string} dataType - Data type
    * @returns {Object} Reverse fields
    */
-  getReverseFields(dataType) {
+  getReverseFields(dataType: string): any {
     return this._dataInfo[dataType]?.reverse || {};
   }
 
@@ -143,9 +146,9 @@ export class DataClient extends BaseAPIClient {
    * @param {Array} parents - Parent scope fields
    * @returns {Object} Scope filters
    */
-  setScope(dataType, values, parents = null) {
+  setScope(dataType: string, values: any, parents: string[] | null = null): any {
     const scopeFields = this.getScopeFields(dataType);
-    const filters = {};
+    const filters: any = {};
 
     if (parents === null) {
       parents = [];
@@ -170,7 +173,7 @@ export class DataClient extends BaseAPIClient {
    * @param {boolean} full - Whether to get full schema
    * @returns {*} Schema data
    */
-  getSchema(full = false) {
+  getSchema(full: boolean = false): any {
     if (full || !this._schema) {
       const processor = () => {
         const schema = this._request('GET', this.baseURL);
@@ -199,7 +202,7 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  _execute(method, path, options = null) {
+  _execute(method: string, path: string, options: any = null): any {
     const url = `${this.baseURL.replace(/\/+$/, '')}/${path.replace(/^\/+|\/+$/g, '')}`.replace(
       /\/+$/,
       ''
@@ -228,7 +231,7 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  _executeTypeOperation(method, dataType, op, options) {
+  _executeTypeOperation(method: string, dataType: string, op: string, options: any): any {
     const path = op === null ? dataType : `${dataType}/${op}`;
     return this._execute(method, path, options);
   }
@@ -242,7 +245,13 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  _executeKeyOperation(method, dataType, op, key, options) {
+  _executeKeyOperation(
+    method: string,
+    dataType: string,
+    op: string,
+    key: string,
+    options: any
+  ): any {
     const path = op === null ? `${dataType}/${key}` : `${dataType}/${key}/${op}`;
     return this._execute(method, path, options);
   }
@@ -256,7 +265,13 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  _executeFieldOperation(method, dataType, op, fieldName, options) {
+  _executeFieldOperation(
+    method: string,
+    dataType: string,
+    op: string,
+    fieldName: string,
+    options: any
+  ): any {
     if (!fieldName) {
       fieldName = this.getIdField(dataType);
     }
@@ -271,7 +286,7 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} fields - Record fields
    * @returns {*} Response data
    */
-  create(dataType, fields = {}) {
+  create(dataType: string, fields: any = {}): any {
     return this._executeTypeOperation('POST', dataType, null, fields);
   }
 
@@ -282,7 +297,7 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} fields - Record fields
    * @returns {*} Response data
    */
-  update(dataType, id, fields = {}) {
+  update(dataType: string, id: string, fields: any = {}): any {
     return this._executeKeyOperation('PUT', dataType, null, id, fields);
   }
 
@@ -292,7 +307,7 @@ export class DataClient extends BaseAPIClient {
    * @param {string} id - Record ID
    * @returns {*} Response data
    */
-  delete(dataType, id) {
+  delete(dataType: string, id: string): any {
     return this._executeKeyOperation('DELETE', dataType, null, id, {});
   }
 
@@ -303,7 +318,7 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  get(dataType, id, options = {}) {
+  get(dataType: string, id: string, options: any = {}): any {
     return this._executeKeyOperation('GET', dataType, null, id, options);
   }
 
@@ -314,7 +329,7 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  getByKey(dataType, key, options = {}) {
+  getByKey(dataType: string, key: string, options: any = {}): any {
     const results = this._executeTypeOperation('GET', dataType, null, {
       [this.getKeyField(dataType)]: key,
       ...this.setScope(dataType, options),
@@ -337,7 +352,7 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  list(dataType, options = {}) {
+  list(dataType: string, options: any = {}): any {
     return this._executeTypeOperation('GET', dataType, null, options);
   }
 
@@ -347,7 +362,7 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  json(dataType, options = {}) {
+  json(dataType: string, options: any = {}): any {
     return this._executeTypeOperation('GET', dataType, 'json', options);
   }
 
@@ -357,7 +372,7 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  csv(dataType, options = {}) {
+  csv(dataType: string, options: any = {}): any {
     return this._executeTypeOperation('GET', dataType, 'csv', options);
   }
 
@@ -368,7 +383,7 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  values(dataType, fieldName = null, options = {}) {
+  values(dataType: string, fieldName: string | null = null, options: any = {}): any {
     return this._executeFieldOperation('GET', dataType, 'values', fieldName, options);
   }
 
@@ -379,7 +394,7 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} options - Request options
    * @returns {number} Record count
    */
-  count(dataType, fieldName = null, options = {}) {
+  count(dataType: string, fieldName: string | null = null, options: any = {}): number {
     const result = this._executeFieldOperation('GET', dataType, 'count', fieldName, options);
     return result.count || 0;
   }
@@ -389,7 +404,7 @@ export class DataClient extends BaseAPIClient {
    * @param {string} datasetName - Dataset name
    * @returns {*} Response data
    */
-  download(datasetName) {
+  download(datasetName: string): any {
     return this._execute('GET', `download/${datasetName}`);
   }
 
@@ -399,7 +414,7 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} options - Request options
    * @returns {Object} Formatted options
    */
-  _formatOptions(method, options) {
+  _formatOptions(method: string, options: any): any {
     if (options === null) {
       options = {};
     }
@@ -407,7 +422,7 @@ export class DataClient extends BaseAPIClient {
     for (const [key, value] of Object.entries(options)) {
       if (typeof value === 'object' && value !== null) {
         if (Array.isArray(value) && method === 'GET') {
-          options[key] = value.join(',');
+          options[key] = (value as any[]).join(',');
         } else {
           options[key] = JSON.stringify(value);
         }

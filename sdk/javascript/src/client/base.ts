@@ -2,12 +2,12 @@
  * Base API client for the Zimagi JavaScript SDK
  */
 
-import { getServiceURL } from '../utility.js';
-import { Cipher } from '../encryption.js';
-import { ClientTokenAuthentication } from '../auth.js';
-import { ClientError } from '../exceptions.js';
-import { defaultCache } from '../cache.js';
-import { defaultMonitor } from '../performance.js';
+import { getServiceURL } from '../utility';
+import { Cipher } from '../encryption';
+import { ClientTokenAuthentication } from '../auth';
+import { ClientError } from '../exceptions';
+import { defaultCache } from '../cache';
+import { defaultMonitor } from '../performance';
 
 /**
  * Base API client class
@@ -17,7 +17,24 @@ export class BaseAPIClient {
    * Create a new API client
    * @param {Object} options - Client options
    */
-  constructor(options = {}) {
+  host: string;
+  port: number;
+  user: string;
+  token: string;
+  encryptionKey: string | null;
+  protocol: string;
+  verifyCert: boolean;
+  baseURL: string;
+  cipher: any;
+  transport: any;
+  decoders: any[];
+  cache: any;
+  performanceMonitor: any;
+  auth: ClientTokenAuthentication;
+  _status: any;
+  _schema: any;
+
+  constructor(options: any = {}) {
     this.host = options.host || 'localhost';
     this.port = options.port;
     this.user = options.user || 'admin';
@@ -50,7 +67,7 @@ export class BaseAPIClient {
    * Get service URL
    * @returns {string} Service URL
    */
-  _getServiceURL() {
+  _getServiceURL(): string {
     return getServiceURL(this.protocol, this.host, this.port);
   }
 
@@ -62,7 +79,12 @@ export class BaseAPIClient {
    * @param {Function} validateCallback - Validation callback
    * @returns {*} Response data
    */
-  _request(method, url, params = null, validateCallback = null) {
+  _request(
+    method: string,
+    url: string,
+    params: any = null,
+    validateCallback: Function | null = null
+  ): any {
     if (!this.transport) {
       throw new ClientError('Zimagi API client transport not defined');
     }
@@ -84,10 +106,10 @@ export class BaseAPIClient {
 
       this.performanceMonitor.endTiming(timingId);
       return result;
-    } catch (error) {
+    } catch (error: any) {
       // Reduce logging in test environment
       if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-        console.debug(`${type} API error: ${this._formatError(path, error, params)}`);
+        console.debug(`${'type'} API error: ${this._formatError('path', error, params)}`);
       }
       this.performanceMonitor.endTiming(timingId);
       throw error;
@@ -98,7 +120,7 @@ export class BaseAPIClient {
    * Get service status
    * @returns {*} Status data
    */
-  getStatus() {
+  getStatus(): any {
     // Reduce logging in test environment
     if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
       console.debug(`[Zimagi SDK] Getting status`);
@@ -128,7 +150,7 @@ export class BaseAPIClient {
    * Get API schema
    * @returns {*} Schema data
    */
-  getSchema() {
+  getSchema(): any {
     // Reduce logging in test environment
     if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
       console.debug(`[Zimagi SDK] Getting schema`);
@@ -163,14 +185,14 @@ export class BaseAPIClient {
    * @param {Object} params - Request parameters
    * @returns {*} Processed result
    */
-  _wrapAPICall(type, path, processor, params = null) {
+  _wrapAPICall(type: string, path: string, processor: Function, params: any = null): any {
     try {
       // Reduce logging in test environment
       if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
         console.debug(`[Zimagi SDK] Wrapping API call: ${type} ${path}`);
       }
       return processor();
-    } catch (error) {
+    } catch (error: any) {
       // Reduce logging in test environment
       if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
         console.debug(`${type} API error: ${this._formatError(path, error, params)}`);
@@ -186,7 +208,7 @@ export class BaseAPIClient {
    * @param {Object} params - Request parameters
    * @returns {string} Formatted error message
    */
-  _formatError(path, error, params = null) {
+  _formatError(path: string, error: Error, params: any = null): string {
     let paramRender = '';
     if (params) {
       paramRender = JSON.stringify(params, null, 2);
@@ -202,7 +224,7 @@ export class BaseAPIClient {
    * @param {number} cacheLifetime - Cache lifetime in milliseconds
    * @returns {*} Cached data
    */
-  _cacheData(cacheName, generatorFunction, cacheLifetime = 3600000) {
+  _cacheData(cacheName: string, generatorFunction: Function, cacheLifetime: number = 3600000): any {
     const cacheKey = `zimagi_${cacheName}`;
     const cachedData = this.cache.get(cacheKey);
 
@@ -234,14 +256,14 @@ export class BaseAPIClient {
    * Get performance statistics
    * @returns {Object} Performance statistics
    */
-  getPerformanceStats() {
+  getPerformanceStats(): any {
     return this.performanceMonitor.getAllStatistics();
   }
 
   /**
    * Clear performance metrics
    */
-  clearPerformanceMetrics() {
+  clearPerformanceMetrics(): void {
     this.performanceMonitor.clear();
   }
 }

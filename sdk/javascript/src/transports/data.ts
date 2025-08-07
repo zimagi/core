@@ -2,8 +2,8 @@
  * Data HTTP transport for the Zimagi JavaScript SDK
  */
 
-import { BaseTransport } from './base.js';
-import { ResponseError } from '../exceptions.js';
+import { BaseTransport } from './base';
+import { ResponseError } from '../exceptions';
 
 /**
  * Data HTTP transport implementation
@@ -19,7 +19,14 @@ export class DataHTTPTransport extends BaseTransport {
    * @param {Array} decoders - Array of codec decoders
    * @returns {*} Response data
    */
-  async handleRequest(method, url, path, headers, params, decoders) {
+  async handleRequest(
+    method: string,
+    url: string,
+    path: string,
+    headers: any,
+    params: any,
+    decoders: any[]
+  ): Promise<any> {
     // Reduce logging in test environment
     if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
       console.debug(`[Zimagi SDK] DataHTTPTransport.handleRequest: ${method} ${url}`);
@@ -78,7 +85,14 @@ export class DataHTTPTransport extends BaseTransport {
    * @param {boolean} encrypted - Whether to encrypt
    * @returns {*} Response data
    */
-  async updateData(method, url, headers, params, decoders, encrypted = true) {
+  async updateData(
+    method: string,
+    url: string,
+    headers: any,
+    params: any,
+    decoders: any[],
+    encrypted: boolean = true
+  ): Promise<any> {
     // Reduce logging in test environment
     if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
       console.debug(`[Zimagi SDK] DataHTTPTransport.updateData: ${method} ${url}`);

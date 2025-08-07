@@ -7,7 +7,7 @@
  * @param {Array} item - Key-value pair
  * @returns {Array} Sort key
  */
-function _keySorter(item) {
+function _keySorter(item: [string, any]): [number, any] {
   const [key, value] = item;
   if (value instanceof Action) {
     const actionPriority = { get: 0, post: 1 }[value.action] || 2;
@@ -20,12 +20,18 @@ function _keySorter(item) {
  * Mixin for sorted items
  */
 class SortedItemsMixin {
+  _items: Map<string, any>;
+
+  constructor() {
+    this._items = new Map();
+  }
+
   /**
    * Get sorted iterator
    * @returns {Iterator} Sorted iterator
    */
-  *[Symbol.iterator]() {
-    const items = [...this.entries()].sort((a, b) => {
+  *[Symbol.iterator](): Iterator<string> {
+    const items = [...this._items.entries()].sort((a, b) => {
       const [sortA, sortB] = [_keySorter(a), _keySorter(b)];
       if (sortA[0] !== sortB[0]) {
         return sortA[0] - sortB[0];
@@ -53,9 +59,9 @@ class CommandIndexMixin extends SortedItemsMixin {
    * Get data items (non-commands)
    * @returns {Object} Data items
    */
-  get data() {
-    const result = {};
-    for (const [key, value] of this.entries()) {
+  get data(): { [key: string]: any } {
+    const result: { [key: string]: any } = {};
+    for (const [key, value] of this._items.entries()) {
       if (!(value instanceof Router || value instanceof Action)) {
         result[key] = value;
       }
@@ -67,9 +73,9 @@ class CommandIndexMixin extends SortedItemsMixin {
    * Get command items
    * @returns {Object} Command items
    */
-  get commands() {
-    const result = {};
-    for (const [key, value] of this.entries()) {
+  get commands(): { [key: string]: any } {
+    const result: { [key: string]: any } = {};
+    for (const [key, value] of this._items.entries()) {
       if (value instanceof Router || value instanceof Action) {
         result[key] = value;
       }
@@ -81,9 +87,9 @@ class CommandIndexMixin extends SortedItemsMixin {
    * Get router items
    * @returns {Object} Router items
    */
-  get routers() {
-    const result = {};
-    for (const [key, value] of this.entries()) {
+  get routers(): { [key: string]: any } {
+    const result: { [key: string]: any } = {};
+    for (const [key, value] of this._items.entries()) {
       if (value instanceof Router) {
         result[key] = value;
       }
@@ -95,9 +101,9 @@ class CommandIndexMixin extends SortedItemsMixin {
    * Get action items
    * @returns {Object} Action items
    */
-  get actions() {
-    const result = {};
-    for (const [key, value] of this.entries()) {
+  get actions(): { [key: string]: any } {
+    const result: { [key: string]: any } = {};
+    for (const [key, value] of this._items.entries()) {
       if (value instanceof Action) {
         result[key] = value;
       }
@@ -110,13 +116,25 @@ class CommandIndexMixin extends SortedItemsMixin {
  * Root schema class
  */
 export class Root extends CommandIndexMixin {
+  url: string;
+  title: string;
+  description: string;
+  mediaType: string;
+
   /**
    * Create a new root
    * @param {Object} options - Root options
    */
-  constructor(options = {}) {
+  constructor(
+    options: {
+      url?: string;
+      title?: string;
+      description?: string;
+      mediaType?: string;
+      commands?: { [key: string]: any };
+    } = {}
+  ) {
     super();
-    this._items = new Map();
     this.url = options.url || '';
     this.title = options.title || '';
     this.description = options.description || '';
@@ -135,7 +153,7 @@ export class Root extends CommandIndexMixin {
    * @param {*} value - Value
    * @returns {Root} This instance
    */
-  set(key, value) {
+  set(key: string, value: any): Root {
     this._items.set(key, value);
     return this;
   }
@@ -145,7 +163,7 @@ export class Root extends CommandIndexMixin {
    * @param {string} key - Key
    * @returns {*} Value
    */
-  get(key) {
+  get(key: string): any {
     return this._items.get(key);
   }
 
@@ -153,7 +171,7 @@ export class Root extends CommandIndexMixin {
    * Get all entries
    * @returns {Array} Entries
    */
-  entries() {
+  entries(): [string, any][] {
     return [...this._items.entries()];
   }
 }
@@ -162,13 +180,29 @@ export class Root extends CommandIndexMixin {
  * Router schema class
  */
 export class Router extends CommandIndexMixin {
+  name: string;
+  overview: string;
+  description: string;
+  epilog: string;
+  priority: number;
+  resource: string;
+
   /**
    * Create a new router
    * @param {Object} options - Router options
    */
-  constructor(options = {}) {
+  constructor(
+    options: {
+      name?: string;
+      overview?: string;
+      description?: string;
+      epilog?: string;
+      priority?: number;
+      resource?: string;
+      commands?: { [key: string]: any };
+    } = {}
+  ) {
     super();
-    this._items = new Map();
     this.name = options.name || '';
     this.overview = options.overview || '';
     this.description = options.description || '';
@@ -189,7 +223,7 @@ export class Router extends CommandIndexMixin {
    * @param {*} value - Value
    * @returns {Router} This instance
    */
-  set(key, value) {
+  set(key: string, value: any): Router {
     this._items.set(key, value);
     return this;
   }
@@ -199,7 +233,7 @@ export class Router extends CommandIndexMixin {
    * @param {string} key - Key
    * @returns {*} Value
    */
-  get(key) {
+  get(key: string): any {
     return this._items.get(key);
   }
 
@@ -207,7 +241,7 @@ export class Router extends CommandIndexMixin {
    * Get all entries
    * @returns {Array} Entries
    */
-  entries() {
+  entries(): [string, any][] {
     return [...this._items.entries()];
   }
 }
@@ -216,11 +250,35 @@ export class Router extends CommandIndexMixin {
  * Action schema class
  */
 export class Action {
+  url: string;
+  name: string;
+  overview: string;
+  description: string;
+  epilog: string;
+  priority: number;
+  resource: string;
+  confirm: boolean;
+  fields: any[];
+  action: string;
+
   /**
    * Create a new action
    * @param {Object} options - Action options
    */
-  constructor(options = {}) {
+  constructor(
+    options: {
+      url?: string;
+      name?: string;
+      overview?: string;
+      description?: string;
+      epilog?: string;
+      priority?: number;
+      resource?: string;
+      confirm?: boolean;
+      fields?: any[];
+      action?: string;
+    } = {}
+  ) {
     this.url = options.url || '';
     this.name = options.name || '';
     this.overview = options.overview || '';
@@ -230,6 +288,7 @@ export class Action {
     this.resource = options.resource || '';
     this.confirm = !!options.confirm;
     this.fields = Array.isArray(options.fields) ? options.fields : [];
+    this.action = options.action || '';
   }
 }
 
@@ -237,11 +296,39 @@ export class Action {
  * Field schema class
  */
 export class Field {
+  method: string;
+  name: string;
+  type: string;
+  argument: string;
+  config: string;
+  description: string;
+  valueLabel: string;
+  required: boolean;
+  system: boolean;
+  default: any;
+  choices: any[];
+  tags: string[];
+
   /**
    * Create a new field
    * @param {Object} options - Field options
    */
-  constructor(options = {}) {
+  constructor(
+    options: {
+      method?: string;
+      name?: string;
+      type?: string;
+      argument?: string;
+      config?: string;
+      description?: string;
+      valueLabel?: string;
+      required?: boolean;
+      system?: boolean;
+      default?: any;
+      choices?: any[];
+      tags?: string[];
+    } = {}
+  ) {
     this.method = options.method || '';
     this.name = options.name || '';
     this.type = options.type || '';
@@ -261,13 +348,19 @@ export class Field {
  * Error schema class
  */
 export class Error extends CommandIndexMixin {
+  title: string;
+
   /**
    * Create a new error
    * @param {Object} options - Error options
    */
-  constructor(options = {}) {
+  constructor(
+    options: {
+      title?: string;
+      content?: { [key: string]: any };
+    } = {}
+  ) {
     super();
-    this._items = new Map();
     this.title = options.title || '';
 
     // Initialize with content
@@ -283,7 +376,7 @@ export class Error extends CommandIndexMixin {
    * @param {*} value - Value
    * @returns {Error} This instance
    */
-  set(key, value) {
+  set(key: string, value: any): Error {
     this._items.set(key, value);
     return this;
   }
@@ -293,7 +386,7 @@ export class Error extends CommandIndexMixin {
    * @param {string} key - Key
    * @returns {*} Value
    */
-  get(key) {
+  get(key: string): any {
     return this._items.get(key);
   }
 
@@ -301,7 +394,7 @@ export class Error extends CommandIndexMixin {
    * Get all entries
    * @returns {Array} Entries
    */
-  entries() {
+  entries(): [string, any][] {
     return [...this._items.entries()];
   }
 
@@ -309,9 +402,9 @@ export class Error extends CommandIndexMixin {
    * Get error messages
    * @returns {Array} Error messages
    */
-  getMessages() {
-    const messages = [];
-    for (const [, value] of this.entries()) {
+  getMessages(): string[] {
+    const messages: string[] = [];
+    for (const [, value] of this._items.entries()) {
       if (Array.isArray(value)) {
         messages.push(...value.filter((item) => typeof item === 'string'));
       }
@@ -324,11 +417,13 @@ export class Error extends CommandIndexMixin {
  * Object schema class
  */
 export class SchemaObject {
+  private _items: Map<string, any>;
+
   /**
    * Create a new object
    * @param {Object} items - Object items
    */
-  constructor(items = {}) {
+  constructor(items: { [key: string]: any } = {}) {
     this._items = new Map();
     for (const [key, value] of Object.entries(items)) {
       this._items.set(key, value);
@@ -341,7 +436,7 @@ export class SchemaObject {
    * @param {*} value - Value
    * @returns {SchemaObject} This instance
    */
-  set(key, value) {
+  set(key: string, value: any): SchemaObject {
     this._items.set(key, value);
     return this;
   }
@@ -351,7 +446,7 @@ export class SchemaObject {
    * @param {string} key - Key
    * @returns {*} Value
    */
-  get(key) {
+  get(key: string): any {
     return this._items.get(key);
   }
 
@@ -359,7 +454,7 @@ export class SchemaObject {
    * Get all entries
    * @returns {Array} Entries
    */
-  entries() {
+  entries(): [string, any][] {
     return [...this._items.entries()];
   }
 }
@@ -372,7 +467,7 @@ export class SchemaArray extends Array {
    * Create a new array
    * @param {Array} items - Array items
    */
-  constructor(items = []) {
+  constructor(items: any[] = []) {
     // Call the parent constructor with the items
     super(...items);
 

@@ -2,17 +2,32 @@
  * Message system for the Zimagi JavaScript SDK
  */
 
-import { normalizeValue } from '../utility.js';
+import { normalizeValue } from '../utility';
 
 /**
  * Base message class
  */
 export class Message {
+  type: string;
+  name: string | null;
+  prefix: string;
+  message: string;
+  silent: boolean;
+  system: boolean;
+
   /**
    * Create a new message
    * @param {Object} options - Message options
    */
-  constructor(options = {}) {
+  constructor(
+    options: {
+      name?: string | null;
+      prefix?: string;
+      message?: string;
+      silent?: boolean;
+      system?: boolean;
+    } = {}
+  ) {
     this.type = this.constructor.name;
     this.name = options.name || null;
     this.prefix = options.prefix || '';
@@ -25,10 +40,10 @@ export class Message {
    * Load message data
    * @param {Object} data - Message data
    */
-  load(data) {
+  load(data: any): void {
     for (const [field, value] of Object.entries(data)) {
       if (field !== 'type') {
-        this[field] = value;
+        (this as any)[field] = value;
       }
     }
   }
@@ -37,7 +52,7 @@ export class Message {
    * Check if message is an error
    * @returns {boolean} Whether message is an error
    */
-  isError() {
+  isError(): boolean {
     return false;
   }
 
@@ -45,8 +60,8 @@ export class Message {
    * Render message data
    * @returns {Object} Rendered message data
    */
-  render() {
-    const data = {
+  render(): any {
+    const data: any = {
       type: this.type,
       message: this.message,
     };
@@ -74,7 +89,7 @@ export class Message {
    * Convert to JSON
    * @returns {string} JSON representation
    */
-  toJSON() {
+  toJSON(): string {
     return JSON.stringify(this.render());
   }
 
@@ -83,7 +98,7 @@ export class Message {
    * @param {Object} options - Formatting options
    * @returns {string} Formatted message
    */
-  format(options = {}) {
+  format(options: any = {}): string {
     return `${this.prefix}${this.message}`;
   }
 
@@ -91,7 +106,7 @@ export class Message {
    * Display message
    * @param {Object} options - Display options
    */
-  display(options = {}) {
+  display(options: any = {}): void {
     if (!this.silent) {
       console.log(this.format());
     }
@@ -103,7 +118,7 @@ export class Message {
    * @param {Object} cipher - Cipher for decryption
    * @returns {Message} Message instance
    */
-  static get(data, cipher = null) {
+  static get(data: any, cipher: any = null): Message {
     let message = data;
     if (cipher) {
       message = cipher.decrypt(data.package, false);
@@ -112,7 +127,7 @@ export class Message {
     const messageData = typeof message === 'string' ? JSON.parse(message) : data.package;
 
     // Map type to class
-    const messageTypes = {
+    const messageTypes: any = {
       StatusMessage: StatusMessage,
       DataMessage: DataMessage,
       InfoMessage: InfoMessage,
@@ -139,8 +154,8 @@ export class StatusMessage extends Message {
    * Create a new status message
    * @param {boolean} success - Success status
    */
-  constructor(success = true) {
-    super({ message: success });
+  constructor(success: boolean = true) {
+    super({ message: success as any });
   }
 
   /**
@@ -148,7 +163,7 @@ export class StatusMessage extends Message {
    * @param {Object} options - Formatting options
    * @returns {string} Formatted message
    */
-  format(options = {}) {
+  format(options: any = {}): string {
     return `Success: ${this.message}`;
   }
 
@@ -156,7 +171,7 @@ export class StatusMessage extends Message {
    * Display message
    * @param {Object} options - Display options
    */
-  display(options = {}) {
+  display(options: any = {}): void {
     // No display for status messages
   }
 }
@@ -165,11 +180,22 @@ export class StatusMessage extends Message {
  * Data message class
  */
 export class DataMessage extends Message {
+  data: any;
+
   /**
    * Create a new data message
    * @param {Object} options - Message options
    */
-  constructor(options = {}) {
+  constructor(
+    options: {
+      name?: string | null;
+      prefix?: string;
+      message?: string;
+      silent?: boolean;
+      system?: boolean;
+      data?: any;
+    } = {}
+  ) {
     super(options);
     this.data = options.data;
   }
@@ -178,7 +204,7 @@ export class DataMessage extends Message {
    * Load message data
    * @param {Object} data - Message data
    */
-  load(data) {
+  load(data: any): void {
     super.load(data);
     // Normalize the data value
     this.data = normalizeValue(data.data, true, true);
@@ -188,8 +214,8 @@ export class DataMessage extends Message {
    * Render message data
    * @returns {Object} Rendered message data
    */
-  render() {
-    const result = super.render();
+  render(): any {
+    const result: any = super.render();
     result.data = this.data;
     return result;
   }
@@ -199,7 +225,7 @@ export class DataMessage extends Message {
    * @param {Object} options - Formatting options
    * @returns {string} Formatted message
    */
-  format(options = {}) {
+  format(options: any = {}): string {
     let data = this.data;
 
     if (typeof this.data === 'object' && this.data !== null) {
@@ -239,7 +265,7 @@ export class WarningMessage extends Message {
    * Display message
    * @param {Object} options - Display options
    */
-  display(options = {}) {
+  display(options: any = {}): void {
     if (!this.silent) {
       console.warn(this.format());
     }
@@ -250,11 +276,22 @@ export class WarningMessage extends Message {
  * Error message class
  */
 export class ErrorMessage extends Message {
+  traceback: string | string[] | null;
+
   /**
    * Create a new error message
    * @param {Object} options - Message options
    */
-  constructor(options = {}) {
+  constructor(
+    options: {
+      message?: string;
+      name?: string | null;
+      prefix?: string;
+      silent?: boolean;
+      system?: boolean;
+      traceback?: string | string[];
+    } = {}
+  ) {
     super(options);
     this.traceback = options.traceback || null;
   }
@@ -263,7 +300,7 @@ export class ErrorMessage extends Message {
    * Check if message is an error
    * @returns {boolean} Whether message is an error
    */
-  isError() {
+  isError(): boolean {
     return true;
   }
 
@@ -271,8 +308,8 @@ export class ErrorMessage extends Message {
    * Render message data
    * @returns {Object} Rendered message data
    */
-  render() {
-    const result = super.render();
+  render(): any {
+    const result: any = super.render();
     result.traceback = this.traceback;
     return result;
   }
@@ -282,7 +319,7 @@ export class ErrorMessage extends Message {
    * @param {Object} options - Formatting options
    * @returns {string} Formatted message
    */
-  format(options = {}) {
+  format(options: any = {}): string {
     if (this.traceback) {
       const traceback = Array.isArray(this.traceback)
         ? this.traceback.map((item) => item.trim()).join('\n')
@@ -297,7 +334,7 @@ export class ErrorMessage extends Message {
    * Display message
    * @param {Object} options - Display options
    */
-  display(options = {}) {
+  display(options: any = {}): void {
     if (!this.silent && this.message) {
       console.error(this.format());
     }
@@ -308,11 +345,22 @@ export class ErrorMessage extends Message {
  * Table message class
  */
 export class TableMessage extends Message {
+  rowLabels: boolean;
+
   /**
    * Create a new table message
    * @param {Object} options - Message options
    */
-  constructor(options = {}) {
+  constructor(
+    options: {
+      name?: string | null;
+      prefix?: string;
+      message?: string;
+      silent?: boolean;
+      system?: boolean;
+      rowLabels?: boolean;
+    } = {}
+  ) {
     super(options);
     this.rowLabels = !!options.rowLabels;
   }
@@ -321,7 +369,7 @@ export class TableMessage extends Message {
    * Load message data
    * @param {Object} data - Message data
    */
-  load(data) {
+  load(data: any): void {
     super.load(data);
     // Normalize the message value
     this.message = normalizeValue(data.message, true, true);
@@ -331,8 +379,8 @@ export class TableMessage extends Message {
    * Render message data
    * @returns {Object} Rendered message data
    */
-  render() {
-    const result = super.render();
+  render(): any {
+    const result: any = super.render();
     result.rowLabels = this.rowLabels;
     return result;
   }
@@ -342,7 +390,7 @@ export class TableMessage extends Message {
    * @param {Object} options - Formatting options
    * @returns {string} Formatted message
    */
-  format(options = {}) {
+  format(options: any = {}): string {
     // Format data as a table
     return `${this.prefix}${JSON.stringify(this.message, null, 2)}`;
   }
@@ -352,20 +400,33 @@ export class TableMessage extends Message {
  * Image message class
  */
 export class ImageMessage extends Message {
+  data: any;
+  mimetype: string | null;
+
   /**
    * Create a new image message
    * @param {string} location - Image location
    * @param {Object} options - Message options
    */
-  constructor(location, options = {}) {
+  constructor(
+    location: string,
+    options: {
+      name?: string | null;
+      prefix?: string;
+      silent?: boolean;
+      system?: boolean;
+    } = {}
+  ) {
     super({ message: location, ...options, silent: true, system: options.system || false });
+    this.data = null;
+    this.mimetype = null;
   }
 
   /**
    * Load message data
    * @param {Object} data - Message data
    */
-  load(data) {
+  load(data: any): void {
     super.load(data);
     // In a real implementation, this would load and encode image data
     this.data = null;
@@ -376,8 +437,8 @@ export class ImageMessage extends Message {
    * Render message data
    * @returns {Object} Rendered message data
    */
-  render() {
-    const result = super.render();
+  render(): any {
+    const result: any = super.render();
     result.data = this.data;
     result.mimetype = this.mimetype;
     return result;

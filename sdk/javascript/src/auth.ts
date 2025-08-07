@@ -6,13 +6,18 @@
  * Client token authentication handler
  */
 export class ClientTokenAuthentication {
+  client: any;
+  user: string;
+  token: string;
+  encrypted: boolean;
+
   /**
    * Create a new authentication handler
    * @param {string} user - Username
    * @param {string} token - Authentication token
    * @param {Object} client - Client instance
    */
-  constructor(user, token, client = null) {
+  constructor(user: string, token: string, client: any = null) {
     this.client = client;
     this.user = user;
     this.token = token;
@@ -24,7 +29,7 @@ export class ClientTokenAuthentication {
    * @param {Object} headers - Request headers
    * @returns {Object} Updated headers
    */
-  apply(headers) {
+  apply(headers: { [key: string]: string }): { [key: string]: string } {
     if (!this.encrypted && this.client.cipher) {
       this.token = this.client.cipher.encrypt(this.token).toString('utf-8');
       this.encrypted = true;

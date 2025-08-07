@@ -2,20 +2,27 @@
  * Command client for the Zimagi JavaScript SDK
  */
 
-import { BaseAPIClient } from './base.js';
-import { CommandHTTPTransport } from '../transports/command.js';
-import { ZimagiJSONCodec, JSONCodec } from '../codecs/index.js';
-import { ParseError } from '../exceptions.js';
+import { BaseAPIClient } from './base';
+import { CommandHTTPTransport } from '../transports/command';
+import { ZimagiJSONCodec, JSONCodec } from '../codecs/index';
+import { ParseError } from '../exceptions';
 
 /**
  * Command client class
  */
 export class CommandClient extends BaseAPIClient {
+  optionsCallback: Function | null;
+  messageCallback: Function | null;
+  initCommands: boolean;
+  schema: any;
+  commands: any;
+  actions: any;
+
   /**
    * Create a new command client
    * @param {Object} options - Client options
    */
-  constructor(options = {}) {
+  constructor(options: any = {}) {
     super({
       port: options.port || 5123,
       verifyCert: options.verifyCert !== undefined ? options.verifyCert : false,
@@ -49,9 +56,9 @@ export class CommandClient extends BaseAPIClient {
    * @param {Function} messageCallback - New message callback
    * @returns {CommandClient} Cloned client
    */
-  clone(messageCallback) {
+  clone(messageCallback: Function): CommandClient {
     // Create new client with same options but different message callback
-    const cloneOptions = {
+    const cloneOptions: any = {
       host: this.host,
       port: this.port,
       user: this.user,
@@ -70,11 +77,11 @@ export class CommandClient extends BaseAPIClient {
   /**
    * Initialize commands from schema
    */
-  _initCommands() {
+  _initCommands(): void {
     this.commands = {};
     this.actions = {};
 
-    const collectCommands = (commandInfo, parents) => {
+    const collectCommands = (commandInfo: any, parents: string[]) => {
       for (const [commandName, info] of Object.entries(commandInfo)) {
         const apiPath = [...parents, commandName].join('/');
         // In a full implementation, we would check if info is an Action or Router
@@ -92,7 +99,7 @@ export class CommandClient extends BaseAPIClient {
    * @param {string} commandName - Command name
    * @returns {string} Normalized path
    */
-  _normalizePath(commandName) {
+  _normalizePath(commandName: string): string {
     return commandName.replace(/(\s+|\.)/g, '/');
   }
 
@@ -100,7 +107,7 @@ export class CommandClient extends BaseAPIClient {
    * Set message callback
    * @param {Function} messageCallback - Message callback
    */
-  setMessageCallback(messageCallback) {
+  setMessageCallback(messageCallback: Function): void {
     this.messageCallback = messageCallback;
     this.transport = new CommandHTTPTransport({
       client: this,
@@ -116,12 +123,12 @@ export class CommandClient extends BaseAPIClient {
    * @param {Object} options - Command options
    * @returns {*} Command response
    */
-  execute(commandName, options = {}) {
+  execute(commandName: string, options: any = {}): any {
     const commandPath = this._normalizePath(commandName);
     const command = this._lookup(commandPath);
     const commandOptions = this._formatOptions('POST', options);
 
-    const validate = (url, params) => {
+    const validate = (url: string, params: any) => {
       this._validate(command, params);
     };
 
@@ -140,10 +147,10 @@ export class CommandClient extends BaseAPIClient {
    * @param {Object} fields - Module fields
    * @returns {*} Command response
    */
-  extend(remote, reference, provider = null, fields = {}) {
+  extend(remote: string, reference: string, provider: string | null = null, fields: any = {}): any {
     fields.reference = reference;
 
-    const options = {
+    const options: any = {
       remote: remote,
       moduleFields: fields,
     };
@@ -163,7 +170,7 @@ export class CommandClient extends BaseAPIClient {
    * @param {Object} options - Additional options
    * @returns {*} Command response
    */
-  runTask(moduleKey, taskName, config = null, options = {}) {
+  runTask(moduleKey: string, taskName: string, config: any | null = null, options: any = {}): any {
     return this.execute('task', {
       ...options,
       moduleKey: moduleKey,
@@ -181,7 +188,13 @@ export class CommandClient extends BaseAPIClient {
    * @param {Object} options - Additional options
    * @returns {*} Command response
    */
-  runProfile(moduleKey, profileKey, config = null, components = null, options = {}) {
+  runProfile(
+    moduleKey: string,
+    profileKey: string,
+    config: any | null = null,
+    components: any[] | null = null,
+    options: any = {}
+  ): any {
     return this.execute('run', {
       ...options,
       moduleKey: moduleKey,
@@ -200,7 +213,13 @@ export class CommandClient extends BaseAPIClient {
    * @param {Object} options - Additional options
    * @returns {*} Command response
    */
-  destroyProfile(moduleKey, profileKey, config = null, components = null, options = {}) {
+  destroyProfile(
+    moduleKey: string,
+    profileKey: string,
+    config: any | null = null,
+    components: any[] | null = null,
+    options: any = {}
+  ): any {
     return this.execute('destroy', {
       ...options,
       moduleKey: moduleKey,
@@ -217,7 +236,7 @@ export class CommandClient extends BaseAPIClient {
    * @param {Object} options - Additional options
    * @returns {*} Command response
    */
-  runImports(names = null, tags = null, options = {}) {
+  runImports(names: string[] | null = null, tags: string[] | null = null, options: any = {}): any {
     return this.execute('import', {
       ...options,
       importNames: names || [],
@@ -232,7 +251,11 @@ export class CommandClient extends BaseAPIClient {
    * @param {Object} options - Additional options
    * @returns {*} Command response
    */
-  runCalculations(names = null, tags = null, options = {}) {
+  runCalculations(
+    names: string[] | null = null,
+    tags: string[] | null = null,
+    options: any = {}
+  ): any {
     return this.execute('calculate', {
       ...options,
       calculationNames: names || [],
@@ -245,7 +268,7 @@ export class CommandClient extends BaseAPIClient {
    * @param {string} commandName - Command name
    * @returns {*} Command object
    */
-  _lookup(commandName) {
+  _lookup(commandName: string): any {
     // Placeholder implementation - in a full implementation this would
     // traverse the schema to find the command
     let node = this.schema;
@@ -266,7 +289,7 @@ export class CommandClient extends BaseAPIClient {
         this._initCommands();
       }
 
-      const relatedActions = [];
+      const relatedActions: string[] = [];
       for (const otherAction of Object.keys(this.actions)) {
         if (otherAction.includes(commandName)) {
           relatedActions.push(otherAction);
@@ -290,13 +313,13 @@ export class CommandClient extends BaseAPIClient {
    * @param {Object} command - Command object
    * @param {Object} options - Command options
    */
-  _validate(command, options) {
+  _validate(command: any, options: any): void {
     // Placeholder implementation - in a full implementation this would
     // validate the options against the command's field definitions
     const provided = new Set(Object.keys(options));
     const required = new Set(); // Would come from command.fields
     const optional = new Set(); // Would come from command.fields
-    const errors = {};
+    const errors: any = {};
 
     const missing = [...required].filter((item) => !provided.has(item));
     for (const item of missing) {
@@ -319,7 +342,7 @@ export class CommandClient extends BaseAPIClient {
    * @param {Object} options - Command options
    * @returns {Object} Formatted options
    */
-  _formatOptions(method, options) {
+  _formatOptions(method: string, options: any): any {
     if (options === null) {
       options = {};
     }
@@ -327,9 +350,9 @@ export class CommandClient extends BaseAPIClient {
     for (const [key, value] of Object.entries(options)) {
       if (typeof value === 'object' && value !== null) {
         if (Array.isArray(value) && method === 'GET') {
-          options[key] = value.join(',');
+          (options as any)[key] = (value as any[]).join(',');
         } else {
-          options[key] = JSON.stringify(value);
+          (options as any)[key] = JSON.stringify(value);
         }
       }
     }

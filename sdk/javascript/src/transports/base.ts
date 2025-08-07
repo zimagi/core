@@ -2,18 +2,35 @@
  * Base transport class for the Zimagi JavaScript SDK
  */
 
-import fetch from 'node-fetch';
-import { ConnectionError, ResponseError, ClientError } from '../exceptions.js';
+import fetch, { RequestInit, Response } from 'node-fetch';
+import { ConnectionError, ResponseError, ClientError } from '../exceptions';
+
+/**
+ * Transport options interface
+ */
+export interface TransportOptions {
+  client?: any;
+  verifyCert?: boolean;
+  optionsCallback?: Function;
+  requestCallback?: Function;
+  responseCallback?: Function;
+}
 
 /**
  * Base transport class
  */
 export class BaseTransport {
+  protected client: any;
+  protected verifyCert: boolean;
+  protected optionsCallback: Function | null;
+  protected requestCallback: Function | null;
+  protected responseCallback: Function | null;
+
   /**
    * Create a new transport
    * @param {Object} options - Transport options
    */
-  constructor(options = {}) {
+  constructor(options: TransportOptions = {}) {
     this.client = options.client || null;
     this.verifyCert = options.verifyCert || false;
     this.optionsCallback = options.optionsCallback || null;
@@ -25,7 +42,7 @@ export class BaseTransport {
    * Safe debug logging that won't cause errors after tests are done
    * @param {...any} args - Arguments to log
    */
-  debug(...args) {
+  debug(...args: any[]): void {
     // In test environment, be more careful about logging
     if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test') {
       // During tests, minimize logging to prevent "Cannot log after tests are done" errors
@@ -50,7 +67,13 @@ export class BaseTransport {
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  async request(method, url, decoders, params = null, options = {}) {
+  async request(
+    method: string,
+    url: string,
+    decoders: any[],
+    params: any = null,
+    options: any = {}
+  ): Promise<any> {
     const connectionErrorMessage = `
 The Zimagi client failed to connect with the server.
 
@@ -59,7 +82,7 @@ If restarting, retry in a few minutes...
 `;
 
     try {
-      const acceptMediaTypes = [];
+      const acceptMediaTypes: string[] = [];
       for (const decoder of decoders) {
         acceptMediaTypes.push(...decoder.mediaTypes);
       }
@@ -89,7 +112,7 @@ If restarting, retry in a few minutes...
         params,
         decoders
       );
-    } catch (error) {
+    } catch (error: any) {
       this.debug(`[Zimagi SDK] Request to ${url} failed: ${error.message}`);
       this.debug(`[Zimagi SDK] Error stack: ${error.stack}`);
 
@@ -117,7 +140,14 @@ If restarting, retry in a few minutes...
    * @param {Array} decoders - Array of codec decoders
    * @returns {*} Response data
    */
-  async handleRequest(method, url, path, headers, params, decoders) {
+  async handleRequest(
+    method: string,
+    url: string,
+    path: string,
+    headers: any,
+    params: any,
+    decoders: any[]
+  ): Promise<any> {
     throw new Error('Method handleRequest(...) must be overridden in all subclasses');
   }
 
@@ -130,7 +160,13 @@ If restarting, retry in a few minutes...
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  async requestPage(url, headers, params, decoders, options = {}) {
+  async requestPage(
+    url: string,
+    headers: any,
+    params: any,
+    decoders: any[],
+    options: any = {}
+  ): Promise<any> {
     const encrypted = options.encrypted !== false;
     const useAuth = options.useAuth !== false;
     const disableCallbacks = options.disableCallbacks || false;
@@ -168,7 +204,7 @@ If restarting, retry in a few minutes...
    * @param {Object} options - Request options
    * @returns {Array} Request and response objects
    */
-  async _request(method, url, options = {}) {
+  async _request(method: string, url: string, options: any = {}): Promise<any[]> {
     const {
       headers = {},
       params = null,
@@ -207,7 +243,7 @@ If restarting, retry in a few minutes...
       }
     }
 
-    const fetchOptions = {
+    const fetchOptions: RequestInit = {
       method: method,
       headers: requestHeaders,
       body: body,
@@ -223,7 +259,7 @@ If restarting, retry in a few minutes...
     const startTime = Date.now();
     this.debug(`[Zimagi SDK] Starting fetch request at ${startTime}`);
 
-    const response = await fetch(requestUrl, fetchOptions);
+    const response: Response = await fetch(requestUrl, fetchOptions);
 
     const endTime = Date.now();
     this.debug(
@@ -240,7 +276,7 @@ If restarting, retry in a few minutes...
    * @param {Object} params - Parameters to encrypt
    * @returns {Object} Encrypted parameters
    */
-  _encryptParams(params) {
+  _encryptParams(params: any): any {
     if (!this.client || !this.client.cipher) {
       return params;
     }
@@ -249,7 +285,7 @@ If restarting, retry in a few minutes...
       return this.client.cipher.encrypt(params);
     }
 
-    const encParams = {};
+    const encParams: any = {};
     for (const [key, value] of Object.entries(params)) {
       encParams[key] = this.client.cipher.encrypt(value);
     }
@@ -267,13 +303,13 @@ If restarting, retry in a few minutes...
    * @returns {*} Decoded data
    */
   async decodeMessage(
-    request,
-    response,
-    decoders,
-    message = null,
-    decrypt = true,
-    disableCallbacks = false
-  ) {
+    request: any,
+    response: any,
+    decoders: any[],
+    message: any = null,
+    decrypt: boolean = true,
+    disableCallbacks: boolean = false
+  ): Promise<any> {
     let content = message !== null ? message : null;
 
     // Get response content
@@ -286,7 +322,7 @@ If restarting, retry in a few minutes...
         } else {
           content = await response.text();
         }
-      } catch (error) {
+      } catch (error: any) {
         this.debug(`[Zimagi SDK] Error reading response body: ${error.message}`);
         content = '';
       }
@@ -328,7 +364,7 @@ If restarting, retry in a few minutes...
    * @param {Array} decoders - Array of codec decoders
    * @returns {Object} Decoder
    */
-  _getDecoder(contentType, decoders) {
+  _getDecoder(contentType: string, decoders: any[]): any {
     this.debug(`[Zimagi SDK] Looking for decoder for content type: ${contentType}`);
     for (const codec of decoders) {
       if (codec.mediaTypes.includes(contentType)) {
@@ -346,7 +382,7 @@ If restarting, retry in a few minutes...
    * @param {Object} cipher - Cipher for decryption
    * @returns {Object} Formatted error
    */
-  _formatResponseError(response, cipher = null) {
+  _formatResponseError(response: any, cipher: any = null): any {
     let message = response.statusText;
     this.debug(`[Zimagi SDK] Formatting response error: ${response.status} ${response.statusText}`);
 
@@ -364,7 +400,7 @@ If restarting, retry in a few minutes...
         message: `Error ${response.status}: ${response.statusText}: ${errorRender}`,
         data: errorData,
       };
-    } catch (error) {
+    } catch (error: any) {
       this.debug(`[Zimagi SDK] Error parsing error data: ${error.message}`);
       return {
         message: `Error ${response.status}: ${response.statusText}: ${message}`,
@@ -378,7 +414,7 @@ If restarting, retry in a few minutes...
    * @param {number} ms - Milliseconds to sleep
    * @returns {Promise} Sleep promise
    */
-  _sleep(ms) {
+  _sleep(ms: number): Promise<void> {
     this.debug(`[Zimagi SDK] Sleeping for ${ms}ms`);
     return new Promise((resolve) => setTimeout(resolve, ms));
   }

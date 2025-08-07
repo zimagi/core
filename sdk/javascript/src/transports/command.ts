@@ -2,22 +2,21 @@
  * Command HTTP transport for the Zimagi JavaScript SDK
  */
 
-import { BaseTransport } from './base.js';
-import { ResponseError } from '../exceptions.js';
-import { CommandResponse } from '../command/response.js';
-import { Message } from '../messages/index.js';
+import { BaseTransport, TransportOptions } from './base';
+import { ResponseError } from '../exceptions';
+import { CommandResponse } from '../command/response';
+import { Message } from '../messages';
 
-/**
- * Command HTTP transport implementation
- */
+export interface CommandTransportOptions extends TransportOptions {
+  messageCallback?: Function;
+}
+
 export class CommandHTTPTransport extends BaseTransport {
-  /**
-   * Create a new command transport
-   * @param {Object} options - Transport options
-   */
-  constructor(options = {}) {
+  private _messageCallback: Function | undefined;
+
+  constructor(options: CommandTransportOptions = {}) {
     super(options);
-    this._messageCallback = options.messageCallback || null;
+    this._messageCallback = options.messageCallback;
     // Reduce logging in test environment
     if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
       console.debug(`[Zimagi SDK] CommandHTTPTransport initialized`);
@@ -34,7 +33,14 @@ export class CommandHTTPTransport extends BaseTransport {
    * @param {Array} decoders - Array of codec decoders
    * @returns {*} Response data
    */
-  async handleRequest(method, url, path, headers, params, decoders) {
+  async handleRequest(
+    method: string,
+    url: string,
+    path: string,
+    headers: any,
+    params: any,
+    decoders: any[]
+  ): Promise<any> {
     // Reduce logging in test environment
     if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
       console.debug(`[Zimagi SDK] CommandHTTPTransport.handleRequest: ${method} ${url}`);
@@ -80,7 +86,7 @@ export class CommandHTTPTransport extends BaseTransport {
    * @param {Array} decoders - Array of codec decoders
    * @returns {*} Response data
    */
-  async requestCommand(url, headers, params, decoders) {
+  async requestCommand(url: string, headers: any, params: any, decoders: any[]): Promise<any> {
     // Reduce logging in test environment
     if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
       console.debug(`[Zimagi SDK] CommandHTTPTransport.requestCommand: ${url}`);
@@ -172,7 +178,7 @@ export class CommandHTTPTransport extends BaseTransport {
       if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
         console.debug(`[Zimagi SDK] Stream processing complete. Total messages: ${messageCount}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       // Reduce logging in test environment
       if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
         console.debug(`[Zimagi SDK] Error processing stream:`, error);
