@@ -9,6 +9,7 @@ from .commands.action import ActionCommand
 from .commands.chat import ChatCommand
 from .commands.help import HelpCommand
 from .commands.router import RouterCommand
+from .commands.schema import SchemaCommand
 from .commands.test import TestCommand
 from .commands.version import VersionCommand
 from .errors import CommandNotFoundError
@@ -52,6 +53,8 @@ class CommandIndex(TerminalMixin):
             return HelpCommand(self, command)
         elif args[0] == "chat":
             return ChatCommand(self, command)
+        elif args[0] == "schema":
+            return SchemaCommand(self, command)
 
         for name in args:
             if isinstance(command, (command_schema.Root, command_schema.Router)):
