@@ -153,7 +153,7 @@ class Parallel:
         return results
 
 
-def threaded_exec(items, callback):
+def exec(items, callback):
     results = Parallel.list(items, callback)
 
     if results.aborted:
