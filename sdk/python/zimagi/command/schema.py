@@ -1,3 +1,4 @@
+import copy
 from collections import OrderedDict
 
 
@@ -31,6 +32,15 @@ class CommandIndexMixin(SortedItemsMixin):
     @property
     def actions(self):
         return OrderedDict([(key, value) for key, value in self.items() if isinstance(value, Action)])
+
+    def export(self):
+        data = {}
+        for key, value in self.items():
+            if isinstance(value, (Router, Action)):
+                data[key] = value.export()
+            else:
+                data[key] = value
+        return data
 
 
 class Root(CommandIndexMixin, OrderedDict):
@@ -100,6 +110,15 @@ class Action:
             else tuple([item if isinstance(item, Field) else Field(item, required=False, location="") for item in fields])
         )
 
+    def export(self):
+        data = {}
+        for key, value in self.__dict__.items():
+            if key == "fields":
+                data[key] = [field.export() for field in value]
+            else:
+                data[key] = value
+        return data
+
 
 class Field:
 
@@ -130,6 +149,9 @@ class Field:
         self.default = default
         self.choices = choices
         self.tags = [] if tags is None else tags
+
+    def export(self):
+        return copy.deepcopy(self.__dict__)
 
 
 class Error(SortedItemsMixin, OrderedDict):
