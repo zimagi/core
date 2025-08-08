@@ -41,13 +41,13 @@ describe('Integration Tests', () => {
       const status = await commandClient.getStatus();
       expect(status).toBeDefined();
       expect(status.encryption).toBeDefined();
-    }, 10000); // Increase timeout to 10 seconds
+    }, 10000);
 
     test('should get schema', async () => {
       const schema = await commandClient.getSchema();
       expect(schema).toBeDefined();
       expect(schema.commands).toBeDefined();
-    }, 20000); // Increase timeout to 20 seconds
+    }, 10000);
   });
 
   describe('Data Client Integration', () => {
@@ -76,18 +76,18 @@ describe('Integration Tests', () => {
       const status = await dataClient.getStatus();
       expect(status).toBeDefined();
       expect(status.encryption).toBeDefined();
-    }, 10000); // Increase timeout to 10 seconds
+    }, 10000);
 
     test('should get schema', async () => {
       const schema = await dataClient.getSchema();
       expect(schema).toBeDefined();
       expect(schema.paths).toBeDefined();
-    }, 20000); // Increase timeout to 20 seconds
+    }, 10000);
 
     test('should list users', async () => {
       const users = await dataClient.list('user');
       expect(users).toBeDefined();
       expect(users.results).toBeDefined();
-    }, 10000); // Increase timeout to 10 seconds
+    }, 10000);
   });
 });
