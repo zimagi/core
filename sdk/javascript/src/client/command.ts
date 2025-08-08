@@ -6,17 +6,19 @@ import { BaseAPIClient } from './base';
 import { CommandHTTPTransport } from '../transports/command';
 import { ZimagiJSONCodec, JSONCodec } from '../codecs/index';
 import { ParseError } from '../exceptions';
+import { Root, Action } from '../schema/index';
+import { CommandResponse } from '../command/response';
 
 /**
  * Command client class
  */
 export class CommandClient extends BaseAPIClient {
-  optionsCallback: Function | null;
-  messageCallback: Function | null;
+  optionsCallback: Function | undefined;
+  messageCallback: Function | undefined;
   initCommands: boolean;
-  schema: any;
-  commands: any;
-  actions: any;
+  schema: Root | undefined;
+  commands: { [key: string]: any };
+  actions: { [key: string]: any };
 
   /**
    * Create a new command client
@@ -30,22 +32,24 @@ export class CommandClient extends BaseAPIClient {
       ...options,
     });
 
-    this.optionsCallback = options.optionsCallback || null;
-    this.messageCallback = options.messageCallback || null;
+    this.optionsCallback = options.optionsCallback || undefined;
     this.initCommands = options.initCommands !== false;
+    this.commands = {};
+    this.actions = {};
+    this.schema = undefined;
 
-    this.transport = new CommandHTTPTransport({
-      client: this,
-      verifyCert: this.verifyCert,
-      optionsCallback: this.optionsCallback,
-      messageCallback: this.messageCallback,
-    });
+    this.setMessageCallback(options.messageCallback || undefined);
+  }
 
-    if (!this.getStatus().encryption) {
+  /**
+   * Initialize data API client
+   */
+  async initialize() {
+    if ((await this.getStatus()).encryption) {
       this.cipher = null;
     }
 
-    this.schema = this.getSchema();
+    this.schema = await this.getSchema();
     if (this.initCommands) {
       this._initCommands();
     }
@@ -121,33 +125,42 @@ export class CommandClient extends BaseAPIClient {
    * Execute a command
    * @param {string} commandName - Command name
    * @param {Object} options - Command options
-   * @returns {*} Command response
+   * @returns {CommandResponse} Command response
    */
-  execute(commandName: string, options: any = {}): any {
+  async execute(commandName: string, options: any = {}): Promise<CommandResponse> {
     const commandPath = this._normalizePath(commandName);
     const command = this._lookup(commandPath);
     const commandOptions = this._formatOptions('POST', options);
 
-    const validate = (url: string, params: any) => {
+    const validate = (_url: string, params: any) => {
       this._validate(command, params);
     };
 
-    const processor = () => {
-      return this._request('POST', command.url, commandOptions, validate);
+    if (!this._initialized) {
+      await this.initialize();
+    }
+
+    const processor = async () => {
+      return await this._request('POST', command.url, commandOptions, validate);
     };
 
-    return this._wrapAPICall('command', commandPath, processor, commandOptions);
+    return await this._wrapAPICall('command', commandPath, processor, commandOptions);
   }
 
   /**
    * Extend with a remote module
    * @param {string} remote - Remote module URL
    * @param {string} reference - Module reference
-   * @param {string} provider - Provider name
+   * @param {string | null} provider - Provider name
    * @param {Object} fields - Module fields
-   * @returns {*} Command response
+   * @returns {CommandResponse} Command response
    */
-  extend(remote: string, reference: string, provider: string | null = null, fields: any = {}): any {
+  async extend(
+    remote: string,
+    reference: string,
+    provider: string | null = null,
+    fields: any = {}
+  ): Promise<CommandResponse> {
     fields.reference = reference;
 
     const options: any = {
@@ -159,19 +172,24 @@ export class CommandClient extends BaseAPIClient {
       options.moduleProviderName = provider;
     }
 
-    return this.execute('module/add', options);
+    return await this.execute('module/add', options);
   }
 
   /**
    * Run a task
    * @param {string} moduleKey - Module key
    * @param {string} taskName - Task name
-   * @param {Object} config - Task configuration
+   * @param {any | null} config - Task configuration
    * @param {Object} options - Additional options
-   * @returns {*} Command response
+   * @returns {CommandResponse} Command response
    */
-  runTask(moduleKey: string, taskName: string, config: any | null = null, options: any = {}): any {
-    return this.execute('task', {
+  async runTask(
+    moduleKey: string,
+    taskName: string,
+    config: any | null = null,
+    options: any = {}
+  ): Promise<CommandResponse> {
+    return await this.execute('task', {
       ...options,
       moduleKey: moduleKey,
       taskKey: taskName,
@@ -183,19 +201,19 @@ export class CommandClient extends BaseAPIClient {
    * Run a profile
    * @param {string} moduleKey - Module key
    * @param {string} profileKey - Profile key
-   * @param {Object} config - Profile configuration
-   * @param {Array} components - Profile components
+   * @param {any | null} config - Profile configuration
+   * @param {any[] | null} components - Profile components
    * @param {Object} options - Additional options
-   * @returns {*} Command response
+   * @returns {CommandResponse} Command response
    */
-  runProfile(
+  async runProfile(
     moduleKey: string,
     profileKey: string,
     config: any | null = null,
     components: any[] | null = null,
     options: any = {}
-  ): any {
-    return this.execute('run', {
+  ): Promise<CommandResponse> {
+    return await this.execute('run', {
       ...options,
       moduleKey: moduleKey,
       profileKey: profileKey,
@@ -208,19 +226,19 @@ export class CommandClient extends BaseAPIClient {
    * Destroy a profile
    * @param {string} moduleKey - Module key
    * @param {string} profileKey - Profile key
-   * @param {Object} config - Profile configuration
-   * @param {Array} components - Profile components
+   * @param {any | null} config - Profile configuration
+   * @param {any[] | null} components - Profile components
    * @param {Object} options - Additional options
-   * @returns {*} Command response
+   * @returns {CommandResponse} Command response
    */
-  destroyProfile(
+  async destroyProfile(
     moduleKey: string,
     profileKey: string,
     config: any | null = null,
     components: any[] | null = null,
     options: any = {}
-  ): any {
-    return this.execute('destroy', {
+  ): Promise<CommandResponse> {
+    return await this.execute('destroy', {
       ...options,
       moduleKey: moduleKey,
       profileKey: profileKey,
@@ -231,13 +249,17 @@ export class CommandClient extends BaseAPIClient {
 
   /**
    * Run imports
-   * @param {Array} names - Import names
-   * @param {Array} tags - Import tags
+   * @param {string[] | null} names - Import names
+   * @param {string[] | null} tags - Import tags
    * @param {Object} options - Additional options
-   * @returns {*} Command response
+   * @returns {CommandResponse} Command response
    */
-  runImports(names: string[] | null = null, tags: string[] | null = null, options: any = {}): any {
-    return this.execute('import', {
+  async runImports(
+    names: string[] | null = null,
+    tags: string[] | null = null,
+    options: any = {}
+  ): Promise<CommandResponse> {
+    return await this.execute('import', {
       ...options,
       importNames: names || [],
       tags: tags || [],
@@ -246,17 +268,17 @@ export class CommandClient extends BaseAPIClient {
 
   /**
    * Run calculations
-   * @param {Array} names - Calculation names
-   * @param {Array} tags - Calculation tags
+   * @param {string[] | null} names - Calculation names
+   * @param {string[] | null} tags - Calculation tags
    * @param {Object} options - Additional options
-   * @returns {*} Command response
+   * @returns {CommandResponse} Command response
    */
-  runCalculations(
+  async runCalculations(
     names: string[] | null = null,
     tags: string[] | null = null,
     options: any = {}
-  ): any {
-    return this.execute('calculate', {
+  ): Promise<CommandResponse> {
+    return await this.execute('calculate', {
       ...options,
       calculationNames: names || [],
       tags: tags || [],
@@ -266,25 +288,29 @@ export class CommandClient extends BaseAPIClient {
   /**
    * Lookup a command
    * @param {string} commandName - Command name
-   * @returns {*} Command object
+   * @returns {Action} Command object
    */
-  _lookup(commandName: string): any {
-    // Placeholder implementation - in a full implementation this would
-    // traverse the schema to find the command
-    let node = this.schema;
+  _lookup(commandName: string): Action {
+    let node: any = this.schema;
     let found = true;
 
     for (const key of commandName.split('/')) {
-      if (node[key] !== undefined) {
-        node = node[key];
-      } else {
+      try {
+        if (node && node.get) {
+          node = node.get(key);
+        } else if (node && node[key] !== undefined) {
+          node = node[key];
+        } else {
+          found = false;
+          break;
+        }
+      } catch (error) {
         found = false;
         break;
       }
     }
 
-    // For now, we'll just return a mock action object for testing
-    if (!found) {
+    if (!found || !(node instanceof Action)) {
       if (!this.initCommands) {
         this._initCommands();
       }
@@ -297,28 +323,23 @@ export class CommandClient extends BaseAPIClient {
       }
 
       throw new ParseError(
-        `Command ${commandName} does not exist. Try one of: ${relatedActions.join(', ')}`
+        `Command ${commandName} does not exist.  Try one of: ${relatedActions.join(', ')}`
       );
     }
-
-    // Return a mock action object
-    return {
-      url: `${this.baseURL}${commandName}`,
-      fields: [],
-    };
+    return node;
   }
 
   /**
    * Validate command options
-   * @param {Object} command - Command object
+   * @param {Action} _command - Command object
    * @param {Object} options - Command options
    */
-  _validate(command: any, options: any): void {
+  _validate(_command: Action, options: any): void {
     // Placeholder implementation - in a full implementation this would
     // validate the options against the command's field definitions
     const provided = new Set(Object.keys(options));
-    const required = new Set(); // Would come from command.fields
-    const optional = new Set(); // Would come from command.fields
+    const required = new Set<string>(); // Would come from command.fields
+    const optional = new Set<string>(); // Would come from command.fields
     const errors: any = {};
 
     const missing = [...required].filter((item) => !provided.has(item));
@@ -332,7 +353,7 @@ export class CommandClient extends BaseAPIClient {
     }
 
     if (Object.keys(errors).length > 0) {
-      throw new ParseError(errors);
+      throw new ParseError(JSON.stringify(errors));
     }
   }
 

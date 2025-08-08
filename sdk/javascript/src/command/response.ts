@@ -2,11 +2,19 @@
  * Command response handler for the Zimagi JavaScript SDK
  */
 
+export interface CommandMessage {
+  type: string;
+  name?: string | null;
+  message: string;
+  isError(): boolean;
+  format(): string;
+}
+
 export class CommandResponse {
   aborted: boolean;
-  messages: Array<any>;
-  named: { [key: string]: any };
-  errors: any[];
+  messages: CommandMessage[];
+  named: { [key: string]: CommandMessage };
+  errors: CommandMessage[];
 
   constructor() {
     this.aborted = true;
@@ -15,7 +23,7 @@ export class CommandResponse {
     this.errors = [];
   }
 
-  add(messages: any | any[]): void {
+  add(messages: CommandMessage | CommandMessage[]): void {
     if (!Array.isArray(messages)) {
       messages = [messages];
     }
@@ -35,7 +43,7 @@ export class CommandResponse {
     }
   }
 
-  get error(): boolean {
+  error(): boolean {
     return this.aborted;
   }
 
@@ -47,7 +55,7 @@ export class CommandResponse {
     const message = this.named[name];
     if (message) {
       try {
-        return message.data;
+        return (message as any).data;
       } catch (error) {
         return message.message;
       }
@@ -55,7 +63,7 @@ export class CommandResponse {
     return null;
   }
 
-  *[Symbol.iterator](): Iterator<any> {
+  *[Symbol.iterator](): Iterator<CommandMessage> {
     yield* this.messages;
   }
 

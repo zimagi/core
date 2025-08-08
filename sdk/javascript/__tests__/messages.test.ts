@@ -7,13 +7,8 @@ import {
   Message,
   StatusMessage,
   DataMessage,
-  InfoMessage,
-  NoticeMessage,
-  SuccessMessage,
   WarningMessage,
   ErrorMessage,
-  TableMessage,
-  ImageMessage,
 } from '../src/messages/index';
 
 describe('Message Classes', () => {
@@ -67,7 +62,7 @@ describe('Message Classes', () => {
       message: 'Test warning',
     });
 
-    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     message.display();
 
@@ -112,7 +107,7 @@ describe('Message Classes', () => {
       message: 'Test message',
     });
 
-    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
     message.display();
 

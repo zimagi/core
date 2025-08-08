@@ -17,11 +17,11 @@ export class BaseCodec {
 
   /**
    * Decode a byte string
-   * @param {string} bytestring - Byte string to decode
-   * @param {Object} options - Decoding options
+   * @param {string} _bytestring - Byte string to decode
+   * @param {Object} _options - Decoding options
    * @returns {*} Decoded data
    */
-  decode(bytestring: string, options: any = {}): any {
+  decode(_bytestring: string, _options: any = {}): any {
     throw new Error('Method decode(...) must be implemented in subclasses');
   }
 }

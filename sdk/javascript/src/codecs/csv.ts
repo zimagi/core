@@ -24,7 +24,13 @@ export class CSVCodec extends BaseCodec {
     return normalizeValue(value, true, false);
   }
 
-  decode(bytestring: string | Buffer, options: any = {}): any {
+  /**
+   * Decode CSV data
+   * @param {string | Buffer} bytestring - CSV data to decode
+   * @param {Object} _options - Decoding options
+   * @returns {*} Decoded data
+   */
+  decode(bytestring: string | Buffer, _options: any = {}): any {
     try {
       let csvString: string;
       if (Buffer.isBuffer(bytestring)) {

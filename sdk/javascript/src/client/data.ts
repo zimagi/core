@@ -31,12 +31,17 @@ export class DataClient extends BaseAPIClient {
       verifyCert: options.verifyCert,
       optionsCallback: options.optionsCallback,
     });
+  }
 
-    if (!this.getStatus().encryption) {
+  /**
+   * Initialize data API client
+   */
+  async initialize() {
+    if (!(await this.getStatus()).encryption) {
       this.cipher = null;
     }
 
-    this.schema = this.getSchema();
+    this.schema = await this.getSchema();
     this._dataInfo = this.schema['x-data'] || {};
   }
 
@@ -64,7 +69,7 @@ export class DataClient extends BaseAPIClient {
    * @returns {string} ID field name
    */
   getIdField(dataType: string): string {
-    return this._dataInfo[dataType]?.id || null;
+    return this._dataInfo[dataType]?.id || '';
   }
 
   /**
@@ -73,7 +78,7 @@ export class DataClient extends BaseAPIClient {
    * @returns {string} Key field name
    */
   getKeyField(dataType: string): string {
-    return this._dataInfo[dataType]?.key || null;
+    return this._dataInfo[dataType]?.key || '';
   }
 
   /**
@@ -159,9 +164,9 @@ export class DataClient extends BaseAPIClient {
       const fullScopeField = scopeParents.join('__');
 
       if (values[fullScopeField] !== undefined) {
-        const scopeKey = this.getKeyField(scopeType);
+        const scopeKey = this.getKeyField(scopeType as string);
         filters[`${fullScopeField}__${scopeKey}`] = values[fullScopeField];
-        Object.assign(filters, this.setScope(scopeType, values, scopeParents));
+        Object.assign(filters, this.setScope(scopeType as string, values, scopeParents));
       }
     }
 
@@ -173,10 +178,10 @@ export class DataClient extends BaseAPIClient {
    * @param {boolean} full - Whether to get full schema
    * @returns {*} Schema data
    */
-  getSchema(full: boolean = false): any {
+  async getSchema(full: boolean = false): Promise<any> {
     if (full || !this._schema) {
-      const processor = () => {
-        const schema = this._request('GET', this.baseURL);
+      const processor = async () => {
+        const schema = await this._request('GET', this.baseURL);
 
         if (full) {
           // Replace path references with actual path objects
@@ -186,11 +191,9 @@ export class DataClient extends BaseAPIClient {
             }
           }
         }
-
         return schema;
       };
-
-      this._schema = this._wrapAPICall('schema', this.baseURL, processor);
+      this._schema = await this._wrapAPICall('schema', this.baseURL, processor);
     }
     return this._schema;
   }
@@ -202,7 +205,7 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  _execute(method: string, path: string, options: any = null): any {
+  async _execute(method: string, path: string, options: any = null): Promise<any> {
     const url = `${this.baseURL.replace(/\/+$/, '')}/${path.replace(/^\/+|\/+$/g, '')}`.replace(
       /\/+$/,
       ''
@@ -211,49 +214,56 @@ export class DataClient extends BaseAPIClient {
     if (!options) {
       options = {};
     }
-
     if (method === 'GET') {
       options = this._formatOptions(method, options);
     }
 
-    const processor = () => {
-      return this._request(method, url, options);
-    };
+    if (!this._initialized) {
+      await this.initialize();
+    }
 
-    return this._wrapAPICall('data', path, processor, options);
+    const processor = async () => {
+      return await this._request(method, url, options);
+    };
+    return await this._wrapAPICall('data', path, processor, options);
   }
 
   /**
    * Execute a data type operation
    * @param {string} method - HTTP method
    * @param {string} dataType - Data type
-   * @param {string} op - Operation
+   * @param {string | null} op - Operation
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  _executeTypeOperation(method: string, dataType: string, op: string, options: any): any {
+  async _executeTypeOperation(
+    method: string,
+    dataType: string,
+    op: string | null,
+    options: any
+  ): Promise<any> {
     const path = op === null ? dataType : `${dataType}/${op}`;
-    return this._execute(method, path, options);
+    return await this._execute(method, path, options);
   }
 
   /**
    * Execute a key operation
    * @param {string} method - HTTP method
    * @param {string} dataType - Data type
-   * @param {string} op - Operation
+   * @param {string | null} op - Operation
    * @param {string} key - Key value
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  _executeKeyOperation(
+  async _executeKeyOperation(
     method: string,
     dataType: string,
-    op: string,
+    op: string | null,
     key: string,
     options: any
-  ): any {
+  ): Promise<any> {
     const path = op === null ? `${dataType}/${key}` : `${dataType}/${key}/${op}`;
-    return this._execute(method, path, options);
+    return await this._execute(method, path, options);
   }
 
   /**
@@ -261,23 +271,23 @@ export class DataClient extends BaseAPIClient {
    * @param {string} method - HTTP method
    * @param {string} dataType - Data type
    * @param {string} op - Operation
-   * @param {string} fieldName - Field name
+   * @param {string | null} fieldName - Field name
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  _executeFieldOperation(
+  async _executeFieldOperation(
     method: string,
     dataType: string,
     op: string,
-    fieldName: string,
+    fieldName: string | null,
     options: any
-  ): any {
+  ): Promise<any> {
     if (!fieldName) {
       fieldName = this.getIdField(dataType);
     }
 
     const path = `${dataType}/${op}/${fieldName}`;
-    return this._execute(method, path, options);
+    return await this._execute(method, path, options);
   }
 
   /**
@@ -286,8 +296,8 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} fields - Record fields
    * @returns {*} Response data
    */
-  create(dataType: string, fields: any = {}): any {
-    return this._executeTypeOperation('POST', dataType, null, fields);
+  async create(dataType: string, fields: any = {}): Promise<any> {
+    return await this._executeTypeOperation('POST', dataType, null, fields);
   }
 
   /**
@@ -297,8 +307,8 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} fields - Record fields
    * @returns {*} Response data
    */
-  update(dataType: string, id: string, fields: any = {}): any {
-    return this._executeKeyOperation('PUT', dataType, null, id, fields);
+  async update(dataType: string, id: string, fields: any = {}): Promise<any> {
+    return await this._executeKeyOperation('PUT', dataType, null, id, fields);
   }
 
   /**
@@ -307,8 +317,8 @@ export class DataClient extends BaseAPIClient {
    * @param {string} id - Record ID
    * @returns {*} Response data
    */
-  delete(dataType: string, id: string): any {
-    return this._executeKeyOperation('DELETE', dataType, null, id, {});
+  async delete(dataType: string, id: string): Promise<any> {
+    return await this._executeKeyOperation('DELETE', dataType, null, id, {});
   }
 
   /**
@@ -318,8 +328,8 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  get(dataType: string, id: string, options: any = {}): any {
-    return this._executeKeyOperation('GET', dataType, null, id, options);
+  async get(dataType: string, id: string, options: any = {}): Promise<any> {
+    return await this._executeKeyOperation('GET', dataType, null, id, options);
   }
 
   /**
@@ -329,8 +339,8 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  getByKey(dataType: string, key: string, options: any = {}): any {
-    const results = this._executeTypeOperation('GET', dataType, null, {
+  async getByKey(dataType: string, key: string, options: any = {}): Promise<any> {
+    const results = await this._executeTypeOperation('GET', dataType, null, {
       [this.getKeyField(dataType)]: key,
       ...this.setScope(dataType, options),
     });
@@ -352,8 +362,8 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  list(dataType: string, options: any = {}): any {
-    return this._executeTypeOperation('GET', dataType, null, options);
+  async list(dataType: string, options: any = {}): Promise<any> {
+    return await this._executeTypeOperation('GET', dataType, null, options);
   }
 
   /**
@@ -362,8 +372,8 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  json(dataType: string, options: any = {}): any {
-    return this._executeTypeOperation('GET', dataType, 'json', options);
+  async json(dataType: string, options: any = {}): Promise<any> {
+    return await this._executeTypeOperation('GET', dataType, 'json', options);
   }
 
   /**
@@ -372,30 +382,34 @@ export class DataClient extends BaseAPIClient {
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  csv(dataType: string, options: any = {}): any {
-    return this._executeTypeOperation('GET', dataType, 'csv', options);
+  async csv(dataType: string, options: any = {}): Promise<any> {
+    return await this._executeTypeOperation('GET', dataType, 'csv', options);
   }
 
   /**
    * Get field values
    * @param {string} dataType - Data type
-   * @param {string} fieldName - Field name
+   * @param {string | null} fieldName - Field name
    * @param {Object} options - Request options
    * @returns {*} Response data
    */
-  values(dataType: string, fieldName: string | null = null, options: any = {}): any {
-    return this._executeFieldOperation('GET', dataType, 'values', fieldName, options);
+  async values(dataType: string, fieldName: string | null = null, options: any = {}): Promise<any> {
+    return await this._executeFieldOperation('GET', dataType, 'values', fieldName, options);
   }
 
   /**
    * Get record count
    * @param {string} dataType - Data type
-   * @param {string} fieldName - Field name
+   * @param {string | null} fieldName - Field name
    * @param {Object} options - Request options
    * @returns {number} Record count
    */
-  count(dataType: string, fieldName: string | null = null, options: any = {}): number {
-    const result = this._executeFieldOperation('GET', dataType, 'count', fieldName, options);
+  async count(
+    dataType: string,
+    fieldName: string | null = null,
+    options: any = {}
+  ): Promise<number> {
+    const result = await this._executeFieldOperation('GET', dataType, 'count', fieldName, options);
     return result.count || 0;
   }
 
@@ -404,8 +418,8 @@ export class DataClient extends BaseAPIClient {
    * @param {string} datasetName - Dataset name
    * @returns {*} Response data
    */
-  download(datasetName: string): any {
-    return this._execute('GET', `download/${datasetName}`);
+  async download(datasetName: string): Promise<any> {
+    return await this._execute('GET', `download/${datasetName}`);
   }
 
   /**
@@ -428,7 +442,6 @@ export class DataClient extends BaseAPIClient {
         }
       }
     }
-
     return options;
   }
 }

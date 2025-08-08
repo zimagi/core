@@ -44,10 +44,10 @@ export class NullCipher {
   /**
    * Decrypt a message (no-op)
    * @param {string} ciphertext - Message to decrypt
-   * @param {boolean} decode - Whether to decode
+   * @param {boolean} _decode - Whether to decode
    * @returns {string} Decrypted message
    */
-  decrypt(ciphertext: string, decode: boolean = true): string {
+  decrypt(ciphertext: string, _decode: boolean = true): string {
     return ciphertext;
   }
 }
@@ -81,10 +81,10 @@ export class AESCipher {
   /**
    * Decrypt a message
    * @param {string} ciphertext - Message to decrypt
-   * @param {boolean} decode - Whether to decode
+   * @param {boolean} _decode - Whether to decode
    * @returns {string} Decrypted message
    */
-  decrypt(ciphertext: string, decode: boolean = true): string {
+  decrypt(ciphertext: string, _decode: boolean = true): string {
     // AES decryption implementation using crypto-js
     const bytes = CryptoJS.AES.decrypt(ciphertext, this.key);
     return bytes.toString(CryptoJS.enc.Utf8);

@@ -95,18 +95,18 @@ export class Message {
 
   /**
    * Format message
-   * @param {Object} options - Formatting options
+   * @param {Object} _options - Formatting options
    * @returns {string} Formatted message
    */
-  format(options: any = {}): string {
+  format(_options: any = {}): string {
     return `${this.prefix}${this.message}`;
   }
 
   /**
    * Display message
-   * @param {Object} options - Display options
+   * @param {Object} _options - Display options
    */
-  display(options: any = {}): void {
+  display(_options: any = {}): void {
     if (!this.silent) {
       console.log(this.format());
     }
@@ -150,28 +150,31 @@ export class Message {
  * Status message class
  */
 export class StatusMessage extends Message {
+  success: boolean;
+
   /**
    * Create a new status message
    * @param {boolean} success - Success status
    */
   constructor(success: boolean = true) {
-    super({ message: success as any });
+    super({ message: String(success) });
+    this.success = success;
   }
 
   /**
    * Format message
-   * @param {Object} options - Formatting options
+   * @param {Object} _options - Formatting options
    * @returns {string} Formatted message
    */
-  format(options: any = {}): string {
+  format(_options: any = {}): string {
     return `Success: ${this.message}`;
   }
 
   /**
    * Display message
-   * @param {Object} options - Display options
+   * @param {Object} _options - Display options
    */
-  display(options: any = {}): void {
+  display(_options: any = {}): void {
     // No display for status messages
   }
 }
@@ -222,10 +225,10 @@ export class DataMessage extends Message {
 
   /**
    * Format message
-   * @param {Object} options - Formatting options
+   * @param {Object} _options - Formatting options
    * @returns {string} Formatted message
    */
-  format(options: any = {}): string {
+  format(_options: any = {}): string {
     let data = this.data;
 
     if (typeof this.data === 'object' && this.data !== null) {
@@ -263,9 +266,9 @@ export class SuccessMessage extends Message {
 export class WarningMessage extends Message {
   /**
    * Display message
-   * @param {Object} options - Display options
+   * @param {Object} _options - Display options
    */
-  display(options: any = {}): void {
+  display(_options: any = {}): void {
     if (!this.silent) {
       console.warn(this.format());
     }
@@ -316,10 +319,10 @@ export class ErrorMessage extends Message {
 
   /**
    * Format message
-   * @param {Object} options - Formatting options
+   * @param {Object} _options - Formatting options
    * @returns {string} Formatted message
    */
-  format(options: any = {}): string {
+  format(_options: any = {}): string {
     if (this.traceback) {
       const traceback = Array.isArray(this.traceback)
         ? this.traceback.map((item) => item.trim()).join('\n')
@@ -332,9 +335,9 @@ export class ErrorMessage extends Message {
 
   /**
    * Display message
-   * @param {Object} options - Display options
+   * @param {Object} _options - Display options
    */
-  display(options: any = {}): void {
+  display(_options: any = {}): void {
     if (!this.silent && this.message) {
       console.error(this.format());
     }
@@ -387,10 +390,10 @@ export class TableMessage extends Message {
 
   /**
    * Format message
-   * @param {Object} options - Formatting options
+   * @param {Object} _options - Formatting options
    * @returns {string} Formatted message
    */
-  format(options: any = {}): string {
+  format(_options: any = {}): string {
     // Format data as a table
     return `${this.prefix}${JSON.stringify(this.message, null, 2)}`;
   }

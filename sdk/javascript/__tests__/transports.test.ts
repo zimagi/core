@@ -6,7 +6,7 @@ import { jest } from '@jest/globals';
 import { BaseTransport } from '../src/transports/base';
 import { CommandHTTPTransport } from '../src/transports/command';
 import { DataHTTPTransport } from '../src/transports/data';
-import { ClientError, ConnectionError, ResponseError } from '../src/exceptions';
+import { ClientError } from '../src/exceptions';
 
 // Mock client for testing
 const mockClient: any = {

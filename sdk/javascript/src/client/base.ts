@@ -3,8 +3,8 @@
  */
 
 import { getServiceURL } from '../utility';
-import { Cipher } from '../encryption';
 import { ClientTokenAuthentication } from '../auth';
+import { Cipher } from '../encryption';
 import { ClientError } from '../exceptions';
 import { defaultCache } from '../cache';
 import { defaultMonitor } from '../performance';
@@ -33,6 +33,7 @@ export class BaseAPIClient {
   auth: ClientTokenAuthentication;
   _status: any;
   _schema: any;
+  _initialized: boolean;
 
   constructor(options: any = {}) {
     this.host = options.host || 'localhost';
@@ -51,16 +52,23 @@ export class BaseAPIClient {
     this.performanceMonitor = options.performanceMonitor || defaultMonitor;
 
     this.auth = new ClientTokenAuthentication(this.user, this.token, this);
+    this._status = null;
+    this._schema = null;
+    this._initialized = false;
 
-    // Reduce logging in test environment
-    if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-      console.debug(`[Zimagi SDK] BaseAPIClient initialized with:`, {
-        host: this.host,
-        port: this.port,
-        protocol: this.protocol,
-        baseURL: this.baseURL,
-      });
-    }
+    console.debug(`[Zimagi SDK] BaseAPIClient initialized with:`, {
+      host: this.host,
+      port: this.port,
+      protocol: this.protocol,
+      baseURL: this.baseURL,
+    });
+  }
+
+  /**
+   * Initialize API client
+   */
+  async initialize() {
+    throw new ClientError('Zimagi API client initialize method not defined');
   }
 
   /**
@@ -79,12 +87,12 @@ export class BaseAPIClient {
    * @param {Function} validateCallback - Validation callback
    * @returns {*} Response data
    */
-  _request(
+  async _request(
     method: string,
     url: string,
     params: any = null,
     validateCallback: Function | null = null
-  ): any {
+  ): Promise<any> {
     if (!this.transport) {
       throw new ClientError('Zimagi API client transport not defined');
     }
@@ -92,13 +100,10 @@ export class BaseAPIClient {
     const timingId = this.performanceMonitor.startTiming(`${method}_${url}`);
 
     try {
-      // Reduce logging in test environment
-      if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-        console.debug(`[Zimagi SDK] Making client request: ${method} ${url}`);
-        console.debug(`[Zimagi SDK] Request params:`, params);
-      }
+      console.debug(`[Zimagi SDK] Making client request: ${method} ${url}`);
+      console.debug(`[Zimagi SDK] Request params:`, params);
 
-      const result = this.transport.request(method, url, this.decoders, params, {
+      const result = await this.transport.request(method, url, this.decoders, params, {
         retries: 20,
         retryWait: 3,
         validateCallback,
@@ -107,10 +112,7 @@ export class BaseAPIClient {
       this.performanceMonitor.endTiming(timingId);
       return result;
     } catch (error: any) {
-      // Reduce logging in test environment
-      if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-        console.debug(`${'type'} API error: ${this._formatError('path', error, params)}`);
-      }
+      console.debug(`${'type'} API error: ${this._formatError('path', error, params)}`);
       this.performanceMonitor.endTiming(timingId);
       throw error;
     }
@@ -120,28 +122,19 @@ export class BaseAPIClient {
    * Get service status
    * @returns {*} Status data
    */
-  getStatus(): any {
-    // Reduce logging in test environment
-    if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-      console.debug(`[Zimagi SDK] Getting status`);
-    }
+  async getStatus(): Promise<any> {
+    console.debug(`[Zimagi SDK] Getting status`);
 
     if (!this._status) {
       const statusURL = `${this.baseURL}status`;
-      // Reduce logging in test environment
-      if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-        console.debug(`[Zimagi SDK] Status URL: ${statusURL}`);
-      }
+      console.debug(`[Zimagi SDK] Status URL: ${statusURL}`);
 
-      const processor = () => {
-        return this._request('GET', statusURL);
+      const processor = async () => {
+        return await this._request('GET', statusURL);
       };
+      this._status = await this._wrapAPICall('status', statusURL, processor);
 
-      this._status = this._wrapAPICall('status', statusURL, processor);
-      // Reduce logging in test environment
-      if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-        console.debug(`[Zimagi SDK] Status result:`, this._status);
-      }
+      console.debug(`[Zimagi SDK] Status result:`, this._status);
     }
     return this._status;
   }
@@ -150,29 +143,24 @@ export class BaseAPIClient {
    * Get API schema
    * @returns {*} Schema data
    */
-  getSchema(): any {
-    // Reduce logging in test environment
-    if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-      console.debug(`[Zimagi SDK] Getting schema`);
-    }
+  async getSchema(): Promise<any> {
+    console.debug(`[Zimagi SDK] Getting schema`);
 
     if (!this._schema) {
-      const schemaGenerator = () => {
-        const processor = () => {
-          return this._request('GET', this.baseURL);
+      const schemaGenerator = async () => {
+        const processor = async () => {
+          return await this._request('GET', this.baseURL);
         };
-        return this._wrapAPICall('schema', this.baseURL, processor);
+        return await this._wrapAPICall('schema', this.baseURL, processor);
       };
 
-      this._schema = this._cacheData(
+      this._schema = await this._cacheData(
         `${this.host}.${this.port}`,
         schemaGenerator,
         86400000 // 24 hours
       );
-      // Reduce logging in test environment
-      if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-        console.debug(`[Zimagi SDK] Schema result:`, this._schema);
-      }
+
+      console.debug(`[Zimagi SDK] Schema result:`, this._schema);
     }
     return this._schema;
   }
@@ -185,18 +173,17 @@ export class BaseAPIClient {
    * @param {Object} params - Request parameters
    * @returns {*} Processed result
    */
-  _wrapAPICall(type: string, path: string, processor: Function, params: any = null): any {
+  async _wrapAPICall(
+    type: string,
+    path: string,
+    processor: Function,
+    params: any = null
+  ): Promise<any> {
     try {
-      // Reduce logging in test environment
-      if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-        console.debug(`[Zimagi SDK] Wrapping API call: ${type} ${path}`);
-      }
-      return processor();
+      console.debug(`[Zimagi SDK] Wrapping API call: ${type} ${path}`);
+      return await processor();
     } catch (error: any) {
-      // Reduce logging in test environment
-      if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-        console.debug(`${type} API error: ${this._formatError(path, error, params)}`);
-      }
+      console.debug(`${type} API error: ${this._formatError(path, error, params)}`);
       throw error;
     }
   }
@@ -224,30 +211,26 @@ export class BaseAPIClient {
    * @param {number} cacheLifetime - Cache lifetime in milliseconds
    * @returns {*} Cached data
    */
-  _cacheData(cacheName: string, generatorFunction: Function, cacheLifetime: number = 3600000): any {
+  async _cacheData(
+    cacheName: string,
+    generatorFunction: Function,
+    cacheLifetime: number = 3600000
+  ): Promise<any> {
     const cacheKey = `zimagi_${cacheName}`;
     const cachedData = this.cache.get(cacheKey);
 
-    // Reduce logging in test environment
-    if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-      console.debug(`[Zimagi SDK] Checking cache for: ${cacheKey}`);
-      console.debug(`[Zimagi SDK] Cache hit: ${!!cachedData}`);
-    }
+    console.debug(`[Zimagi SDK] Checking cache for: ${cacheKey}`);
+    console.debug(`[Zimagi SDK] Cache hit: ${!!cachedData}`);
 
     if (cachedData) {
       return cachedData;
     }
 
-    // Reduce logging in test environment
-    if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-      console.debug(`[Zimagi SDK] Generating data for cache: ${cacheKey}`);
-    }
-    const data = generatorFunction();
+    console.debug(`[Zimagi SDK] Generating data for cache: ${cacheKey}`);
+
+    const data = await generatorFunction();
     this.cache.set(cacheKey, data, cacheLifetime);
-    // Reduce logging in test environment
-    if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-      console.debug(`[Zimagi SDK] Data cached: ${cacheKey}`);
-    }
+    console.debug(`[Zimagi SDK] Data cached: ${cacheKey}`);
 
     return data;
   }

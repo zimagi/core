@@ -27,18 +27,13 @@ export class DataHTTPTransport extends BaseTransport {
     params: any,
     decoders: any[]
   ): Promise<any> {
-    // Reduce logging in test environment
-    if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-      console.debug(`[Zimagi SDK] DataHTTPTransport.handleRequest: ${method} ${url}`);
-      console.debug(`[Zimagi SDK] Path: ${path}`);
-    }
+    console.debug(`[Zimagi SDK] DataHTTPTransport.handleRequest: ${method} ${url}`);
+    console.debug(`[Zimagi SDK] Path: ${path}`);
 
     if (method === 'GET') {
       if (path.match(/^\/status\/?$/)) {
-        // Reduce logging in test environment
-        if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-          console.debug(`[Zimagi SDK] Handling status request`);
-        }
+        console.debug(`[Zimagi SDK] Handling status request`);
+
         return await this.requestPage(url, headers, null, decoders, {
           encrypted: false,
           useAuth: false,
@@ -47,10 +42,8 @@ export class DataHTTPTransport extends BaseTransport {
       }
 
       if (!path || path === '/' || path.startsWith('/schema/')) {
-        // Reduce logging in test environment
-        if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-          console.debug(`[Zimagi SDK] Handling schema/root request`);
-        }
+        console.debug(`[Zimagi SDK] Handling schema/root request`);
+
         return await this.requestPage(url, headers, null, decoders, {
           encrypted: false,
           useAuth: true,
@@ -58,20 +51,15 @@ export class DataHTTPTransport extends BaseTransport {
         });
       }
 
-      // Reduce logging in test environment
-      if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-        console.debug(`[Zimagi SDK] Handling data request`);
-      }
+      console.debug(`[Zimagi SDK] Handling data request`);
+
       return await this.requestPage(url, headers, params, decoders, {
         encrypted: true,
         useAuth: true,
       });
     }
 
-    // Reduce logging in test environment
-    if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-      console.debug(`[Zimagi SDK] Handling data update request`);
-    }
+    console.debug(`[Zimagi SDK] Handling data update request`);
     return await this.updateData(method, url, headers, params, decoders);
   }
 
@@ -93,10 +81,7 @@ export class DataHTTPTransport extends BaseTransport {
     decoders: any[],
     encrypted: boolean = true
   ): Promise<any> {
-    // Reduce logging in test environment
-    if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-      console.debug(`[Zimagi SDK] DataHTTPTransport.updateData: ${method} ${url}`);
-    }
+    console.debug(`[Zimagi SDK] DataHTTPTransport.updateData: ${method} ${url}`);
 
     const [request, response] = await this._request(method, url, {
       headers: {
@@ -108,21 +93,15 @@ export class DataHTTPTransport extends BaseTransport {
       useAuth: true,
     });
 
-    // Reduce logging in test environment
-    if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-      console.debug(`[Zimagi SDK] Update data request completed: ${method} ${url}`);
-      console.debug(`[Zimagi SDK] Response status: ${response.status}`);
-    }
+    console.debug(`[Zimagi SDK] Update data request completed: ${method} ${url}`);
+    console.debug(`[Zimagi SDK] Response status: ${response.status}`);
 
     if (response.status >= 400) {
       const error = this._formatResponseError(
         response,
         encrypted && this.client ? this.client.cipher : null
       );
-      // Reduce logging in test environment
-      if (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'test') {
-        console.debug(`[Zimagi SDK] Update data request error:`, error);
-      }
+      console.debug(`[Zimagi SDK] Update data request error:`, error);
       throw new ResponseError(error.message, response.status, error.data);
     }
 
