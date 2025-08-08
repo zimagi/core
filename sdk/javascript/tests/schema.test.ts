@@ -12,10 +12,10 @@ describe('Schema Classes', () => {
       description: 'Test description',
     });
 
-    expect((root as any).url).toBe('http://localhost');
-    expect((root as any).title).toBe('Test Root');
-    expect((root as any).description).toBe('Test description');
-    expect((root as any).mediaType).toBe('application/vnd.zimagi+json');
+    expect(root.url).toBe('http://localhost');
+    expect(root.title).toBe('Test Root');
+    expect(root.description).toBe('Test description');
+    expect(root.mediaType).toBe('application/vnd.zimagi+json');
   });
 
   test('Router should initialize with options', () => {
@@ -28,12 +28,12 @@ describe('Schema Classes', () => {
       resource: 'test',
     });
 
-    expect((router as any).name).toBe('Test Router');
-    expect((router as any).overview).toBe('Test overview');
-    expect((router as any).description).toBe('Test description');
-    expect((router as any).epilog).toBe('Test epilog');
-    expect((router as any).priority).toBe(5);
-    expect((router as any).resource).toBe('test');
+    expect(router.name).toBe('Test Router');
+    expect(router.overview).toBe('Test overview');
+    expect(router.description).toBe('Test description');
+    expect(router.epilog).toBe('Test epilog');
+    expect(router.priority).toBe(5);
+    expect(router.resource).toBe('test');
   });
 
   test('Action should initialize with options', () => {
@@ -49,15 +49,15 @@ describe('Schema Classes', () => {
       fields: [],
     });
 
-    expect((action as any).url).toBe('http://localhost/action');
-    expect((action as any).name).toBe('Test Action');
-    expect((action as any).overview).toBe('Test overview');
-    expect((action as any).description).toBe('Test description');
-    expect((action as any).epilog).toBe('Test epilog');
-    expect((action as any).priority).toBe(3);
-    expect((action as any).resource).toBe('test');
-    expect((action as any).confirm).toBe(true);
-    expect((action as any).fields).toEqual([]);
+    expect(action.url).toBe('http://localhost/action');
+    expect(action.name).toBe('Test Action');
+    expect(action.overview).toBe('Test overview');
+    expect(action.description).toBe('Test description');
+    expect(action.epilog).toBe('Test epilog');
+    expect(action.priority).toBe(3);
+    expect(action.resource).toBe('test');
+    expect(action.confirm).toBe(true);
+    expect(action.fields).toEqual([]);
   });
 
   test('Field should initialize with options', () => {
@@ -76,18 +76,18 @@ describe('Schema Classes', () => {
       tags: ['tag1', 'tag2'],
     });
 
-    expect((field as any).method).toBe('GET');
-    expect((field as any).name).toBe('test_field');
-    expect((field as any).type).toBe('string');
-    expect((field as any).argument).toBe('test');
-    expect((field as any).config).toBe('config');
-    expect((field as any).description).toBe('Test description');
-    expect((field as any).valueLabel).toBe('Test Label');
-    expect((field as any).required).toBe(true);
-    expect((field as any).system).toBe(false);
-    expect((field as any).default).toBe('default_value');
-    expect((field as any).choices).toEqual(['choice1', 'choice2']);
-    expect((field as any).tags).toEqual(['tag1', 'tag2']);
+    expect(field.method).toBe('GET');
+    expect(field.name).toBe('test_field');
+    expect(field.type).toBe('string');
+    expect(field.argument).toBe('test');
+    expect(field.config).toBe('config');
+    expect(field.description).toBe('Test description');
+    expect(field.valueLabel).toBe('Test Label');
+    expect(field.required).toBe(true);
+    expect(field.system).toBe(false);
+    expect(field.default).toBe('default_value');
+    expect(field.choices).toEqual(['choice1', 'choice2']);
+    expect(field.tags).toEqual(['tag1', 'tag2']);
   });
 
   test('Error should initialize with options', () => {
@@ -98,8 +98,8 @@ describe('Schema Classes', () => {
       },
     });
 
-    expect((error as any).title).toBe('Test Error');
-    expect((error as any).get('message')).toBe('Error message');
+    expect(error.title).toBe('Test Error');
+    expect(error.get('message')).toBe('Error message');
   });
 
   test('Object should initialize with items', () => {
@@ -108,8 +108,8 @@ describe('Schema Classes', () => {
       key2: 'value2',
     });
 
-    expect((obj as any).get('key1')).toBe('value1');
-    expect((obj as any).get('key2')).toBe('value2');
+    expect(obj.get('key1')).toBe('value1');
+    expect(obj.get('key2')).toBe('value2');
   });
 
   test('Array should initialize with items', () => {

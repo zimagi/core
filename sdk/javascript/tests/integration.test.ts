@@ -40,13 +40,13 @@ describe('Integration Tests', () => {
     test('should get status', async () => {
       const status = await commandClient.getStatus();
       expect(status).toBeDefined();
-      expect((status as any).encryption).toBeDefined();
+      expect(status.encryption).toBeDefined();
     }, 10000); // Increase timeout to 10 seconds
 
     test('should get schema', async () => {
       const schema = await commandClient.getSchema();
       expect(schema).toBeDefined();
-      expect((schema as any).commands).toBeDefined();
+      expect(schema.commands).toBeDefined();
     }, 20000); // Increase timeout to 20 seconds
   });
 
@@ -75,19 +75,19 @@ describe('Integration Tests', () => {
     test('should get status', async () => {
       const status = await dataClient.getStatus();
       expect(status).toBeDefined();
-      expect((status as any).encryption).toBeDefined();
+      expect(status.encryption).toBeDefined();
     }, 10000); // Increase timeout to 10 seconds
 
     test('should get schema', async () => {
       const schema = await dataClient.getSchema();
       expect(schema).toBeDefined();
-      expect((schema as any).paths).toBeDefined();
+      expect(schema.paths).toBeDefined();
     }, 20000); // Increase timeout to 20 seconds
 
     test('should list users', async () => {
       const users = await dataClient.list('user');
       expect(users).toBeDefined();
-      expect((users as any).results).toBeDefined();
+      expect(users.results).toBeDefined();
     }, 10000); // Increase timeout to 10 seconds
   });
 });

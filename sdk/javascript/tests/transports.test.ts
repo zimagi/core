@@ -33,18 +33,18 @@ describe('BaseTransport', () => {
       responseCallback: mockFn,
     });
 
-    expect((transport as any).client).toBe(mockClient);
-    expect((transport as any).verifyCert).toBe(true);
-    expect((transport as any).optionsCallback).toBeDefined();
-    expect((transport as any).requestCallback).toBeDefined();
-    expect((transport as any).responseCallback).toBeDefined();
+    expect(transport.client).toBe(mockClient);
+    expect(transport.verifyCert).toBe(true);
+    expect(transport.optionsCallback).toBeDefined();
+    expect(transport.requestCallback).toBeDefined();
+    expect(transport.responseCallback).toBeDefined();
   });
 
   test('should throw error for unimplemented handleRequest', () => {
     const transport = new BaseTransport();
-    expect(
-      (transport as any).handleRequest('GET', 'http://localhost', '/', {}, {}, [])
-    ).rejects.toThrow('Method handleRequest(...) must be overridden in all subclasses');
+    expect(transport.handleRequest('GET', 'http://localhost', '/', {}, {}, [])).rejects.toThrow(
+      'Method handleRequest(...) must be overridden in all subclasses'
+    );
   });
 
   test('_getDecoder should throw error for unsupported media type', () => {
@@ -58,13 +58,13 @@ describe('BaseTransport', () => {
     }
 
     expect(() => {
-      (transport as any)._getDecoder('text/html', [new MockCodec()]);
+      transport._getDecoder('text/html', [new MockCodec()]);
     }).toThrow(ClientError);
   });
 
   test('_sleep should return a promise', () => {
     const transport = new BaseTransport();
-    const promise = (transport as any)._sleep(1);
+    const promise = transport._sleep(1);
     expect(promise).toBeInstanceOf(Promise);
   });
 });

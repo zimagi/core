@@ -44,7 +44,7 @@ describe('Message Classes', () => {
 
     expect(message.type).toBe('DataMessage');
     expect(message.message).toBe('Test data');
-    expect((message as any).data).toEqual({ key: 'value' });
+    expect(message.data).toEqual({ key: 'value' });
   });
 
   test('ErrorMessage should be identified as error', () => {
@@ -54,7 +54,7 @@ describe('Message Classes', () => {
     });
 
     expect(message.isError()).toBe(true);
-    expect((message as any).traceback).toBe('Error traceback');
+    expect(message.traceback).toBe('Error traceback');
   });
 
   test('WarningMessage should display to console.warn', () => {

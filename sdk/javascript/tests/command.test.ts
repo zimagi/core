@@ -83,8 +83,8 @@ describe('CommandResponse', () => {
 
     response.add([userMessage, logMessage]);
 
-    expect((response as any).activeUser).toEqual({ username: 'testuser' });
-    expect((response as any).logKey).toBe('test-log-key');
+    expect(response.activeUser).toEqual({ username: 'testuser' });
+    expect(response.logKey).toBe('test-log-key');
   });
 
   test('should generate error message', () => {
