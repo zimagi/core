@@ -2,7 +2,6 @@
  * Base transport class for the Zimagi JavaScript SDK
  */
 
-import fetch from 'node-fetch';
 import { ConnectionError, ResponseError, ClientError } from '../exceptions';
 
 /**
@@ -20,11 +19,11 @@ export interface TransportOptions {
  * Base transport class
  */
 export class BaseTransport {
-  protected client: any;
-  protected verifyCert: boolean;
-  protected optionsCallback: Function | null;
-  protected requestCallback: Function | null;
-  protected responseCallback: Function | null;
+  client: any;
+  verifyCert: boolean;
+  optionsCallback: Function | null;
+  requestCallback: Function | null;
+  responseCallback: Function | null;
 
   /**
    * Create a new transport
@@ -36,6 +35,25 @@ export class BaseTransport {
     this.optionsCallback = options.optionsCallback || null;
     this.requestCallback = options.requestCallback || null;
     this.responseCallback = options.responseCallback || null;
+  }
+
+  /**
+   * Render debug statements
+   */
+  debug(...args: any[]): void {
+    // In test environment, be more careful about logging
+    if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test') {
+      // During tests, minimize logging to prevent "Cannot log after tests are done" errors
+      return;
+    }
+
+    // Outside of test environment, log normally
+    try {
+      console.debug('[Zimagi SDK Transport]: ', ...args);
+    } catch (e) {
+      // Silently ignore logging if context is invalid
+      return;
+    }
   }
 
   /**
@@ -79,9 +97,9 @@ If restarting, retry in a few minutes...
         this.optionsCallback(params);
       }
 
-      console.debug(`[Zimagi SDK] Making request: ${method} ${url}`);
-      console.debug(`[Zimagi SDK] Request headers: ${JSON.stringify(headers)}`);
-      console.debug(`[Zimagi SDK] Request params: ${JSON.stringify(params)}`);
+      this.debug(`Making request: ${method} ${url}`);
+      this.debug(`Request headers: ${JSON.stringify(headers)}`);
+      this.debug(`Request params: ${JSON.stringify(params)}`);
 
       return await this.handleRequest(
         method,
@@ -92,11 +110,11 @@ If restarting, retry in a few minutes...
         decoders
       );
     } catch (error: any) {
-      console.debug(`[Zimagi SDK] Request to ${url} failed: ${error.message}`);
-      console.debug(`[Zimagi SDK] Error stack: ${error.stack}`);
+      this.debug(`Request to ${url} failed: ${error.message}`);
+      this.debug(`Error stack: ${error.stack}`);
 
       if ((options.tries || 3) > 0) {
-        console.debug(`[Zimagi SDK] Retrying request (${options.tries || 3} tries remaining)`);
+        this.debug(`Retrying request (${options.tries || 3} tries remaining)`);
         await this._sleep((options.retryWait || 2) * 1000);
         return await this.request(method, url, decoders, params, {
           ...options,
@@ -150,8 +168,8 @@ If restarting, retry in a few minutes...
     const useAuth = options.useAuth !== false;
     const disableCallbacks = options.disableCallbacks || false;
 
-    console.debug(`[Zimagi SDK] Requesting page: ${url}`);
-    console.debug(`[Zimagi SDK] Page request options:`, { encrypted, useAuth, disableCallbacks });
+    this.debug(`Requesting page: ${url}`);
+    this.debug(`Page request options:`, { encrypted, useAuth, disableCallbacks });
 
     const result = await this._request('GET', url, {
       headers: headers,
@@ -161,15 +179,15 @@ If restarting, retry in a few minutes...
       disableCallbacks: disableCallbacks,
     });
 
-    console.debug(`[Zimagi SDK] Page request completed: ${url}`);
-    console.debug(`[Zimagi SDK] Response status: ${result[1].status}`);
+    this.debug(`Page request completed: ${url}`);
+    this.debug(`Response status: ${result[1].status}`);
 
     if (result[1].status >= 400) {
       const error = this._formatResponseError(
         result[1],
         encrypted && this.client ? this.client.cipher : null
       );
-      console.debug(`[Zimagi SDK] Page request error:`, error);
+      this.debug(`Page request error:`, error);
       throw new ResponseError(error.message, result[1].status, error.data);
     }
 
@@ -230,24 +248,22 @@ If restarting, retry in a few minutes...
       body: body,
     };
 
-    console.debug(`[Zimagi SDK] Making fetch request: ${method} ${requestUrl}`);
-    console.debug(`[Zimagi SDK] Fetch options:`, fetchOptions);
+    this.debug(`Making fetch request: ${method} ${requestUrl}`);
+    this.debug(`Fetch options:`, fetchOptions);
 
     if (!disableCallbacks && this.requestCallback && typeof this.requestCallback === 'function') {
       this.requestCallback(fetchOptions);
     }
 
     const startTime = Date.now();
-    console.debug(`[Zimagi SDK] Starting fetch request at ${startTime}`);
+    this.debug(`Starting fetch request at ${startTime}`);
 
     const response: any = await fetch(requestUrl, fetchOptions);
 
     const endTime = Date.now();
-    console.debug(
-      `[Zimagi SDK] Fetch request completed at ${endTime} (duration: ${endTime - startTime}ms)`
-    );
-    console.debug(`[Zimagi SDK] Response status: ${response.status}`);
-    console.debug(`[Zimagi SDK] Response headers:`, Object.fromEntries(response.headers.entries()));
+    this.debug(`Fetch request completed at ${endTime} (duration: ${endTime - startTime}ms)`);
+    this.debug(`Response status: ${response.status}`);
+    this.debug(`Response headers:`, Object.fromEntries(response.headers.entries()));
 
     return [{ url: requestUrl, method, headers: requestHeaders }, response];
   }
@@ -304,7 +320,7 @@ If restarting, retry in a few minutes...
           content = await response.text();
         }
       } catch (error: any) {
-        console.debug(`[Zimagi SDK] Error reading response body: ${error.message}`);
+        this.debug(`Error reading response body: ${error.message}`);
         content = '';
       }
     }
@@ -313,12 +329,12 @@ If restarting, retry in a few minutes...
 
     if (content || content === '') {
       const contentType = response.headers.get('content-type') || '';
-      console.debug(`[Zimagi SDK] Decoding response with content-type: ${contentType}`);
+      this.debug(`Decoding response with content-type: ${contentType}`);
 
       const codec = this._getDecoder(contentType.split(';')[0].trim().toLowerCase(), decoders);
 
       if (decrypt && this.client && this.client.cipher) {
-        console.debug(`[Zimagi SDK] Decrypting response content`);
+        this.debug(`Decrypting response content`);
         content = this.client.cipher.decrypt(content);
       }
 
@@ -346,10 +362,10 @@ If restarting, retry in a few minutes...
    * @returns {Object} Decoder
    */
   _getDecoder(contentType: string, decoders: any[]): any {
-    console.debug(`[Zimagi SDK] Looking for decoder for content type: ${contentType}`);
+    this.debug(`Looking for decoder for content type: ${contentType}`);
     for (const codec of decoders) {
       if (codec.mediaTypes.includes(contentType)) {
-        console.debug(`[Zimagi SDK] Found decoder: ${codec.constructor.name}`);
+        this.debug(`Found decoder: ${codec.constructor.name}`);
         return codec;
       }
     }
@@ -365,26 +381,24 @@ If restarting, retry in a few minutes...
    */
   _formatResponseError(response: any, cipher: any = null): any {
     let message = response.statusText;
-    console.debug(
-      `[Zimagi SDK] Formatting response error: ${response.status} ${response.statusText}`
-    );
+    this.debug(`Formatting response error: ${response.status} ${response.statusText}`);
 
     if (cipher) {
       // Decrypt error message if needed
-      console.debug(`[Zimagi SDK] Decrypting error message`);
+      this.debug(`Decrypting error message`);
       message = cipher.decrypt(response.body);
     }
 
     try {
       const errorData = JSON.parse(message);
       const errorRender = JSON.stringify(errorData, null, 2);
-      console.debug(`[Zimagi SDK] Parsed error data:`, errorData);
+      this.debug(`Parsed error data:`, errorData);
       return {
         message: `Error ${response.status}: ${response.statusText}: ${errorRender}`,
         data: errorData,
       };
     } catch (error: any) {
-      console.debug(`[Zimagi SDK] Error parsing error data: ${error.message}`);
+      this.debug(`Error parsing error data: ${error.message}`);
       return {
         message: `Error ${response.status}: ${response.statusText}: ${message}`,
         data: message,
@@ -398,7 +412,7 @@ If restarting, retry in a few minutes...
    * @returns {Promise} Sleep promise
    */
   _sleep(ms: number): Promise<void> {
-    console.debug(`[Zimagi SDK] Sleeping for ${ms}ms`);
+    this.debug(`Sleeping for ${ms}ms`);
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

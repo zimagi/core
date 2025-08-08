@@ -371,9 +371,9 @@ export class CommandClient extends BaseAPIClient {
     for (const [key, value] of Object.entries(options)) {
       if (typeof value === 'object' && value !== null) {
         if (Array.isArray(value) && method === 'GET') {
-          (options as any)[key] = (value as any[]).join(',');
+          options[key] = (value as any[]).join(',');
         } else {
-          (options as any)[key] = JSON.stringify(value);
+          options[key] = JSON.stringify(value);
         }
       }
     }

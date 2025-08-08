@@ -2,6 +2,8 @@
  * Command response handler for the Zimagi JavaScript SDK
  */
 
+import { DataMessage } from '../messages';
+
 export interface CommandMessage {
   type: string;
   name?: string | null;
@@ -52,10 +54,10 @@ export class CommandResponse {
   }
 
   getNamedData(name: string): any {
-    const message = this.named[name];
+    const message = this.named[name] as DataMessage | null;
     if (message) {
       try {
-        return (message as any).data;
+        return message.data;
       } catch (error) {
         return message.message;
       }

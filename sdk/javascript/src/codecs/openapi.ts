@@ -18,7 +18,7 @@ export class OpenAPIJSONCodec extends BaseCodec {
       return JSON.stringify(data);
     } catch (error: any) {
       if (typeof jest !== 'undefined' && !jest) {
-        console.debug(`[Zimagi SDK] OpenAPI JSON encoding failed: ${error.message}`);
+        this.debug(`OpenAPI JSON encoding failed: ${error.message}`);
       }
       throw new ParseError(`OpenAPI JSON encoding error: ${error.message}`);
     }
@@ -41,7 +41,7 @@ export class OpenAPIJSONCodec extends BaseCodec {
     } catch (error: any) {
       // Only log if we're still in a test context and not after tests are done
       if (typeof jest !== 'undefined' && !jest) {
-        console.debug(`[Zimagi SDK] OpenAPI JSON parsing failed: ${error.message}`);
+        this.debug(`OpenAPI JSON parsing failed: ${error.message}`);
       }
       throw new ParseError(`Malformed JSON: ${error.message}`);
     }

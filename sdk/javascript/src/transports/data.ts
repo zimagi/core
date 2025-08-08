@@ -27,12 +27,12 @@ export class DataHTTPTransport extends BaseTransport {
     params: any,
     decoders: any[]
   ): Promise<any> {
-    console.debug(`[Zimagi SDK] DataHTTPTransport.handleRequest: ${method} ${url}`);
-    console.debug(`[Zimagi SDK] Path: ${path}`);
+    this.debug(`DataHTTPTransport.handleRequest: ${method} ${url}`);
+    this.debug(`Path: ${path}`);
 
     if (method === 'GET') {
       if (path.match(/^\/status\/?$/)) {
-        console.debug(`[Zimagi SDK] Handling status request`);
+        this.debug(`Handling status request`);
 
         return await this.requestPage(url, headers, null, decoders, {
           encrypted: false,
@@ -42,7 +42,7 @@ export class DataHTTPTransport extends BaseTransport {
       }
 
       if (!path || path === '/' || path.startsWith('/schema/')) {
-        console.debug(`[Zimagi SDK] Handling schema/root request`);
+        this.debug(`Handling schema/root request`);
 
         return await this.requestPage(url, headers, null, decoders, {
           encrypted: false,
@@ -51,7 +51,7 @@ export class DataHTTPTransport extends BaseTransport {
         });
       }
 
-      console.debug(`[Zimagi SDK] Handling data request`);
+      this.debug(`Handling data request`);
 
       return await this.requestPage(url, headers, params, decoders, {
         encrypted: true,
@@ -59,7 +59,7 @@ export class DataHTTPTransport extends BaseTransport {
       });
     }
 
-    console.debug(`[Zimagi SDK] Handling data update request`);
+    this.debug(`Handling data update request`);
     return await this.updateData(method, url, headers, params, decoders);
   }
 
@@ -81,7 +81,7 @@ export class DataHTTPTransport extends BaseTransport {
     decoders: any[],
     encrypted: boolean = true
   ): Promise<any> {
-    console.debug(`[Zimagi SDK] DataHTTPTransport.updateData: ${method} ${url}`);
+    this.debug(`DataHTTPTransport.updateData: ${method} ${url}`);
 
     const [request, response] = await this._request(method, url, {
       headers: {
@@ -93,15 +93,15 @@ export class DataHTTPTransport extends BaseTransport {
       useAuth: true,
     });
 
-    console.debug(`[Zimagi SDK] Update data request completed: ${method} ${url}`);
-    console.debug(`[Zimagi SDK] Response status: ${response.status}`);
+    this.debug(`Update data request completed: ${method} ${url}`);
+    this.debug(`Response status: ${response.status}`);
 
     if (response.status >= 400) {
       const error = this._formatResponseError(
         response,
         encrypted && this.client ? this.client.cipher : null
       );
-      console.debug(`[Zimagi SDK] Update data request error:`, error);
+      this.debug(`Update data request error:`, error);
       throw new ResponseError(error.message, response.status, error.data);
     }
 

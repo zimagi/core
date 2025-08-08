@@ -18,7 +18,7 @@ export class JSONCodec extends BaseCodec {
       return JSON.stringify(data);
     } catch (error: any) {
       if (typeof jest !== 'undefined' && !jest) {
-        console.debug(`[Zimagi SDK] JSON encoding failed: ${error.message}`);
+        this.debug(`JSON encoding failed: ${error.message}`);
       }
       throw new ParseError(`JSON encoding error: ${error.message}`);
     }
@@ -36,7 +36,7 @@ export class JSONCodec extends BaseCodec {
     } catch (error: any) {
       // Only log if we're still in a test context and not after tests are done
       if (typeof jest !== 'undefined' && !jest) {
-        console.debug(`[Zimagi SDK] JSON parsing failed: ${error.message}`);
+        this.debug(`JSON parsing failed: ${error.message}`);
       }
       throw new ParseError(`Malformed JSON: ${error.message}`);
     }
