@@ -2,7 +2,7 @@
  * Base transport class for the Zimagi JavaScript SDK
  */
 
-// Use dynamic import for node-fetch to avoid Jest configuration issues
+import fetch from 'node-fetch';
 import { ConnectionError, ResponseError, ClientError } from '../exceptions';
 
 /**
@@ -60,7 +60,6 @@ The Zimagi client failed to connect with the server.
 This could indicate the server is down or restarting.
 If restarting, retry in a few minutes...
 `;
-
     try {
       const acceptMediaTypes: string[] = [];
       for (const decoder of decoders) {
@@ -192,15 +191,6 @@ If restarting, retry in a few minutes...
       useAuth = true,
       disableCallbacks = false,
     } = options;
-
-    // Dynamically import node-fetch to avoid Jest configuration issues
-    let fetch: any;
-    try {
-      const nodeFetch = await import('node-fetch');
-      fetch = nodeFetch.default || nodeFetch;
-    } catch (error) {
-      throw new ClientError('node-fetch module not available');
-    }
 
     // Create request object
     const requestHeaders = { ...headers };
