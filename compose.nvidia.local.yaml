@@ -29,7 +29,7 @@ x-zimagi-env: &zimagi-env
   ZIMAGI_POSTGRES_PORT: 5432
   ZIMAGI_REDIS_HOST: redis-zimagi
   ZIMAGI_REDIS_PORT: 6379
-  ZIMAGI_QDRANT_HOST: qdrant
+  ZIMAGI_QDRANT_HOST: qdrant-zimagi
   ZIMAGI_QDRANT_PORT: 6333
 
 x-zimagi-service-shared: &zimagi-service-shared
@@ -49,6 +49,7 @@ x-zimagi-service-shared: &zimagi-service-shared
   depends_on:
     - postgresql-zimagi
     - redis-zimagi
+    - qdrant-zimagi
 
 x-zimagi-service: &zimagi-service
   <<: *zimagi-service-shared

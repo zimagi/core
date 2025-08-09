@@ -4,13 +4,13 @@ include:
 volumes:
   postgres_zimagi_data: {}
   redis_zimagi_data: {}
-  qdrant_data: {}
-  qdrant_snapshots: {}
+  qdrant_zimagi_data: {}
+  qdrant_zimagi_snapshots: {}
 
 services:
   postgresql-zimagi:
     image: 'postgres:17.4'
-    command: postgres -c 'max_connections=100'
+    command: postgres -c 'max_connections=1000'
     networks:
       - zimagi-net
     volumes:
@@ -42,13 +42,13 @@ services:
       timeout: 5s
       retries: 10
 
-  qdrant:
+  qdrant-zimagi:
     image: 'qdrant/qdrant:v1.14.1'
     networks:
       - zimagi-net
     volumes:
-      - 'qdrant_data:/qdrant/storage'
-      - 'qdrant_snapshots:/qdrant/snapshots'
+      - 'qdrant_zimagi_data:/qdrant/storage'
+      - 'qdrant_zimagi_snapshots:/qdrant/snapshots'
     environment:
       QDRANT__LOG_LEVEL: DEBUG
       QDRANT__STORAGE__SNAPSHOTS_PATH: /qdrant/snapshots
