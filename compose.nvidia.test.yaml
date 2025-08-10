@@ -89,7 +89,7 @@ services:
       test: ['CMD', 'curl', '-f', 'http://localhost:5000/status']
       interval: 5s
       timeout: 5s
-      retries: 20
+      retries: 60
 
   mcp-api:
     <<: *zimagi-service
@@ -100,7 +100,7 @@ services:
       test: ['CMD', 'curl', '-f', 'http://localhost:5000/status']
       interval: 5s
       timeout: 5s
-      retries: 20
+      retries: 60
 
   data-api:
     <<: *zimagi-service
@@ -111,7 +111,7 @@ services:
       test: ['CMD', 'curl', '-f', 'http://localhost:5000/status']
       interval: 5s
       timeout: 5s
-      retries: 20
+      retries: 60
 
   controller:
     <<: *zimagi-service
@@ -120,7 +120,7 @@ services:
       test: ['CMD-SHELL', 'test -f /var/local/zimagi/controller || exit 1']
       interval: 5s
       timeout: 5s
-      retries: 20
+      retries: 60
 
   scheduler:
     <<: *zimagi-service
@@ -129,4 +129,4 @@ services:
       test: ['CMD-SHELL', 'test -f /var/local/zimagi/scheduler || exit 1']
       interval: 5s
       timeout: 5s
-      retries: 20
+      retries: 60
