@@ -254,7 +254,7 @@ DEFAULT_ADMIN_TOKEN = Config.string("ZIMAGI_DEFAULT_ADMIN_TOKEN", "uy5c8xiahf93j
 
 ANONYMOUS_USER = Config.string("ZIMAGI_ANONYMOUS_USER", "anonymous")
 
-DATA_API_FILTER_DEPTH = Config.integer("ZIMAGI_DATA_API_FILTER_DEPTH", 2)
+DATA_API_FILTER_DEPTH = Config.integer("ZIMAGI_DATA_API_FILTER_DEPTH", 3)
 
 #
 # Worker configuration
