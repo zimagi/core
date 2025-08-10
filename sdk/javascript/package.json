@@ -1,6 +1,6 @@
 {
   "name": "@zimagi/zimagi",
-  "version": "0.14.2",
+  "version": "0.14.3",
   "description": "JavaScript SDK for Zimagi platform",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
