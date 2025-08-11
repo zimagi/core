@@ -27,7 +27,7 @@ class Provider(BaseProvider("module", "git")):
     def initialize_instance(self, instance, created):
         super().initialize_instance(instance, created)
 
-        if not settings.DISABLE_MODULE_SYNC:
+        if created or not settings.DISABLE_MODULE_SYNC:
             module_path = self.module_path(instance.name)
 
             if not Git.check(module_path):
