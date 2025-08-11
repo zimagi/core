@@ -14,9 +14,6 @@ class ScheduledTaskChanges(celery_beat_models.PeriodicTasks):
 
 
 class ScheduledTaskFacade(ModelFacade("scheduled_task")):
-    def keep(self, key=None):
-        return []
-
     def delete(self, key, **filters):
         result = super().delete(key, **filters)
         ScheduledTaskChanges.update_changed()

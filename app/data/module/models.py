@@ -93,7 +93,7 @@ class ModuleFacade(ModelFacade("module")):
         keep_names = [settings.CORE_MODULE] + self.manager.index.get_default_module_names()
         if key and self.manager.index.module_dependencies.get(key, None):
             keep_names = keep_names + [key]
-        return keep_names
+        return key in keep_names if key else keep_names
 
     def delete(self, key, **filters):
         result = super().delete(key, **filters)

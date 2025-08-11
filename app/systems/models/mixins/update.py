@@ -306,7 +306,7 @@ class ModelFacadeUpdateMixin:
                 setattr(instance, relation, id)
 
     def delete(self, key, **filters):
-        if key not in ensure_list(self.keep(key)):
+        if not self.keep(key):
             filters[self.key()] = key
             return self.clear(**filters)
         else:

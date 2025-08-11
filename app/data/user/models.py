@@ -25,7 +25,8 @@ class UserFacade(ModelFacade("user")):
                 user.provider.update(config, quiet=True)
 
     def keep(self, key=None):
-        return [settings.ADMIN_USER] + list(settings.MANAGER.index.users.keys())
+        keep_list = [settings.ADMIN_USER] + list(settings.MANAGER.index.users.keys())
+        return key in keep_list if key else keep_list
 
     def keep_relations(self):
         keep_relations = {"groups": {settings.ADMIN_USER: Roles.admin}}
