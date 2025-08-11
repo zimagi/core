@@ -99,6 +99,9 @@ jobs:
             source start standard test api
             echo "export COMPOSE_FILE='${COMPOSE_FILE}'" >> $BASH_ENV
       - run:
+          name: Install Javascript SDK dependencies
+          command: ./js-sdk install
+      - run:
           name: Run API Javascript SDK tests
           command: ./js-sdk run test
       - run:
@@ -125,6 +128,9 @@ jobs:
           command: |
             source start standard test api.encrypted
             echo "export COMPOSE_FILE='${COMPOSE_FILE}'" >> $BASH_ENV
+      - run:
+          name: Install Javascript SDK dependencies
+          command: ./js-sdk install
       - run:
           name: Run API Javascript encrypted SDK tests
           command: ./js-sdk run test
