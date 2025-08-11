@@ -63,7 +63,7 @@ services:
     <<: *zimagi-service
     entrypoint: zimagi-command
     ports:
-      - '5123:5000'
+      - '${ZIMAGI_COMMAND_PORT}:5000'
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:5000/status']
       interval: 5s
@@ -74,7 +74,7 @@ services:
     <<: *zimagi-service
     entrypoint: zimagi-mcp
     ports:
-      - '6123:5000'
+      - '${ZIMAGI_MCP_PORT}:5000'
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:5000/status']
       interval: 5s
@@ -85,7 +85,7 @@ services:
     <<: *zimagi-service
     entrypoint: zimagi-data
     ports:
-      - '5323:5000'
+      - '${ZIMAGI_DATA_PORT}:5000'
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:5000/status']
       interval: 5s
