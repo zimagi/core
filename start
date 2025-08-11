@@ -147,7 +147,7 @@ else
   cp "${__zimagi_env_dir}/secret.example" "${__zimagi_env_dir}/secret"
 fi
 
-if [ $new_env -eq 1 ]; then
+if [[ $new_env -eq 1 ]] && [[ "${COMPOSE_ENVIRONMENT}" == "local" ]]; then
   echo ""
   echo "[IMPORTANT]: Check to make sure the environment is correct in the env/generated and env/secret files before proceeding!"
   echo ""
