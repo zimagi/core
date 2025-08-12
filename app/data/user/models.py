@@ -45,8 +45,6 @@ class UserFacade(ModelFacade("user")):
     def active_user(self):
         if not self.manager.runtime.active_user():
             self.set_active_user(self.admin)
-        if not self.manager.runtime.active_user():
-            self.set_active_user(self.retrieve(settings.ADMIN_USER))
         return self.manager.runtime.active_user()
 
     def set_active_user(self, user):
