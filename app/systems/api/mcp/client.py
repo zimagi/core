@@ -61,8 +61,8 @@ class MCPClient:
         return flatten([server.list_tools(allowed_tools) for server in self.servers.values()])
 
     def get_tool_fields(self, name):
-        (tool_name, server_name) = self.mcp._get_name(name)
-        tool = self.servers[server_name].index[tool_name]
+        (tool_name, server_name) = self._get_name(name)
+        tool = self.servers[server_name].index["tools"][tool_name]
         return Collection(
             index=(
                 tool.inputSchema["properties"] if "properties" in tool.inputSchema and tool.inputSchema["properties"] else {}

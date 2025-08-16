@@ -91,7 +91,7 @@ class Response:
     def _parse_data_objects(self, markdown_text):
         return self._parse_markdown_json(markdown_text) + self._parse_markdown_yaml(markdown_text)
 
-    def _parse_markdown_json(markdown_text):
+    def _parse_markdown_json(self, markdown_text):
         pattern = r"```json(?::(\w+))?\s*\n(.*?)\n```"
         results = []
 
@@ -106,7 +106,7 @@ class Response:
 
         return results
 
-    def _parse_markdown_yaml(markdown_text):
+    def _parse_markdown_yaml(self, markdown_text):
         pattern = r"```yaml(?::(\w+))?\s*\n(.*?)\n```"
         results = []
 
@@ -152,7 +152,7 @@ class Response:
 
 class Actor:
 
-    chat_field_pattern = r"^\<\<(.+)\>\>$"
+    memory_field_pattern = r"^\<\<(.+)\>\>$"
 
     def __init__(self, command, prompts, search_limit=1000, search_min_score=0.3, keep_previous=5):
         self.command = command
@@ -169,12 +169,12 @@ class Actor:
     def get_max_cycles(self):
         return 10
 
-    def set_chat(self, message, chat_key):
-        match = re.match(self.chat_field_pattern, chat_key)
+    def set_memory_sequence(self, message, name):
+        match = re.match(self.memory_field_pattern, name)
         if match and match[1] in message:
-            chat_key = message[match[1]]
+            name = message[match[1]]
 
-        self.memory_manager.set_chat(chat_key)
+        self.memory_manager.set_memory_sequence(name)
 
     def _get_message_sequence(self, prompts, user, text):
         system_messages = []
@@ -196,11 +196,11 @@ class Actor:
         self.memory_manager.add(extra_messages, request_messages)
         return self.memory_manager.load(text, system_messages)
 
-    def respond(self, event, chat_key, search_field, field_labels=None):
+    def respond(self, event, memory_sequence, search_field, field_labels=None):
         response = Response(self.memory_manager, self.mcp)
         tools = self.mcp.list_tools(self.state_manager["tools"]) if self.state_manager["tools"] else []
 
-        self.set_chat(event.message, chat_key)
+        self.set_memory_sequence(event.message, memory_sequence)
         for cycle in range(self.get_max_cycles()):
             try:
                 messages = self._get_message_sequence(
@@ -211,54 +211,34 @@ class Actor:
                             "user": self.memory_manager.user.name,
                             "message": event.message,
                             "field_labels": field_labels or {},
-                            "data": response.data,
-                            "references": response.references,
                             "tools": tools,
                         }
                     ),
                     event.package.user,
                     event.message[search_field],
                 )
-                tool_calls = response.add_message(self._instruct(messages).text)
-                if not tool_calls:
+                print(dump_json(messages, indent=2))
+                print("=======================")
+
+                text = self._instruct(messages).text
+                is_complete = "<<DONE>>" in text
+                text = text.replace("<<DONE>>", "").strip()
+                print(text)
+                print(is_complete)
+
+                tool_calls = response.add_message(text)
+                print(tool_calls)
+                if not tool_calls and is_complete:
                     break
-                for index, value in enumerate(self.command.run_list(tool_calls, self._exec_tool)):
+
+                tool_results = self.command.run_list(tool_calls, self._exec_tool)
+                for index, value in enumerate(tool_results.data):
                     response.add_message(value.result, "tool")
 
             except Exception as error:
                 logger.error("Actor response generation failed")
                 logger.debug(f"Internal actor traceback: {format_traceback()}")
                 return self._handle_error(error)
-
-        return response.export()
-
-    def assist(self, event, chat_key, search_field, field_labels=None):
-        response = Response(self.memory_manager, self.mcp)
-
-        self.set_chat(event.message, chat_key)
-        for cycle in range(self.get_max_cycles()):
-            try:
-                messages = self._get_message_sequence(
-                    self.prompt_engine.render(
-                        {
-                            **self.state_manager.export(),
-                            "max_cycles": self.get_max_cycles(),
-                            "user": self.memory_manager.user.name,
-                            "message": event.message,
-                            "field_labels": field_labels or {},
-                        }
-                    ),
-                    event.package.user,
-                    event.message[search_field],
-                )
-                response.add_message(self._instruct(messages).text)
-                break
-
-            except Exception as error:
-                logger.error("Actor response generation failed")
-                logger.debug(f"Internal actor traceback: {format_traceback()}")
-                if cycle == (self.get_max_cycles() - 1):
-                    return self._handle_error(error)
 
         return response.export()
 

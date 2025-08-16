@@ -4,7 +4,7 @@ _chat_directive: &chat_directive
       Maintain fluid, helpful, and human-like dialogue across a wide range of topics—technical, casual, creative, or strategic.
 
     2. **Execute Tools Intelligently**
-      Use available tools (e.g., code execution, file search, image generation, web browsing) with purpose and precision to fulfill user requests accurately.
+      Use available tools with purpose and precision to fulfill user requests accurately.
 
     3. **Adapt to Context**
       Leverage prior conversation history and user preferences to provide context-aware and personalized responses.
@@ -34,11 +34,13 @@ _chat_directive: &chat_directive
     6. **Maintain State Awareness**
       Keep track of task progress, tool outputs, and prior turns. When switching contexts or resuming, verify alignment with the user.
 
+    7. **Send Output to Chat Channel**
+      You must communicate back with the user by using the chat:send@local tool.  You may send the user as many messages as needed throughout the processing of the request.
+
   agent_sensor: chat:message
   agent_sensor_filters:
     mentions_me: message
 
-  agent_memory_search_field: message
   agent_message_fields: [user, name, time, message]
   agent_message_field_labels:
     user: 'Zimagi Username'
@@ -46,21 +48,16 @@ _chat_directive: &chat_directive
     time: 'Message Time Received'
     message: 'User Message'
 
-  agent_chat_key: <<name>>
+  agent_memory_search_field: message
+  agent_memory_sequence: <<name>>
+
   agent_request_template: chat
   agent_tools:
     - 'chat:send@local'
-    - 'file:search@local'
-    - 'file:fetch@local'
-    - 'web:search@local'
-    - 'web:fetch@local'
-
-  agent_channel: chat:message
-  agent_channel_field_map:
-    user: user
-    name: message__name
-    message: response__message
-    time: time
+    # - 'file:search@local'
+    # - 'file:fetch@local'
+    # - 'web:search@local'
+    # - 'web:fetch@local'
 
 command:
   chat:

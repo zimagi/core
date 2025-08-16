@@ -102,21 +102,19 @@ command_base:
     parse:
       - lifetime
       - pause
+      - agent_user
       - agent_goal
       - agent_rules
-      - agent_user
-      - agent_chat_key
+      - agent_persona
       - agent_sensor
       - agent_sensor_filters
       - agent_message_fields
       - agent_message_field_labels
       - agent_memory_search_field
-      - agent_assistant_search_limit
-      - agent_assistant_search_min_score
+      - agent_memory_sequence
       - agent_system_template
       - agent_request_template
       - agent_tools_template
-      - agent_assistant_template
       - agent_tools
       - agent_channel
       - agent_channel_field_map

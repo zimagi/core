@@ -12,16 +12,6 @@ logger = logging.getLogger(__name__)
 
 class Cell(BaseCommand("cell")):
 
-    @property
-    def processes(self):
-        sensor_name = self.spec["options"].get("agent_sensor", None)
-        if not sensor_name:
-            return ("assistant",)
-        if sensor_name == "chat:message":
-            return ("event_processor",)
-        else:
-            return ("event_processor", "assistant")
-
     def get_state_key(self):
         return f"cell:state:{self.agent_user}:{".".join(self.get_full_name().split(" ")[1:])}"
 
@@ -41,6 +31,7 @@ class Cell(BaseCommand("cell")):
             {
                 "goal": self.agent_goal,
                 "rules": self.agent_rules,
+                "persona": self.agent_persona,
                 "tools": self.agent_tools,
             },
         )
@@ -71,7 +62,8 @@ class Cell(BaseCommand("cell")):
         try:
             for event in self.communication.listen(self.agent_sensor_filters, self.agent_message_fields):
                 response = self.profile(self.process_sensory_event, event)
-                self.communication.send(self.agent_channel, event, response, self.agent_channel_field_map)
+                if self.agent_channel:
+                    self.communication.send(self.agent_channel, event, response, self.agent_channel_field_map)
                 self.finalize_event_response(event, response)
                 self.data("Completed", response)
 
@@ -86,60 +78,6 @@ class Cell(BaseCommand("cell")):
         except Exception as error:
             self.error_handler.handle(error)
             self.communication.send_error(self.agent_channel, error)
-            raise
-
-    def assistant(self):
-        self.notice("Starting cell assistant ...")
-
-        chat_channel = "chat:message"
-
-        # Initialize cycle
-        try:
-            self._initialize_cycle(
-                chat_channel,
-                prompts={
-                    "system": self.agent_system_template,
-                    "assistant": self.agent_assistant_template,
-                },
-                search_limit=self.agent_assistant_search_limit,
-                search_min_score=self.agent_assistant_search_min_score,
-            )
-        except Exception as error:
-            self.error_handler.handle(error)
-            self.communication.send_error(chat_channel, error)
-            raise
-
-        # Execute cycle
-        try:
-            for event in self.communication.listen(
-                {"mentions_me": "message"},
-                ["user", "name", "message", "time"],
-            ):
-                response = self.profile(self.process_chat_message, event)
-                self.communication.send(
-                    chat_channel,
-                    event,
-                    response,
-                    {
-                        "user": "user",
-                        "name": "message__name",
-                        "message": "response__message",
-                        "time": "time",
-                    },
-                )
-                self.finalize_event_response(event, response)
-
-        except Exception as error:
-            self.error_handler.handle(error)
-            self.communication.send_error(chat_channel, error)
-            raise
-
-        # Finalize cycle
-        try:
-            self._finalize_cycle()
-        except Exception as error:
-            self.error_handler.handle(error)
-            self.communication.send_error(chat_channel, error)
             raise
 
     def _initialize_cycle(self, sensor_name, prompts, **kwargs):
@@ -161,20 +99,7 @@ class Cell(BaseCommand("cell")):
 
     def process_sensory_event(self, event):
         return self.actor.respond(
-            event, self.agent_chat_key, self.agent_memory_search_field, self.agent_message_field_labels
-        )
-
-    def process_chat_message(self, event):
-        return self.actor.assist(
-            event,
-            self.agent_chat_key,
-            "message",
-            {
-                "user": "Zimagi Username",
-                "name": "Chat Name",
-                "time": "Message Time Received",
-                "message": "User Message",
-            },
+            event, self.agent_memory_sequence, self.agent_memory_search_field, self.agent_message_field_labels
         )
 
     def finalize_event_response(self, event, response):

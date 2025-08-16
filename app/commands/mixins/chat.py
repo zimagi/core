@@ -14,4 +14,9 @@ class ChatMixin(CommandMixin("chat")):
 
     def save_user_message(self, chat_name, message, user=None, role="user"):
         user = user if user else self.active_user.name
-        (self.get_memory_manager().set_chat(chat_name).add({"role": role, "content": message, "sender": user}).save())
+        (
+            self.get_memory_manager()
+            .set_memory_sequence(chat_name)
+            .add({"role": role, "content": message, "sender": user})
+            .save()
+        )

@@ -1,11 +1,3 @@
-# Request Instructions
-
-## Goals
-
-<{goal}>
-
-## Request Received
-
 #% for field, value in message.items() %#
 #%- if value is string and '\n' in value %#
 <{field_labels.get(field, field)}>:

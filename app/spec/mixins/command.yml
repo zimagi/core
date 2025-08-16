@@ -240,6 +240,13 @@ command_mixins:
         help: 'cell rules'
         value_label: TEXT
         tags: [agent, instruction]
+      agent_persona:
+        parser: variable
+        type: str
+        optional: true
+        help: 'cell persona'
+        value_label: TEXT
+        tags: [agent, instruction]
       agent_user:
         parser: variable
         type: str
@@ -248,12 +255,12 @@ command_mixins:
         help: 'cell run as user (defaults to admin)'
         value_label: USER_NAME
         tags: [agent, experience, access]
-      agent_chat_key:
+      agent_memory_sequence:
         parser: variable
         type: str
         default: global
         optional: true
-        help: 'cell chat key'
+        help: 'cell memory sequence name'
         value_label: IDENTIFIER
         tags: [agent, experience]
       agent_sensor:
@@ -285,20 +292,6 @@ command_mixins:
         help: 'cell memory search field for searching memories'
         value_label: NAME
         tags: [agent, experience]
-      agent_assistant_search_limit:
-        parser: variable
-        type: int
-        optional: true
-        help: 'cell memory search limit for relevant dialog message sections (defaults to user preference)'
-        value_label: SECTIONS
-        tags: [agent, experience]
-      agent_assistant_search_min_score:
-        parser: variable
-        type: float
-        optional: true
-        help: 'cell memory search minimum score for relevant dialog message sections (defaults to user preference)'
-        value_label: SCORE
-        tags: [agent, experience]
       agent_system_template:
         parser: variable
         type: str
@@ -323,14 +316,6 @@ command_mixins:
         help: 'cell instruction tools prompt template'
         value_label: NAME
         tags: [agent, template]
-      agent_assistant_template:
-        parser: variable
-        type: str
-        optional: true
-        default: assistant
-        help: 'cell instruction assistant prompt template'
-        value_label: NAME
-        tags: [agent, template]
       agent_tools:
         parser: variables
         type: str
@@ -341,7 +326,7 @@ command_mixins:
       agent_channel:
         parser: variable
         type: str
-        optional: false
+        optional: true
         help: 'cell output communication channel'
         value_label: CHANNEL
         tags: [agent, communication]
@@ -456,14 +441,14 @@ command_mixins:
   chat:
     class: ChatMixin
     meta:
-      chat:
-        data: chat
+      memory:
+        data: memory
         priority: 1
-      chat_dialog:
-        data: chat_dialog
+      memory_dialog:
+        data: memory_dialog
         priority: 2
-      chat_message:
-        data: chat_message
+      memory_message:
+        data: memory_message
         priority: 3
     parameters:
       chat_name:
