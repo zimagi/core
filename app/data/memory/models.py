@@ -1,7 +1,7 @@
 from systems.models.index import Model, ModelFacade
 
 
-class ChatFacade(ModelFacade("chat")):
+class MemoryFacade(ModelFacade("memory")):
     def get_field_message_render_display(self, instance, value, short):
         display = []
         for record in instance.messages.all().order_by("created"):
@@ -10,11 +10,11 @@ class ChatFacade(ModelFacade("chat")):
         return "\n".join(display) + "\n"
 
 
-class Chat(Model("chat")):
+class Memory(Model("memory")):
     pass
 
 
-class ChatMessage(Model("chat_message")):
+class MemoryMessage(Model("memory_message")):
     ROLE_USER = "user"
     ROLE_ASSISTANT = "assistant"
 

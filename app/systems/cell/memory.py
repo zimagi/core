@@ -24,10 +24,10 @@ class DialogResult:
 
 class Experience:
 
-    def __init__(self, command, language_model, chat, search_results, keep_previous=5):
+    def __init__(self, command, language_model, memory, search_results, keep_previous=5):
         self.command = command
         self.language_model = language_model
-        self.chat = chat
+        self.memory = memory
         self.search_results = search_results
 
         self.dialogs = {}
@@ -40,7 +40,7 @@ class Experience:
         message_ids = []
 
         for dialog_id in (
-            self.command._chat_dialog.set_order("-created").set_limit(keep_previous).field_values("id", chat=self.chat)
+            self.command._memory_dialog.set_order("-created").set_limit(keep_previous).field_values("id", memory=self.memory)
         ):
             self.dialogs[dialog_id] = DialogResult(score=1, scores=[1])
 
@@ -56,10 +56,10 @@ class Experience:
                     self.dialogs[dialog_id].score = max(self.dialogs[dialog_id].score, score)
 
         for dialog_id, dialog_result in self.dialogs.items():
-            self.dialogs[dialog_id].messages = self.command._chat_message.field_values("id", dialog_id=dialog_id)
+            self.dialogs[dialog_id].messages = self.command._memory_message.field_values("id", dialog_id=dialog_id)
             message_ids.extend(self.dialogs[dialog_id].messages)
 
-        for instance in self.command._chat_message.filter(id__in=message_ids):
+        for instance in self.command._memory_message.filter(id__in=message_ids):
             self.messages[instance.id] = instance
             self.tokens[instance.id] = self.language_model.get_token_count(
                 {"role": instance.role, "content": instance.content}
@@ -83,7 +83,7 @@ class MemoryManager:
         if not self.language_model:
             self.error(f"User {self.user.name} language model configurations required to use memory manager")
 
-        self.embedding_db = self.user.get_qdrant_collection(self.command, "chat")
+        self.embedding_db = self.user.get_qdrant_collection(self.command, "memory")
         self.new_messages = []
 
     def _get_user(self, user):
@@ -91,14 +91,14 @@ class MemoryManager:
             return self.command._user.retrieve(user)
         return user
 
-    def _get_chat(self, user, chat_key):
-        chat = self.command._chat.retrieve(None, user=user, name=chat_key)
-        if not chat:
-            chat, created = self.command._chat.store(None, {"user": user, "name": chat_key})
-        return chat
+    def _get_memory_sequence(self, user, name):
+        memory = self.command._memory.retrieve(None, user=user, name=name)
+        if not memory:
+            memory, created = self.command._memory.store(None, {"user": user, "name": name})
+        return memory
 
-    def set_chat(self, chat_key):
-        self.chat = self._get_chat(self.user, chat_key)
+    def set_memory_sequence(self, name):
+        self.memory = self._get_memory_sequence(self.user, name)
         return self
 
     def add(self, *messages):
@@ -142,10 +142,12 @@ class MemoryManager:
             fields=["dialog_id", "message_id"],
             limit=search_limit or self.search_limit,
             min_score=min_score or self.search_min_score,
-            filter_field="chat_id",
-            filter_ids=self.chat.id,
+            filter_field="memory_id",
+            filter_ids=self.memory.id,
         )
-        return Experience(self.command, self.language_model, self.chat, search_results, keep_previous or self.keep_previous)
+        return Experience(
+            self.command, self.language_model, self.memory, search_results, keep_previous or self.keep_previous
+        )
 
     def _trim_experience(self, experience, available_tokens):
         selected_messages = []
@@ -168,47 +170,47 @@ class MemoryManager:
 
     def save(self):
         def _save_callback():
-            chat_dialog = self.command._chat_dialog.set_order("-created").set_limit(1).filter(chat=self.chat)
+            memory_dialog = self.command._memory_dialog.set_order("-created").set_limit(1).filter(memory=self.memory)
             last_message = None
 
-            if chat_dialog:
-                chat_dialog = chat_dialog[0]
-                last_message = self.command._chat_message.set_order("-created").set_limit(1).filter(dialog=chat_dialog)
+            if memory_dialog:
+                memory_dialog = memory_dialog[0]
+                last_message = self.command._memory_message.set_order("-created").set_limit(1).filter(dialog=memory_dialog)
                 if last_message:
                     last_message = last_message[0]
 
             for memory in self.new_messages:
-                if not chat_dialog or memory["role"] == "user":
+                if not memory_dialog or memory["role"] == "user":
                     if not last_message or last_message.role == "assistant":
-                        chat_dialog = self.command.save_instance(
-                            self.command._chat_dialog,
+                        memory_dialog = self.command.save_instance(
+                            self.command._memory_dialog,
                             None,
-                            fields={"chat": self.chat},
+                            fields={"memory": self.memory},
                         )
 
-                chat_message = self.command.save_instance(
-                    self.command._chat_message,
+                memory_message = self.command.save_instance(
+                    self.command._memory_message,
                     None,
-                    fields={**memory, "chat": self.chat, "dialog": chat_dialog},
+                    fields={**memory, "memory": self.memory, "dialog": memory_dialog},
                 )
                 self.command.save_embeddings(
                     self.user,
                     self.embedding_db,
-                    "chat_message",
-                    chat_message.id,
+                    "memory_message",
+                    memory_message.id,
                     "content",
                     payload={
-                        "chat_id": self.chat.id,
-                        "user_id": chat_message.sender,
-                        "dialog_id": chat_dialog.id,
-                        "message_id": chat_message.id,
-                        "role": chat_message.role,
+                        "memory_id": self.memory.id,
+                        "user_id": memory_message.sender,
+                        "dialog_id": memory_dialog.id,
+                        "message_id": memory_message.id,
+                        "role": memory_message.role,
                     },
                 )
-                last_message = chat_message
+                last_message = memory_message
 
         if self.new_messages:
-            self.command.run_exclusive(f"save-memories-{self.chat.id}", _save_callback)
+            self.command.run_exclusive(f"save-memories-{self.memory.id}", _save_callback)
             self.new_messages = []
 
         return self

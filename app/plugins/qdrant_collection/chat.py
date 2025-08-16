@@ -1,11 +1,11 @@
 from systems.plugins.index import BaseProvider
 
 
-class Provider(BaseProvider("qdrant_collection", "chat")):
+class Provider(BaseProvider("qdrant_collection", "memory")):
 
     def _get_index_fields(self):
         return {
-            "chat_id": "keyword",
+            "memory_id": "keyword",
             "user_id": "keyword",
             "dialog_id": "keyword",
             "message_id": "keyword",
@@ -13,13 +13,13 @@ class Provider(BaseProvider("qdrant_collection", "chat")):
             "order": "float",
         }
 
-    def _get_chat_filters(self, chat_id=None, user_id=None, dialog_id=None, message_id=None):
+    def _get_memory_filters(self, memory_id=None, user_id=None, dialog_id=None, message_id=None):
         from qdrant_client import models
 
         filters = []
 
-        if chat_id:
-            filters.append(self._get_query_id_condition("chat_id", chat_id))
+        if memory_id:
+            filters.append(self._get_query_id_condition("memory_id", memory_id))
         if user_id:
             filters.append(self._get_query_id_condition("user_id", user_id))
         if dialog_id:
@@ -29,15 +29,15 @@ class Provider(BaseProvider("qdrant_collection", "chat")):
 
         return models.Filter(must=filters) if filters else None
 
-    def count(self, chat_id=None, user_id=None, dialog_id=None, message_id=None):
-        return self._get_count_query(self._get_chat_filters(chat_id, user_id, dialog_id, message_id))
+    def count(self, memory_id=None, user_id=None, dialog_id=None, message_id=None):
+        return self._get_count_query(self._get_memory_filters(memory_id, user_id, dialog_id, message_id))
 
-    def exists(self, chat_id=None, user_id=None, dialog_id=None, message_id=None):
-        return self._check_exists(self._get_chat_filters(chat_id, user_id, dialog_id, message_id))
+    def exists(self, memory_id=None, user_id=None, dialog_id=None, message_id=None):
+        return self._check_exists(self._get_memory_filters(memory_id, user_id, dialog_id, message_id))
 
     def get(
         self,
-        chat_id=None,
+        memory_id=None,
         user_id=None,
         dialog_id=None,
         message_id=None,
@@ -45,19 +45,19 @@ class Provider(BaseProvider("qdrant_collection", "chat")):
         include_vectors=False,
     ):
         return self._run_query(
-            self._get_chat_filters(chat_id, user_id, dialog_id, message_id),
+            self._get_memory_filters(memory_id, user_id, dialog_id, message_id),
             fields=fields,
             include_vectors=include_vectors,
         )
 
-    def store(self, chat_id, user_id, dialog_id, message_id, text, embedding, role, order):
+    def store(self, memory_id, user_id, dialog_id, message_id, text, embedding, role, order):
         return self.request_upsert(
             collection_name=self.get_collection_name(),
             points=[
                 self._get_record(
                     text,
                     embedding,
-                    chat_id=chat_id,
+                    memory_id=memory_id,
                     user_id=user_id,
                     dialog_id=dialog_id,
                     message_id=message_id,
@@ -67,8 +67,8 @@ class Provider(BaseProvider("qdrant_collection", "chat")):
             ],
         )
 
-    def remove(self, chat_id=None, user_id=None, dialog_id=None, message_id=None):
+    def remove(self, memory_id=None, user_id=None, dialog_id=None, message_id=None):
         return self.request_delete(
             collection_name=self.get_collection_name(),
-            points_selector=self._get_chat_filters(chat_id, user_id, dialog_id, message_id),
+            points_selector=self._get_memory_filters(memory_id, user_id, dialog_id, message_id),
         )

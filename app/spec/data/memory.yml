@@ -1,5 +1,5 @@
 data:
-  chat:
+  memory:
     base: id_resource
     roles:
       edit: [chat-user]
@@ -22,8 +22,8 @@ data:
       ordering: [user, name, 'created']
       dynamic_fields: [message_render]
 
-  chat_dialog:
-    app: chat
+  memory_dialog:
+    app: memory
     base: id_resource
     disable_ops: [update]
     roles:
@@ -31,20 +31,20 @@ data:
       view: [chat-user]
     packages: []
     key: id
-    id_fields: [chat_id, created]
+    id_fields: [memory_id, created]
     fields:
       name: null
-      chat:
+      memory:
         type: '@django.ForeignKey'
-        relation: chat
+        relation: memory
         options:
           on_delete: '@django.CASCADE'
           related_name: dialogs
     meta:
-      ordering: [chat_id, 'created']
+      ordering: [memory_id, 'created']
 
-  chat_message:
-    app: chat
+  memory_message:
+    app: memory
     base: id_resource
     disable_ops: [update]
     roles:
@@ -52,18 +52,18 @@ data:
       view: [chat-user]
     packages: []
     key: id
-    id_fields: [chat_id, created]
+    id_fields: [memory_id, created]
     fields:
       name: null
-      chat:
+      memory:
         type: '@django.ForeignKey'
-        relation: chat
+        relation: memory
         options:
           on_delete: '@django.CASCADE'
           related_name: messages
       dialog:
         type: '@django.ForeignKey'
-        relation: chat_dialog
+        relation: memory_dialog
         options:
           on_delete: '@django.CASCADE'
           related_name: messages
@@ -82,4 +82,4 @@ data:
         options:
           default: ""
     meta:
-      ordering: [chat_id, 'created']
+      ordering: [memory_id, 'created']

@@ -54,7 +54,7 @@ class ChatApp(App):
         history = self.query_one("#chat-history")
         history.scroll_end(animate=False)
 
-        self.chats = self.data_client.values("chat", "name", user__name=settings.API_USER).results
+        self.chats = self.data_client.values("memory", "name", user__name=settings.API_USER).results
         self.current_chat = (
             self.initial_chat_name
             if self.initial_chat_name and self.initial_chat_name in self.chats
@@ -140,7 +140,7 @@ class ChatApp(App):
             self.notify("Chat name already exists!", severity="error")
             return
 
-        chat = self.data_client.create("chat", user=settings.API_USER, name=name)
+        chat = self.data_client.create("memory", user=settings.API_USER, name=name)
         self.chats.append(chat.name)
         self.current_chat = chat.name
 
@@ -176,10 +176,10 @@ class ChatApp(App):
                 chat_messages = self._chat_messages.get(self.current_chat, [])
 
                 for message in self.data_client.json(
-                    "chat_message",
+                    "memory_message",
                     fields=["sender", "created", "content"],
                     ordering="created",
-                    chat__name=self.current_chat,
+                    memory__name=self.current_chat,
                     created__gte=self._get_last_message_time(self.current_chat),
                 ):
                     self.add_message(
