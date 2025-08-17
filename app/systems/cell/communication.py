@@ -44,6 +44,7 @@ class CommunicationProcessor:
                 self.send_error(self.sensor_name, error, package)
                 # self.send(self.sensor_name, package.message, package.sender)
                 raise
+        self.command.notice("Execution cycle complete")
 
     def send(self, channel, event, response, field_map):
         channel = event.package.sender if channel == "sender" else channel
@@ -127,7 +128,8 @@ class CommunicationProcessor:
         flattened_message = flatten_dict(normalize_value(message))
         translation = {}
 
-        logger.info(f"Flattened output: {dump_json(flattened_message, indent=2)}")
+        if self.command.manager.runtime.debug():
+            logger.info(f"Flattened output: {dump_json(flattened_message, indent=2)}")
 
         if field_map:
             for field, flattened_field in field_map.items():
@@ -135,5 +137,7 @@ class CommunicationProcessor:
         else:
             translation = message
 
-        logger.info(f"Translated output: {dump_json(translation, indent=2)}")
+        if self.command.manager.runtime.debug():
+            logger.info(f"Translated output: {dump_json(translation, indent=2)}")
+
         return translation
