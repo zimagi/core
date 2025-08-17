@@ -22,13 +22,15 @@ class StateManager:
             self.state_key,
             self.default_state,
         )
-        logger.debug(f"Loaded agent state: {self._state}")
+        if self.command.manager.runtime.debug():
+            logger.debug(f"Loaded agent state: {dump_json(self._state, indent=2)}")
         return self._state
 
     def save(self, state):
         self._state = state
         self.command.set_state(self.state_key, self._state)
-        logger.debug(f"Agent state saved: {self._state}")
+        if self.command.manager.runtime.debug():
+            logger.debug(f"Agent state saved: {dump_json(self._state, indent=2)}")
         return self._state
 
     def __iter__(self):
