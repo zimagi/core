@@ -4,6 +4,7 @@ import re
 from systems.cell.prompt import PromptEngine
 from utility.data import dump_json, load_json, load_yaml
 from utility.display import format_exception_info, format_traceback
+from utility.text import interpolate
 
 logger = logging.getLogger(__name__)
 
@@ -32,12 +33,12 @@ class Response:
     def __str__(self):
         return (
             f"{self.get_message()}:\n\n"
-            f"Data:\n{dump_json(self.data, indent=2)}\n"
-            f"References:\n{dump_json(self.references, indent=2)}"
+            f"# Data:\n\n```json\n{dump_json(self.data, indent=2)}\n```\n\n"
+            f"# References:\n\n```json\n{dump_json(self.references, indent=2)}\n```"
         )
 
     def get_message(self):
-        return "\n\n".join([message["content"] for message in self.messages])
+        return "\n\n".join([f"# Message:\n\n{message["content"]}" for message in self.messages])
 
     def add_message(self, message, role="assistant"):
         tool_calls = self._parse_message(message)
@@ -122,7 +123,7 @@ class Response:
         return results
 
     def _validate_reference(self, reference_data):
-        if not reference_data or len(reference_data.keys()) != 2:
+        if not isinstance(reference_data, dict) or len(reference_data.keys()) != 2:
             return False
         if "location" not in reference_data or not reference_data["location"]:
             return False
@@ -152,8 +153,6 @@ class Response:
 
 class Actor:
 
-    memory_field_pattern = r"^\<\<(.+)\>\>$"
-
     def __init__(self, command, prompts, search_limit=1000, search_min_score=0.3, keep_previous=5):
         self.command = command
         self.state_manager = self.command.get_state_manager()
@@ -169,71 +168,56 @@ class Actor:
     def get_max_cycles(self):
         return 10
 
-    def set_memory_sequence(self, message, name):
-        match = re.match(self.memory_field_pattern, name)
-        if match and match[1] in message:
-            name = message[match[1]]
+    def get_completion_token(self):
+        return "<<DONE>>"
 
-        self.memory_manager.set_memory_sequence(name)
+    def _set_memory(self, message, name):
+        self.memory_manager.set_sequence(interpolate(name, message))
 
-    def _get_message_sequence(self, prompts, user, text):
-        system_messages = []
-        request_messages = []
-        extra_messages = []
-
+    def _start_messages(self, prompts, user, text):
+        if "tools" in prompts:
+            self.memory_manager.set_tools(prompts["tools"])
         if "system" in prompts:
-            system_messages.append({"role": "system", "content": prompts["system"]})
-
+            self.memory_manager.add_system({"role": "system", "content": prompts["system"]})
         if "request" in prompts:
-            tools_prompt = [prompts["tools"]] if "tools" in prompts else []
-            request_prompt = "\n\n".join([prompts["request"], *tools_prompt])
-            request_messages.append({"role": "user", "content": request_prompt, "sender": user})
+            self.memory_manager.add({"role": "user", "content": prompts["request"], "sender": user})
 
-        for prompt_name, prompt_text in prompts.items():
-            if prompt_name not in ["system", "tools", "request"]:
-                extra_messages.append({"role": "user", "content": prompt_text, "sender": user})
-
-        self.memory_manager.add(extra_messages, request_messages)
-        return self.memory_manager.load(text, system_messages)
+        self.memory_manager.search(text)
 
     def respond(self, event, memory_sequence, search_field, field_labels=None):
         response = Response(self.memory_manager, self.mcp)
         tools = self.mcp.list_tools(self.state_manager["tools"]) if self.state_manager["tools"] else []
+        max_cycles = self.get_max_cycles()
+        completion_token = self.get_completion_token()
 
-        self.set_memory_sequence(event.message, memory_sequence)
-        for cycle in range(self.get_max_cycles()):
+        self._set_memory(event.message, memory_sequence)
+        self._start_messages(
+            self.prompt_engine.render(
+                {
+                    **self.state_manager.export(),
+                    "max_cycles": max_cycles,
+                    "completion_token": completion_token,
+                    "user": self.memory_manager.user.name,
+                    "message": event.message,
+                    "field_labels": field_labels or {},
+                    "tools": tools,
+                }
+            ),
+            event.package.user,
+            event.message[search_field],
+        )
+        for cycle in range(max_cycles):
             try:
-                messages = self._get_message_sequence(
-                    self.prompt_engine.render(
-                        {
-                            **self.state_manager.export(),
-                            "max_cycles": self.get_max_cycles(),
-                            "user": self.memory_manager.user.name,
-                            "message": event.message,
-                            "field_labels": field_labels or {},
-                            "tools": tools,
-                        }
-                    ),
-                    event.package.user,
-                    event.message[search_field],
-                )
-                print(dump_json(messages, indent=2))
-                print("=======================")
+                text = self._instruct(self.memory_manager.load()).text
+                is_complete = completion_token in text
+                text = text.replace(completion_token, "").strip()
 
-                text = self._instruct(messages).text
-                is_complete = "<<DONE>>" in text
-                text = text.replace("<<DONE>>", "").strip()
-                print(text)
-                print(is_complete)
-
-                tool_calls = response.add_message(text)
-                print(tool_calls)
-                if not tool_calls and is_complete:
-                    break
-
-                tool_results = self.command.run_list(tool_calls, self._exec_tool)
+                tool_results = self.command.run_list(response.add_message(text), self._exec_tool)
                 for index, value in enumerate(tool_results.data):
                     response.add_message(value.result, "tool")
+
+                if is_complete:
+                    break
 
             except Exception as error:
                 logger.error("Actor response generation failed")
@@ -260,9 +244,14 @@ class Actor:
         return model_response
 
     def _exec_tool(self, tool_data):
-        logger.info(f"Executing tool: {tool_data['tool']}")
+        if self.command.manager.runtime.debug():
+            logger.info(f"Executing tool: {dump_json(tool_data, indent=2)}")
+
         response_text = self.mcp.exec_tool(tool_data["tool"], tool_data.get("parameters", {}))
-        return f"Tool executed: {tool_data['tool']}\n\n{response_text}"
+        return (
+            f"## Tool executed:\n\n```json\n{dump_json(tool_data, indent=2)}\n```\n\n"
+            f"## Tool response:\n\n{response_text}"
+        )
 
     def _handle_error(self, error):
         logger.error(f"Actor encountered error: {error}")

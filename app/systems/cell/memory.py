@@ -1,6 +1,6 @@
 import logging
 
-from utility.data import dump_json, ensure_list
+from utility.data import dump_json
 
 logger = logging.getLogger(__name__)
 
@@ -65,8 +65,9 @@ class Experience:
                 {"role": instance.role, "content": instance.content}
             )
 
-        logger.info("Matching dialogs:")
-        logger.info(dump_json(self.dialogs, indent=2))
+        if self.command.manager.runtime.debug():
+            logger.info("Matching dialogs:")
+            logger.info(dump_json(self.dialogs, indent=2))
 
 
 class MemoryManager:
@@ -84,21 +85,42 @@ class MemoryManager:
             self.error(f"User {self.user.name} language model configurations required to use memory manager")
 
         self.embedding_db = self.user.get_qdrant_collection(self.command, "memory")
-        self.new_messages = []
+        self.reset()
 
     def _get_user(self, user):
         if isinstance(user, str):
             return self.command._user.retrieve(user)
         return user
 
-    def _get_memory_sequence(self, user, name):
+    def _get_sequence(self, user, name):
         memory = self.command._memory.retrieve(None, user=user, name=name)
         if not memory:
             memory, created = self.command._memory.store(None, {"user": user, "name": name})
         return memory
 
-    def set_memory_sequence(self, name):
-        self.memory = self._get_memory_sequence(self.user, name)
+    def set_sequence(self, name):
+        self.memory = self._get_sequence(self.user, name)
+        return self
+
+    def reset(self):
+        self.experience = None
+        self.system_messages = []
+        self.new_messages = []
+        self.tools = ""
+
+    def set_tools(self, tool_prompt):
+        self.tools = tool_prompt
+
+    def add_system(self, *messages):
+
+        def _add_list(message_list):
+            for message in message_list:
+                if isinstance(message, (list, tuple)):
+                    _add_list(message)
+                else:
+                    self.system_messages.append(message)
+
+        _add_list(messages)
         return self
 
     def add(self, *messages):
@@ -115,39 +137,43 @@ class MemoryManager:
         _add_list(messages)
         return self
 
-    def load(self, text, system_messages=None, search_limit=None, min_score=None, keep_previous=None):
+    def load(self):
         available_tokens = self.language_model.get_max_tokens()
-        experience = self._search_experience(text, search_limit, min_score, keep_previous)
         messages = []
 
-        if system_messages:
-            system_messages = ensure_list(system_messages)
-            available_tokens -= self.language_model.get_token_count(system_messages)
-            messages.extend(system_messages)
+        if self.system_messages:
+            if self.tools:
+                self.system_messages[0]["content"] = "\n\n".join([self.system_messages[0]["content"], self.tools])
+
+            available_tokens -= self.language_model.get_token_count(self.system_messages)
+            messages.extend(self.system_messages)
 
         if self.new_messages:
             new_tokens = self.language_model.get_token_count(self.new_messages)
-            messages.extend(self._trim_experience(experience, (available_tokens - new_tokens)))
+            if self.experience:
+                messages.extend(self._trim_experience(self.experience, (available_tokens - new_tokens)))
             messages.extend(self.new_messages)
-        else:
-            messages.extend(self._trim_experience(experience, available_tokens))
+
+        elif self.experience:
+            messages.extend(self._trim_experience(self.experience, available_tokens))
+
+        # if messages and self.tools:
+        #     messages[-1]["content"] = "\n\n".join([messages[-1]["content"], self.tools])
 
         return messages
 
-    def _search_experience(self, text, search_limit, min_score, keep_previous):
+    def search(self, text):
         search_results = self.command.search_embeddings(
             self.user,
             self.embedding_db,
             text,
             fields=["dialog_id", "message_id"],
-            limit=search_limit or self.search_limit,
-            min_score=min_score or self.search_min_score,
+            limit=self.search_limit,
+            min_score=self.search_min_score,
             filter_field="memory_id",
             filter_ids=self.memory.id,
         )
-        return Experience(
-            self.command, self.language_model, self.memory, search_results, keep_previous or self.keep_previous
-        )
+        self.experience = Experience(self.command, self.language_model, self.memory, search_results, self.keep_previous)
 
     def _trim_experience(self, experience, available_tokens):
         selected_messages = []

@@ -12,8 +12,18 @@ logger = logging.getLogger(__name__)
 
 class Cell(BaseCommand("cell")):
 
+    @property
+    def agent_channel(self):
+        channel = super().agent_channel
+        if not channel:
+            channel = f"agent:{self.get_cell_id()}"
+        return channel
+
+    def get_cell_id(self):
+        return ":".join(self.get_full_name().split(" ")[1:])
+
     def get_state_key(self):
-        return f"cell:state:{self.agent_user}:{".".join(self.get_full_name().split(" ")[1:])}"
+        return f"cell:state:{self.get_cell_id()}"
 
     def get_sensor_key(self):
         return self.agent_user
@@ -42,7 +52,7 @@ class Cell(BaseCommand("cell")):
     def get_actor(self, **kwargs):
         return Actor(self, **kwargs)
 
-    def event_processor(self):
+    def exec(self):
         # Initialize cycle
         try:
             self._initialize_cycle(
@@ -62,8 +72,7 @@ class Cell(BaseCommand("cell")):
         try:
             for event in self.communication.listen(self.agent_sensor_filters, self.agent_message_fields):
                 response = self.profile(self.process_sensory_event, event)
-                if self.agent_channel:
-                    self.communication.send(self.agent_channel, event, response, self.agent_channel_field_map)
+                self.communication.send(self.agent_channel, event, response, self.agent_channel_field_map)
                 self.finalize_event_response(event, response)
                 self.data("Completed", response)
 
