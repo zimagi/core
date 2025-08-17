@@ -23,7 +23,11 @@ class LanguageModel(Agent("language_model")):
                     )
                     self.send(package.sender, response.export())
                     self.send("language_model:complete", metrics)
-                    self.success(f"Successfully generated: {metrics}")
+
+                    if self.manager.runtime.debug():
+                        self.success(f"Response:\n\n{response.text}")
+                        self.notice(f"Reasoning:\n\n{response.reasoning}")
+                        self.data("Response metrics", metrics)
 
             except Exception as error:
                 self.warning(f"Language model generate request failed with error: {error}:\n\n{request}")
