@@ -17,4 +17,4 @@ chat:
       Broadcast a message to a shared multi-agent and platform user chat channel
 
     description: |
-      Use this command to send <chat_text> to a channel identified by <chat_name>, allowing communication with other agents or users subscribed to the same channel. This enables coordination, negotiation, and collaborative problem-solving across agents. To reference or address specific participants, include their usernames using the @username format. This is useful for updating project context, discussing responsibilities, or synchronizing tasks in multi-agent environments.
+      Use this command to send <chat_text> to a chat sequence identified by <chat_name> on the channel <chat_channel>, allowing communication with other agents or users subscribed to the same channel. This enables coordination, negotiation, and collaborative problem-solving across agents. To reference or address specific participants, include their usernames using the @username format. This is useful for updating project context, discussing responsibilities, or synchronizing tasks in multi-agent environments.
