@@ -451,6 +451,14 @@ command_mixins:
         data: memory_message
         priority: 3
     parameters:
+      chat_channel:
+        parser: variable
+        type: str
+        optional: '--channel'
+        default: message
+        help: 'chat message channel'
+        value_label: NAME
+        tags: [mcp, communication, chat]
       chat_name:
         parser: variable
         type: str

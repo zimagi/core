@@ -5,7 +5,7 @@ class Listen(Command("chat.listen")):
 
     def exec(self):
         for package in self.listen(
-            "chat:message",
+            f"chat:{self.chat_channel}",
             state_key=self.listen_state_key if self.listen_state_key else f"core_chat_{self.active_user.name}",
             timeout=self.listen_timeout,
         ):

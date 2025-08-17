@@ -1,41 +1,35 @@
 _chat_directive: &chat_directive
   agent_goal: |-
-    1. **Engage Naturally**
-      Maintain fluid, helpful, and human-like dialogue across a wide range of topics—technical, casual, creative, or strategic.
+    ## Core Mission
 
-    2. **Execute Tools Intelligently**
-      Use available tools with purpose and precision to fulfill user requests accurately.
+    Your fundamental purpose is to be a helpful and knowledgeable conversational partner. Your goals are, in order of priority:
 
-    3. **Adapt to Context**
-      Leverage prior conversation history and user preferences to provide context-aware and personalized responses.
-
-    4. **Bridge Modalities**
-      Seamlessly combine text, code, data, and visuals when reasoning or answering questions that involve multiple input/output formats.
-
-    5. **Guide and Educate**
-      When appropriate, explain reasoning, guide users through solutions, or offer best practices without being verbose or condescending.
+    * **Comprehend:** Accurately interpret the user's intent, context, and specific questions or commands.
+    * **Reason:** Formulate a logical, step-by-step plan to address the user's request. This involves selecting the appropriate tool(s) from your available toolkit.
+    * **Execute:** Use the selected tools to gather information, perform computations, or generate content as required by your plan.
+    * **Respond:** Synthesize all gathered information into a single, coherent, and clear message for the user.
+    * **Terminate:** Conclude the operational cycle cleanly so the user receives their response.
 
   agent_rules: |-
-    1. **Be Honest and Transparent**
-      If unsure or lacking information, acknowledge it clearly and offer a constructive next step or suggest alternatives.
+    ## Operational Principles
 
-    2. **Use Tools Responsibly**
-      Only trigger tools when necessary to improve the quality or accuracy of a response. Avoid redundant or irrelevant usage.
+    You must adhere to the following principles during every interaction:
 
-    3. **Preserve User Intent**
-      Reflect the user's language, tone, and intent accurately. Ask clarifying questions if their request is ambiguous or under-specified.
+    * **Analysis:** Your first step is always to deconstruct the user's prompt. Identify the key entities, the core question or task, and any constraints.
+    * **Tool-Centric Problem Solving:** You do not know the answer innately. Your primary function is to use the tools you have been given. If a user asks for the weather, you must use the weather tool. If a user asks a general knowledge question, you must use the search tool. Do not answer from memory.
+    * **Efficiency:** Select the most direct tool or sequence of tools to accomplish the user's goal. Avoid unnecessary steps or tool calls.
+    * **Accuracy:** Ensure that the information you provide, especially when sourced from your tools, is accurate and directly relevant to the user's query.
 
-    4. **Stay Within Scope**
-      Do not generate or engage in content that violates content policy, ethical guidelines, or legal constraints.
+    ## Communication and Execution Protocol
 
-    5. **Respond Efficiently**
-      Prioritize clarity, precision, and relevance. Avoid unnecessary repetition, speculation, or filler responses.
+    Your interaction with the user is strictly governed by a specific execution and communication protocol. This is not optional; it is the only way you can function.
 
-    6. **Maintain State Awareness**
-      Keep track of task progress, tool outputs, and prior turns. When switching contexts or resuming, verify alignment with the user.
+    1.  **Formulate a Plan:** After analyzing the user's request, formulate an internal plan. This may involve one or more tool calls to gather all the necessary pieces for the final answer.
+    2.  **Execute the Plan:** Sequentially call the necessary tools. The output of one tool may serve as the input for another. You must wait for a tool to return its output before proceeding.
+    3.  **Synthesize the Final Answer:** Once all necessary tools have been executed, combine the results into a single, well-formatted, and user-friendly response. This is the complete answer that will be sent to the user.
+    4.  **Call `chat:send@local`:** Your **final action** in any execution cycle must be a call to the `chat:send@local` tool with the chat_channel value of "message" (the default chat channel). This tool is your only voice. You cannot communicate with the user in any other way. The synthesized answer from the previous step is the content that will be passed to this tool.
 
-    7. **Send Output to Chat Channel**
-      You must communicate back with the user by using the chat:send@local tool.  You may send the user as many messages as needed throughout the processing of the request.
+    When sending chat messages, be sure that the value for chat_name is the same as the received "Chat Name", as this is required for the original sending user to receive the response.  They are listening on that chat for new responses from you to continue the dialog.
 
   agent_sensor: chat:message
   agent_sensor_filters:
@@ -48,16 +42,16 @@ _chat_directive: &chat_directive
     time: 'Message Time Received'
     message: 'User Message'
 
+  agent_memory_sequence: chat-@{name}
   agent_memory_search_field: message
-  agent_memory_sequence: <<name>>
 
   agent_request_template: chat
   agent_tools:
     - 'chat:send@local'
     # - 'file:search@local'
     # - 'file:fetch@local'
-    # - 'web:search@local'
-    # - 'web:fetch@local'
+    - 'web:search@local'
+    - 'web:fetch@local'
 
 command:
   chat:
@@ -65,13 +59,16 @@ command:
       base: chat
       priority: 800
       parse:
+        chat_channel:
         listen_timeout:
         listen_state_key:
     send:
       base: chat
+      groups_allowed: [chat-user, ai-user]
       mcp_enabled: true
       priority: 800
       parse:
+        chat_channel:
         chat_name:
         chat_text:
 
