@@ -47,7 +47,7 @@ Here is the breakdown of the procedure you must follow:
 
 Once the TPA loop is complete (either by successful information gathering or by reaching the cycle limit), you must synthesize all the information you have gathered from the tool calls into a single, cohesive, and user-friendly response. Do not simply output the raw data from the tools. Explain the results and directly answer the user's original request. If you could not fully resolve the request, explain what you found and why you could not proceed further.
 
-Be sure to include the <<DONE>> tag at the end of the Final Output Generation message so that the agent execution engine knows when to return from the execution cycles.
+Be sure to include the <{completion_token}> tag at the end of the Final Output Generation message so that the agent execution engine knows when to return from the execution cycles.
 
 ## Constraints & Rules Summary
 
