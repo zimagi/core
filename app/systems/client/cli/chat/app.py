@@ -253,7 +253,7 @@ class ChatApp(App):
         if self.current_chat:
             input_widget = self.query_one("#message-input", MessageInput)
             if text := input_widget.text.strip():
-                self.command_client.execute("chat send", chat_name=self.current_chat, chat_text=text)
+                self.command_client.execute("chat send", chat_channel="message", chat_name=self.current_chat, chat_text=text)
                 input_widget.text = ""
                 input_widget.focus()
 
@@ -276,6 +276,7 @@ class ChatApp(App):
             try:
                 command_client.execute(
                     "chat listen",
+                    chat_channel="message",
                     listen_timeout=15,
                 )
             except ConnectionError as error:
