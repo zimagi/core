@@ -476,6 +476,11 @@ command_mixins:
         value_label: MESSAGE
         api_only: true
         tags: [mcp, message, chat]
+      disable_save:
+        parser: flag
+        flag: '--disable-save'
+        help: 'whether or not to disable the saving of the chat message into memory'
+        tags: [mcp, message, chat]
       listen_timeout:
         parser: variable
         type: int

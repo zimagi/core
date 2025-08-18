@@ -50,6 +50,7 @@ _chat_directive: &chat_directive
     'chat:send@local':
       chat_channel: message
       chat_name: '@name'
+      disable_save: true
     # 'file:search@local':
     # 'file:fetch@local':
     'web:search@local':
@@ -73,6 +74,7 @@ command:
         chat_channel:
         chat_name:
         chat_text:
+        disable_save:
 
   agent:
     chat:

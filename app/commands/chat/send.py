@@ -14,4 +14,5 @@ class Send(Command("chat.send")):
                     "time": self.time.now_string,
                 },
             )
-            self.save_user_message(self.chat_name, self.chat_text)
+            if not self.disable_save:
+                self.save_user_message(self.chat_name, self.chat_text)
