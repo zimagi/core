@@ -45,10 +45,6 @@ export class CommandClient extends BaseAPIClient {
    * Initialize data API client
    */
   async initialize() {
-    if ((await this.getStatus()).encryption) {
-      this.cipher = null;
-    }
-
     this.schema = await this.getSchema();
     if (this.initCommands) {
       this._initCommands();

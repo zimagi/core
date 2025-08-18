@@ -65,6 +65,15 @@ export class BaseAPIClient {
   }
 
   /**
+   * Check encryption
+   */
+  async check_encryption() {
+    if (!(await this.getStatus()).encryption) {
+      this.cipher = null;
+    }
+  }
+
+  /**
    * Initialize API client
    */
   async initialize() {
@@ -166,6 +175,8 @@ export class BaseAPIClient {
     this.debug(`Getting schema`);
 
     if (!this._schema) {
+      await this.check_encryption();
+
       const schemaGenerator = async () => {
         const processor = async () => {
           return await this._request('GET', this.baseURL);

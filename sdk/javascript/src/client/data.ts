@@ -37,10 +37,6 @@ export class DataClient extends BaseAPIClient {
    * Initialize data API client
    */
   async initialize() {
-    if (!(await this.getStatus()).encryption) {
-      this.cipher = null;
-    }
-
     this.schema = await this.getSchema();
     this._dataInfo = this.schema['x-data'] || {};
   }
@@ -180,6 +176,8 @@ export class DataClient extends BaseAPIClient {
    */
   async getSchema(full: boolean = false): Promise<any> {
     if (full || !this._schema) {
+      await this.check_encryption();
+
       const processor = async () => {
         const schema = await this._request('GET', this.baseURL);
 
