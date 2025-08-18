@@ -157,9 +157,6 @@ class MemoryManager:
         elif self.experience:
             messages.extend(self._trim_experience(self.experience, available_tokens))
 
-        # if messages and self.tools:
-        #     messages[-1]["content"] = "\n\n".join([messages[-1]["content"], self.tools])
-
         return messages
 
     def search(self, text):
