@@ -47,11 +47,13 @@ _chat_directive: &chat_directive
 
   agent_request_template: chat
   agent_tools:
-    - 'chat:send@local'
-    # - 'file:search@local'
-    # - 'file:fetch@local'
-    - 'web:search@local'
-    - 'web:fetch@local'
+    'chat:send@local':
+      chat_channel: message
+      chat_name: '@name'
+    # 'file:search@local':
+    # 'file:fetch@local':
+    'web:search@local':
+    'web:fetch@local':
 
 command:
   chat:
