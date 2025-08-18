@@ -449,7 +449,7 @@ jobs:
 
   deploy-npm:
     docker:
-      - image: cimg/node:20.14
+      - image: cimg/node:24.6.0
     steps:
       - checkout
       - run:
