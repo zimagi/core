@@ -29,7 +29,6 @@
   "author": "Zimagi Team",
   "license": "Apache-2.0",
   "dependencies": {
-    "crypto-js": "^4.2.0",
     "papaparse": "^5.4.1"
   },
   "devDependencies": {

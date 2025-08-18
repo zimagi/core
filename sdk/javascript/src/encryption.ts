@@ -2,7 +2,7 @@
  * Encryption utilities for the Zimagi JavaScript SDK
  */
 
-import CryptoJS from 'crypto-js';
+import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 
 /**
  * Base cipher class
@@ -57,7 +57,8 @@ export class NullCipher {
  */
 export class AESCipher {
   binaryMarker: string;
-  key: string;
+  batchSize: number;
+  key: Buffer;
 
   /**
    * Create a new AES cipher
@@ -65,7 +66,8 @@ export class AESCipher {
    */
   constructor(key: string) {
     this.binaryMarker = '<<<<-->BINARY<-->>>>';
-    this.key = key;
+    this.batchSize = 16; // AES block size
+    this.key = Buffer.from(key, 'utf-8');
   }
 
   /**
@@ -73,20 +75,46 @@ export class AESCipher {
    * @param {string} message - Message to encrypt
    * @returns {string} Encrypted message
    */
-  encrypt(message: string): string {
-    // AES encryption implementation using crypto-js
-    return CryptoJS.AES.encrypt(String(message), this.key).toString();
+  encrypt(message: string | Buffer): string {
+    const iv = randomBytes(this.batchSize);
+    const cipher = createCipheriv('aes-256-ctr', this.key, iv);
+
+    let processedMessage: string;
+    if (Buffer.isBuffer(message)) {
+      processedMessage = this.binaryMarker + message.toString('hex');
+    } else {
+      processedMessage = message;
+    }
+
+    const encrypted = Buffer.concat([
+      cipher.update(Buffer.from(processedMessage, 'utf-8')),
+      cipher.final(),
+    ]);
+    return Buffer.concat([iv, encrypted]).toString('base64');
   }
 
   /**
    * Decrypt a message
    * @param {string} ciphertext - Message to decrypt
-   * @param {boolean} _decode - Whether to decode
+   * @param {boolean} decode - Whether to decode
    * @returns {string} Decrypted message
    */
-  decrypt(ciphertext: string, _decode: boolean = true): string {
-    // AES decryption implementation using crypto-js
-    const bytes = CryptoJS.AES.decrypt(ciphertext, this.key);
-    return bytes.toString(CryptoJS.enc.Utf8);
+  decrypt(ciphertext: string, decode = true): string | Buffer {
+    const decodedCiphertext = Buffer.from(ciphertext, 'base64');
+    const iv = decodedCiphertext.subarray(0, this.batchSize);
+    const encrypted = decodedCiphertext.subarray(this.batchSize);
+
+    const decipher = createDecipheriv('aes-256-ctr', this.key, iv);
+
+    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+
+    if (decode) {
+      const decryptedString = decrypted.toString('utf-8');
+      if (decryptedString.startsWith(this.binaryMarker)) {
+        return Buffer.from(decryptedString.substring(this.binaryMarker.length), 'hex');
+      }
+      return decryptedString;
+    }
+    return decrypted;
   }
 }
