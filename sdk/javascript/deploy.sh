@@ -20,6 +20,10 @@ cat > ~/.npmrc <<EOF
 EOF
 chmod 600 ~/.npmrc
 
+echo "Setting Zimagi package version"
+jq --arg version "$(cat ../../app/VERSION | tr -d '\n\r')" '.version = $version' package.json > package.json.tmp
+mv package.json.tmp package.json
+
 echo "Installing dependencies"
 npm install
 
