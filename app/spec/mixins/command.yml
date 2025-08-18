@@ -273,6 +273,7 @@ command_mixins:
       agent_sensor_filters:
         parser: fields
         optional: true
+        help: 'query and pluggable filters with values'
         tags: [agent, communication]
       agent_message_fields:
         parser: variables
@@ -284,6 +285,7 @@ command_mixins:
       agent_message_field_labels:
         parser: fields
         optional: true
+        help: 'mapping of labels to message field names'
         tags: [agent, communication]
       agent_memory_search_field:
         parser: variable
@@ -317,11 +319,9 @@ command_mixins:
         value_label: NAME
         tags: [agent, template]
       agent_tools:
-        parser: variables
-        type: str
-        optional: false
-        help: 'one or more MCP tool names'
-        value_label: NAME
+        parser: fields
+        optional: true
+        help: 'one or more MCP tool names as keys with optional override parameters'
         tags: [agent, action]
       agent_channel:
         parser: variable
@@ -333,6 +333,7 @@ command_mixins:
       agent_channel_field_map:
         parser: fields
         optional: true
+        help: 'mapping of response fields to output channel fields (for standardization fo output)'
         tags: [agent, communication]
   group:
     class: GroupMixin
