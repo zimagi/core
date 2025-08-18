@@ -1,3 +1,5 @@
+import re
+
 import mcp.types as types
 from django.conf import settings
 from django.core.management.base import CommandError
@@ -54,7 +56,7 @@ def index_tools(user, server):
                         tools.append(
                             types.Tool(
                                 name=":".join(name.split(" ")),
-                                description=subcommand.get_description(),
+                                description=re.sub(r"\n+", "\n", subcommand.get_description().strip()),
                                 inputSchema={
                                     "type": "object",
                                     "required": required_fields,
