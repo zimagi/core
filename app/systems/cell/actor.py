@@ -2,7 +2,7 @@ import logging
 import re
 
 from systems.cell.prompt import PromptEngine
-from utility.data import dump_json, load_json, load_yaml
+from utility.data import deep_merge, dump_json, load_json, load_yaml
 from utility.display import format_exception_info, format_traceback
 from utility.text import interpolate
 
@@ -186,7 +186,7 @@ class Actor:
 
     def respond(self, event, memory_sequence, search_field, field_labels=None):
         response = Response(self.memory_manager, self.mcp)
-        tools = self.mcp.list_tools(self.state_manager["tools"]) if self.state_manager["tools"] else []
+        tools = self.mcp.list_tools(self.state_manager["tools"].keys()) if self.state_manager["tools"] else []
         max_cycles = self.get_max_cycles()
         completion_token = self.get_completion_token()
 
@@ -212,7 +212,7 @@ class Actor:
                 is_complete = completion_token in text
                 text = text.replace(completion_token, "").strip()
 
-                tool_results = self.command.run_list(response.add_message(text), self._exec_tool)
+                tool_results = self.command.run_list(response.add_message(text), self._exec_tool, event.message)
                 for index, value in enumerate(tool_results.data):
                     response.add_message(value.result, "tool")
 
@@ -243,13 +243,23 @@ class Actor:
         logger.info(f"Response success: {model_response.text}")
         return model_response
 
-    def _exec_tool(self, tool_data):
-        if self.command.manager.runtime.debug():
-            logger.info(f"Executing tool: {dump_json(tool_data, indent=2)}")
+    def _exec_tool(self, tool_data, message):
+        tool_index = self.state_manager["tools"]
+        tool_name = tool_data["tool"]
 
-        response_text = self.mcp.exec_tool(tool_data["tool"], tool_data.get("parameters", {}))
+        if self.command.manager.runtime.debug():
+            logger.info(f"Processing tool call: {dump_json(tool_data, indent=2)}")
+
+        parameters = tool_data.get("parameters", {})
+        if tool_index[tool_name] and isinstance(tool_index[tool_name], dict):
+            parameters = deep_merge(parameters, interpolate(tool_index[tool_name], message))
+
+        if self.command.manager.runtime.debug():
+            logger.info(f"Executing tool {tool_name}: {dump_json(parameters, indent=2)}")
+
+        response_text = self.mcp.exec_tool(tool_name, parameters)
         return (
-            f"## Tool executed:\n\n```json\n{dump_json(tool_data, indent=2)}\n```\n\n"
+            f"## Tool executed:\n\n```json\n{dump_json({"tool": tool_name, "parameters": parameters}, indent=2)}\n```\n\n"
             f"## Tool response:\n\n{response_text}"
         )
 
