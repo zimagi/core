@@ -49,6 +49,7 @@ def task_sent_handler(sender, headers=None, body=None, **kwargs):
 
     active_command = settings.MANAGER.active_command
     worker_command = ActionCommand("worker")
+    worker_command._user.set_active_user(worker_command._user.retrieve(settings.ADMIN_USER))
     queue = None
 
     for entity in kwargs["declare"]:

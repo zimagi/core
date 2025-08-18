@@ -13,6 +13,10 @@ from utility.data import dump_json, ensure_list, get_identifier, prioritize, ser
 logger = logging.getLogger(__name__)
 
 
+class ColumnNotFoundError(Exception):
+    pass
+
+
 class BaseProvider(BasePlugin("source")):
     page_count = 100
 
@@ -109,11 +113,27 @@ class BaseProvider(BasePlugin("source")):
             if isinstance(series, (list, tuple)):
                 for index, item in enumerate(series):
                     if isinstance(item, dict):
-                        series[index] = [item[column] for column in columns if column in item]
+                        item_values = []
+                        for column in columns:
+                            if column in item:
+                                item_values.append(item[column])
+                            else:
+                                raise ColumnNotFoundError(
+                                    f"Column {column} does not exist in {series_name} properties: {", ".join(item.keys())}",
+                                )
+
+                        series[index] = item_values
+
+                    if self.command.debug:
+                        self.command.data(f"Load record [ {index} ]", item)
 
                 series = self.get_dataframe(series, columns)
 
             saved_data = self.validate(name, series)
+            if self.command.debug:
+                for index, item in enumerate(saved_data):
+                    self.command.data(f"Save record [ {index} ]", item)
+
             logger.debug(f"Importing {name}: {saved_data}")
 
             if not self.field_disable_save:

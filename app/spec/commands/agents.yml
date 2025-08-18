@@ -1,0 +1,19 @@
+command:
+  agent:
+    archiver:
+      base: agent
+      mixins: [scaling_event]
+
+    qdrant:
+      base: agent
+      mixins: [qdrant]
+      worker_type: qdrant
+
+    encoder:
+      base: agent
+      mixins: [qdrant]
+      worker_type: encoder
+
+    language_model:
+      base: agent
+      worker_type: language_model

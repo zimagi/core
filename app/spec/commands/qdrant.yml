@@ -1,0 +1,37 @@
+command:
+  qdrant:
+    list:
+      base: qdrant_admin
+      parse: collection_name
+
+    snapshot:
+      base: qdrant_admin
+      parse: collection_name
+
+    remove:
+      base: qdrant_admin
+      confirm: true
+      parse:
+        collection_name: false
+        snapshot_name: false
+
+    clean:
+      base: qdrant_admin
+      parameters:
+        keep_num:
+          parser: variable
+          type: int
+          optional: '--keep'
+          default: 3
+          help: 'Number of most recent snapshots to keep'
+          value_label: INT
+          tags: [qdrant]
+      parse:
+        - collection_name
+        - keep_num
+
+    restore:
+      base: qdrant_admin
+      parse:
+        - collection_name
+        - snapshot_name

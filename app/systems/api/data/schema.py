@@ -2,6 +2,7 @@ import re
 from functools import lru_cache
 from urllib.parse import urljoin
 
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from rest_framework import exceptions
@@ -175,7 +176,7 @@ class DataSchema(AutoSchema):
                                 parameter["schema"]["x-base-field"] if "x-base-field" in parameter["schema"] else field_name
                             )
 
-                            if field_name in relations:
+                            if field_name in relations and depth < settings.DATA_API_FILTER_DEPTH:
                                 related_view = relations[field_name]["model"].facade.get_viewset()(action=self.view.action)
                                 if not check_filter_overlap([*parents, *data_types, related_view.facade.name]):
                                     parameters.extend(

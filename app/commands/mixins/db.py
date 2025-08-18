@@ -55,7 +55,7 @@ class DatabaseMixin(CommandMixin("db")):
         module_disk = FileSystem(self.manager.module_path)
         files_disk = FileSystem(self.manager.file_path)
 
-        self.send("core:db:backup:init", snapshot_name)
+        self.send("db:backup:init", snapshot_name)
 
         with filesystem_temp_dir(self.get_temp_path()) as temp:
             self.info("Backing up application modules")
@@ -70,7 +70,7 @@ class DatabaseMixin(CommandMixin("db")):
 
             temp.archive(snapshot_file)
 
-        self.send("core:db:backup:complete", snapshot_name)
+        self.send("db:backup:complete", snapshot_name)
         self.success(f"Successfully dumped snapshot: {snapshot_name}")
 
     def restore_snapshot(self, snapshot_name=None):
@@ -84,7 +84,7 @@ class DatabaseMixin(CommandMixin("db")):
             snapshot_name = snapshot_name.removesuffix(self.backup_extension)
             latest = False
 
-        self.send("core:db:restore:init", {"name": snapshot_name, "latest": latest})
+        self.send("db:restore:init", {"name": snapshot_name, "latest": latest})
         self.disconnect_db()
 
         snapshot_file = os.path.join(self.snapshot_path, f"{snapshot_name}{self.backup_extension}")
@@ -110,7 +110,7 @@ class DatabaseMixin(CommandMixin("db")):
                 files_disk.remove(directory)
                 temp.get(directory, "files").clone(files_disk.path(directory))
 
-        self.send("core:db:restore:complete", {"name": snapshot_name, "latest": latest})
+        self.send("db:restore:complete", {"name": snapshot_name, "latest": latest})
         self.success(f"Successfully restored snapshot: {snapshot_name}")
 
     def clean_snapshots(self, keep_num=None):
@@ -123,7 +123,7 @@ class DatabaseMixin(CommandMixin("db")):
                 self.notice(f"Removing snapshot: {snapshot}")
                 snapshot_disk.remove(f"{snapshot}{self.backup_extension}")
 
-        self.send("core:db:clean", keep_num)
+        self.send("db:clean", keep_num)
 
     @property
     def root_lib_path(self):

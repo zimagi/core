@@ -6,7 +6,7 @@ class Archiver(Agent("archiver")):
     processes = ("record_scaling_event",)
 
     def record_scaling_event(self):
-        for package in self.listen("worker:scaling", state_key="core_archiver"):
+        for package in self.listen("worker:scaling", state_key="archiver"):
             message = Collection(**package.message)
             self.save_instance(
                 self._scaling_event,

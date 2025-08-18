@@ -2,6 +2,9 @@
 git
 openssh-client
 sshpass
+tesseract-ocr
+poppler-utils
+zlib1g-dev
 
 # Database support
 libpq-dev
@@ -9,3 +12,4 @@ postgresql-client
 
 # Service clients
 docker-ce
+google-chrome-stable

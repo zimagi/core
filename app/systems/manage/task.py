@@ -89,11 +89,14 @@ class ManagerTaskMixin:
         self.sensors = Collection()
 
     def task_connection(self):
-        if not getattr(self, "_task_connection", None):
-            if settings.REDIS_TASK_URL:
-                self._task_connection = redis.from_url(settings.REDIS_TASK_URL, encoding="utf-8", decode_responses=True)
-            else:
+        self._task_connection = None
+        if settings.REDIS_TASK_URL:
+            self._task_connection = redis.from_url(settings.REDIS_TASK_URL, encoding="utf-8", decode_responses=True)
+            try:
+                self._task_connection.ping()
+            except redis.exceptions.ConnectionError:
                 self._task_connection = None
+
         return self._task_connection
 
     def start_sensor(self, key):

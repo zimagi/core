@@ -1,0 +1,85 @@
+data:
+  memory:
+    base: id_resource
+    roles:
+      edit: [chat-user]
+      view: [chat-user]
+    packages: []
+    key: id
+    id_fields: [name, user_id]
+    fields:
+      user:
+        type: '@django.ForeignKey'
+        relation: user
+        options:
+          on_delete: '@django.PROTECT'
+      label:
+        type: '@django.CharField'
+        options:
+          'null': true
+          max_length: 256
+    meta:
+      ordering: [user, name, 'created']
+      dynamic_fields: [message_render]
+
+  memory_dialog:
+    app: memory
+    base: id_resource
+    disable_ops: [update]
+    roles:
+      edit: []
+      view: [chat-user]
+    packages: []
+    key: id
+    id_fields: [memory_id, created]
+    fields:
+      name: null
+      memory:
+        type: '@django.ForeignKey'
+        relation: memory
+        options:
+          on_delete: '@django.CASCADE'
+          related_name: dialogs
+    meta:
+      ordering: [memory_id, 'created']
+
+  memory_message:
+    app: memory
+    base: id_resource
+    disable_ops: [update]
+    roles:
+      edit: []
+      view: [chat-user]
+    packages: []
+    key: id
+    id_fields: [memory_id, created]
+    fields:
+      name: null
+      memory:
+        type: '@django.ForeignKey'
+        relation: memory
+        options:
+          on_delete: '@django.CASCADE'
+          related_name: messages
+      dialog:
+        type: '@django.ForeignKey'
+        relation: memory_dialog
+        options:
+          on_delete: '@django.CASCADE'
+          related_name: messages
+      role:
+        type: '@django.CharField'
+        options:
+          default: user
+          max_length: 32
+      sender:
+        type: '@django.CharField'
+        options:
+          'null': true
+          max_length: 256
+      content:
+        type: '@django.TextField'
+        options:
+          default: ""
+    meta:
+      ordering: [memory_id, 'created']

@@ -1,0 +1,32 @@
+plugin:
+  encoder:
+    base: base
+    interface:
+      encode:
+        params:
+          text: list
+        returns: list
+
+    requirement:
+      model:
+        type: str
+        help: 'Encoder model name'
+    option:
+      dimension:
+        type: int
+        help: 'Embedding dimension'
+        default: 768
+      format:
+        type: str
+        help: 'Embedding format'
+        default: float
+
+    providers:
+      transformer:
+        option:
+          device:
+            type: str
+            help: 'Device to run encoding process'
+            default: 'cuda:0'
+      litellm:
+      deepinfra:

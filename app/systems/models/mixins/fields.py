@@ -27,7 +27,7 @@ class ModelFacadeFieldMixin:
         self.optional_fields = []
 
         for field in self.field_instances:
-            if field.name != self.pk and field.name != self.key():
+            if not field.name.endswith("_ptr") and field.name != self.pk and field.name != self.key():
                 if not field.null and field.blank is False and field.default == NOT_PROVIDED:
                     self.required_fields.append(field.name)
                 else:

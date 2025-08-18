@@ -29,9 +29,8 @@ class GroupFacade(ModelFacade("group")):
             command._user.admin.groups.add(admin_role)
 
     def keep(self, key=None):
-        if key:
-            return []
-        return list(Roles.index.keys())
+        keep_keys = list(Roles.index.keys())
+        return key in keep_keys if key else keep_keys
 
 
 class Group(Model("group")):

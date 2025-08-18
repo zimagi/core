@@ -4,11 +4,7 @@
 #%- set plural_name = name + plural_suffix %#
 #%- endif %#
 
-#%- if extend %#
-#%- set combined_command_mixins = [] %#
-#%- else %#
 #%- set combined_command_mixins = [ base ] %#
-#%- endif %#
 
 #%- if mixins %#
 #%- set combined_command_mixins = combined_command_mixins + mixins %#

@@ -1,13 +1,27 @@
 command:
   info:
     base: platform
-    priority: 5
+    priority: -5
   version:
     base: platform
     priority: -4
+  build:
+    base: platform
+    api_enabled: false
+    priority: -3
+    parameters:
+      build_modules:
+        parser: variables
+        type: str
+        optional: true
+        help: 'module names'
+        value_label: MODULE_NAME
+        tags: [module]
+    parse:
+      - build_modules
   test:
     base: platform
-    priority: -3
+    priority: -2
     parameters:
       test_types:
         parser: variables

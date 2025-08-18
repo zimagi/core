@@ -26,5 +26,5 @@ variables:
 
 map:
     spec.yml:
-        target: spec/data/<{ data_name }>.yml
+        target: spec/auto/data/<{ data_name }>.yml
         location: data.<{ data_name }>.fields.<{ field_name }>

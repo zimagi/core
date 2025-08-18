@@ -66,7 +66,7 @@ class ActionCommand(BaseCommand):
         if self.schema.confirm:
             self.confirmation()
 
-        self.client.execute(self.name, **self.options)
+        self.command_client.execute(self.name, **self.options)
 
     def handle_message(self, message):
         message.display(debug=settings.DEBUG, width=settings.DISPLAY_WIDTH)

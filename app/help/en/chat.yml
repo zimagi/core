@@ -1,0 +1,20 @@
+chat:
+  overview: |
+    Commands for sending and receiving messages in a shared multi-agent chat channel
+
+  description: |
+    These commands enable communication between users and agents through a centralized chat system. send-chat-message <chat_name> <chat_text> broadcasts a message to a shared channel, allowing participants to coordinate, reference others using @username, and share updates. listen-chat <listen_timeout> <listen_state_key> listens for new messages on the same channel for the given timeout, delivering unique messages to each listener based on a shared listen_state_key. Together, these commands support synchronized, multi-agent collaboration through a common chat interface.
+
+  listen:
+    overview: |
+      Listen for new messages on a shared chat channel with unique delivery
+
+    description: |
+      Use this command to listen for messages on a shared chat channel for up to <listen_timeout> seconds, scoped by the <listen_state_key>. All agents or users using the same listen_state_key will receive uniquely assigned messages, ensuring each participant processes a different message in the stream. This enables coordinated, parallel processing in multi-agent systems without duplication or message conflicts.
+
+  send:
+    overview: |
+      Broadcast a message to a shared multi-agent and platform user chat channel
+
+    description: |
+      Use this command to send <chat_text> to a chat sequence identified by <chat_name> on the channel <chat_channel>, allowing communication with other agents or users subscribed to the same channel. This enables coordination, negotiation, and collaborative problem-solving across agents. To reference or address specific participants, include their usernames using the @username format. This is useful for updating project context, discussing responsibilities, or synchronizing tasks in multi-agent environments.

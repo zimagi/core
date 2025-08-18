@@ -10,6 +10,7 @@ import threading
 import time
 import tracemalloc
 import warnings
+from contextlib import contextmanager
 
 import urllib3
 from django.conf import settings
@@ -79,7 +80,7 @@ class BaseCommand(
 
     @property
     def service_id(self):
-        return settings.SERVICE_ID
+        return f"{":".join(self.get_full_name().split(" "))}{settings.SERVICE_ID}"
 
     def _signal_handler(self, sig, stack_frame):
         for lock_id in settings.MANAGER.index.get_locks():
@@ -108,6 +109,18 @@ class BaseCommand(
     def shutdown(self):
         # Override in subcommands if needed
         pass
+
+    @contextmanager
+    def run_as(self, user):
+        original_user = self.active_user
+        try:
+            if isinstance(user, str):
+                user = self.get_instance(self._user, user, required=True)
+
+            self._user.set_active_user(user)
+            yield user
+        finally:
+            self._user.set_active_user(original_user)
 
     def sleep(self, seconds):
         time.sleep(seconds)
@@ -242,6 +255,7 @@ class BaseCommand(
         parser.error = display_error
 
         if self.require_db():
+            self.manager.set_command(self)
             self._user._ensure(self)
 
         self.add_arguments(parser)
@@ -251,11 +265,11 @@ class BaseCommand(
         self.parser = parser
         self.parse_base()
 
-    def parse(self):
+    def parse(self, add_api_fields=False):
         # Override in subclass
         pass
 
-    def parse_base(self, addons=None):
+    def parse_base(self, addons=None, add_api_fields=False):
         self.option_map = {}
 
         # System
@@ -271,13 +285,13 @@ class BaseCommand(
             # Operations
             self.parse_no_parallel()
 
-            if self.require_db() and self.api_enabled():
+            if self.require_db() and self.api_enabled() and not self.mcp_enabled():
                 self.parse_platform_host()
 
             if addons and callable(addons):
                 addons()
 
-            self.parse()
+            self.parse(add_api_fields)
 
     def parse_passthrough(self):
         return False
@@ -394,6 +408,9 @@ class BaseCommand(
     def confirm(self):
         return False
 
+    def mcp_enabled(self):
+        return False
+
     def api_enabled(self):
         return True
 
@@ -461,6 +478,8 @@ class BaseCommand(
                 user_groups.append(group)
 
         if len(user_groups):
+            user_groups = list(set(user_groups))
+
             if not self.active_user.groups.filter(name__in=user_groups).exists():
                 self.warning(
                     "Operation {} {} {} access requires at least one of the following roles in environment: {}".format(
@@ -498,10 +517,28 @@ class BaseCommand(
             self.set_option_defaults(False)
 
         parser = self.create_parser()
-        self.info(parser.format_help(), system=True)
+        self.system_info(parser.format_help())
+
+    @contextmanager
+    def run_muted(self):
+        original_mute = self.mute
+        self.mute = True
+        yield
+        self.mute = original_mute
+
+    def start_capture(self):
+        self._capture_messages = []
+
+    def add_capture_message(self, message):
+        if not message.system and getattr(self, "_capture_messages", None) is not None:
+            self._capture_messages.append(message)
+
+    def get_captured_messages(self):
+        return getattr(self, "_capture_messages", [])
 
     def message(self, msg, mutable=True, silent=False, log=True, verbosity=None):
         self.queue(msg, log=log)
+        self.add_capture_message(msg)
 
         if mutable and self.mute:
             return
@@ -522,13 +559,44 @@ class BaseCommand(
     def set_status(self, success, log=True):
         self.message(messages.StatusMessage(success, user=self.active_user.name if self.active_user else None), log=log)
 
+    def system_info(self, message, name=None, prefix=None):
+        self.message(
+            messages.InfoMessage(
+                str(message),
+                name=name,
+                prefix=prefix,
+                user=self.active_user.name if self.active_user else None,
+                system=True,
+            ),
+            log=False,
+        )
+
+    def spacing(self, lines=1, system=False):
+        self.message(
+            messages.InfoMessage(
+                ("\n" * lines),
+                user=self.active_user.name if self.active_user else None,
+                system=system,
+            ),
+            log=False,
+        )
+
+    def separator(self, character="=", system=False):
+        self.message(
+            messages.InfoMessage(
+                (character * self.display_width),
+                user=self.active_user.name if self.active_user else None,
+                system=system,
+            ),
+            log=False,
+        )
+
     def info(self, message, name=None, prefix=None, log=True, system=False):
         self.message(
             messages.InfoMessage(
                 str(message),
                 name=name,
                 prefix=prefix,
-                silent=False,
                 system=system,
                 user=self.active_user.name if self.active_user else None,
             ),
@@ -549,8 +617,19 @@ class BaseCommand(
             log=log,
         )
 
-    def silent_data(self, name, value, log=True):
-        self.data(name, value, name=name, silent=True, log=log)
+    def silent_data(self, name, value, log=True, system=False):
+        self.data(name, value, name=name, silent=True, log=log, system=system)
+
+    def image(self, location, value, name=None, silent=True, log=True):
+        self.message(
+            messages.ImageMessage(
+                location,
+                name=name,
+                silent=silent,
+                user=self.active_user.name if self.active_user else None,
+            ),
+            log=log,
+        )
 
     def notice(self, message, name=None, prefix=None, system=False, log=True):
         self.message(
@@ -558,7 +637,6 @@ class BaseCommand(
                 str(message),
                 name=name,
                 prefix=prefix,
-                silent=False,
                 system=system,
                 user=self.active_user.name if self.active_user else None,
             ),
@@ -571,7 +649,6 @@ class BaseCommand(
                 str(message),
                 name=name,
                 prefix=prefix,
-                silent=False,
                 system=system,
                 user=self.active_user.name if self.active_user else None,
             ),
@@ -584,7 +661,6 @@ class BaseCommand(
                 str(message),
                 name=name,
                 prefix=prefix,
-                silent=False,
                 system=system,
                 user=self.active_user.name if self.active_user else None,
             ),
@@ -780,7 +856,7 @@ class BaseCommand(
             self.options.clear()
 
         if not custom:
-            self.set_option_defaults(parse_options=not primary or (settings.API_EXEC and primary))
+            self.set_option_defaults(parse_options=(not primary or ((settings.WSGI_EXEC or settings.MCP_EXEC) and primary)))
             self.validate_options(options)
 
             host = options.pop("platform_host", None)
@@ -797,6 +873,8 @@ class BaseCommand(
         return False
 
     def bootstrap(self, options):
+        self.manager.set_command(self)
+
         if "json_options" in options and options["json_options"] != "{}":
             options = load_json(options["json_options"])
 
@@ -839,25 +917,26 @@ class BaseCommand(
         parser = self.create_parser()
         args = argv[(len(self.get_full_name().split(" ")) + 1) :]
 
-        if not self.parse_passthrough():
-            if "-h" in argv or "--help" in argv:
-                return self.print_help(True)
-
-        if options is None:
-            options = vars(parser.parse_args(args))
-
-        if "json_options" in options and options["json_options"] != "{}":
-            options = load_json(options["json_options"])
-            args = options.get("args", [])
-
-        if not self.parse_passthrough():
-            if "--version" in argv:
-                return self.manager.index.find_command("version").run_from_argv([])
-        else:
-            options = {"args": args}
-
         try:
+            if options is None:
+                if "-h" in argv or "--help" in argv:
+                    return self.print_help(True)
+                options = vars(parser.parse_args(args))
+
+            if "json_options" in options and options["json_options"] != "{}":
+                options = load_json(options["json_options"])
+                args = options.get("args", [])
+
             self.bootstrap(options)
+
+            if not self.parse_passthrough():
+                if "-h" in argv or "--help" in argv:
+                    return self.print_help(True)
+                if "--version" in argv:
+                    return self.manager.index.find_command("version").run_from_argv([])
+            else:
+                options = {"args": args}
+
             self.handle(options, primary=True)
         finally:
             try:

@@ -1,17 +1,22 @@
+import base64
 import logging
 import sys
+from urllib import request as downloader
 
+import magic
 import oyaml
 from django.conf import settings
 from systems.encryption.cipher import Cipher
 from utility.data import dump_json, load_json, normalize_value
 from utility.display import format_data
+from utility.request import validate_url
 from utility.terminal import TerminalMixin
 
 logger = logging.getLogger(__name__)
 
 
 class AppMessage(TerminalMixin):
+
     @classmethod
     def get(cls, data, decrypt=True, user=None):
         if decrypt:
@@ -83,6 +88,7 @@ class AppMessage(TerminalMixin):
 
 
 class StatusMessage(AppMessage):
+
     def __init__(self, success=True, user=None):
         super().__init__(success, user=user)
 
@@ -123,18 +129,21 @@ class InfoMessage(AppMessage):
 
 
 class NoticeMessage(AppMessage):
+
     def format(self, debug=False, disable_color=False, width=None):
         message = self.message if disable_color else self.notice_color(self.message)
         return f"{self._format_prefix(disable_color)}{message}"
 
 
 class SuccessMessage(AppMessage):
+
     def format(self, debug=False, disable_color=False, width=None):
         message = self.message if disable_color else self.success_color(self.message)
         return f"{self._format_prefix(disable_color)}{message}"
 
 
 class WarningMessage(AppMessage):
+
     def format(self, debug=False, disable_color=False, width=None):
         message = self.message if disable_color else self.warning_color(self.message)
         return f"{self._format_prefix(disable_color)}{message}"
@@ -193,3 +202,31 @@ class TableMessage(AppMessage):
 
     def format(self, debug=False, disable_color=False, width=None):
         return format_data(self.message, self._format_prefix(disable_color), row_labels=self.row_labels, width=width)
+
+
+class ImageMessage(AppMessage):
+
+    def __init__(self, location, name=None, silent=True, system=False, user=None):
+        super().__init__(location, name=name, silent=silent, system=system, user=user)
+
+    def load(self, data):
+        super().load(data)
+
+        if validate_url(self.message):
+            with downloader.urlopen(self.message) as image:
+                image_bytes = image.read()
+        else:
+            with open(self.message, mode="rb") as image:
+                image_bytes = image.read()
+
+        self.data = base64.b64encode(image_bytes)
+        try:
+            self.mimetype = magic.from_buffer(image_bytes, mime=True)
+        except Exception:
+            self.mimetype = None
+
+    def render(self):
+        result = super().render()
+        result["data"] = self.data
+        result["mimetype"] = self.mimetype
+        return result

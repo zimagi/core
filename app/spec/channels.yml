@@ -1,10 +1,268 @@
+_encoder_save_message: &encoder_save_message
+  type: dict
+  items:
+    data_type:
+      type: str
+      description: 'The data type name that needs to be encoded'
+      required: true
+    id:
+      type: str
+      description: 'The data instance ID to be encoded'
+      required: true
+    field:
+      type: str
+      description: 'The data instance field to be encoded'
+      required: true
+    collection:
+      type: str
+      description: 'The Qdrant collection to store embeddings'
+      required: true
+    payload:
+      type: dict
+      description: 'The Qdrant collection payload fields and values to store with embeddings'
+      required: false
+
 channels:
-  administration:
-    admin:
-    db-admin:
-    schedule-admin:
-    notification-admin:
-    user-admin:
-    config-admin:
-    module-admin:
-    data-admin:
+  'data:save:{data_type}':
+    description: 'This channel receives the newly created ID field values for any defined data {type}'
+    groups: ai-user
+    message:
+      type: str
+      description: 'The data type instance ID that was saved'
+      required: true
+
+  'data:remove:{data_type}':
+    description: 'This channel receives the newly removed ID field values for any defined data {type}'
+    groups: ai-user
+    message:
+      type: str
+      description: 'The data type instance ID that was removed'
+      required: true
+
+  'worker:scaling':
+    description: 'This channel records worker scaling events for analysis'
+    groups: admin
+    message:
+      type: dict
+      items:
+        command:
+          type: str
+          description: 'Command that triggered the worker scaling event'
+          required: true
+        worker_type:
+          type: str
+          description: 'Worker type that is being scaled'
+          required: true
+        worker_max_count:
+          type: int
+          description: 'Maximum number of workers allowed running at any given time'
+          required: true
+        worker_count:
+          type: int
+          description: 'Current number of workers that are running'
+          required: true
+        task_count:
+          type: int
+          description: 'Number of tasks waiting to be executed for this worker type'
+          required: true
+        worker_max_created:
+          type: int
+          description: 'The maximum number of workers we can create'
+          required: true
+        workers_created:
+          type: int
+          description: 'Number of workers that were actually created for this scaling event'
+          required: true
+
+  'encoder:save':
+    description: 'This channel gets notified with requests to generate embeddings using an encoder provider'
+    groups:
+      - ai-user
+      - chat-user
+    message:
+      <<: *encoder_save_message
+
+  'encoder:complete':
+    description: 'This channel gets notified of encoding task completions by the encoder agents'
+    groups:
+      - ai-user
+      - chat-user
+    message:
+      <<: *encoder_save_message
+
+  'encoder:search':
+    description: 'This channel gets notified with requests to generate search embeddings based on provided text'
+    groups:
+      - ai-user
+      - chat-user
+    message:
+      type: str
+      description: 'Text that should be used to generate and return embeddings for search'
+      required: true
+
+  'encoder:remove':
+    description: 'This channel gets notified with requests to remove embeddings based data instance IDs'
+    groups:
+      - ai-user
+      - chat-user
+    message:
+      type: dict
+      items:
+        collection:
+          type: str
+          description: 'The Qdrant collection to remove embeddings'
+          required: true
+        filters:
+          type: dict
+          description: 'The Qdrant collection filter field values to remove embeddings'
+          required: true
+
+  'language_model:generate':
+    description: 'This channel gets notified with requests to generate output via a local or remote language model'
+    groups:
+      - ai-user
+      - chat-user
+    message:
+      type: dict
+      items:
+        messages:
+          type: list[dict]
+          description: 'Messages to pass to the language model that provide instructions, data, and context'
+          required: true
+        options:
+          type: dict
+          description: 'Any language model options needed for processing'
+          required: false
+
+  'language_model:complete':
+    description: 'This channel gets notified with language model generation completion metrics'
+    groups:
+      - ai-user
+      - chat-user
+    message:
+      type: dict
+      items:
+        prompt_tokens:
+          type: int
+          description: 'Total number of input tokens for language model generation request'
+          required: true
+        output_tokens:
+          type: int
+          description: 'Total number of output tokens for language model generation request'
+          required: true
+        total_tokens:
+          type: int
+          description: 'Total number of input and output tokens for language model generation request'
+          required: true
+        cost:
+          type: float
+          description: 'The cost in dollars if there is a service cost associated with the request'
+          required: false
+
+  'chat:message':
+    description: 'This channel receives a sequence of chat messages'
+    groups:
+      - ai-user
+      - chat-user
+    message:
+      type: dict
+      items:
+        user:
+          type: str
+          description: 'User that submitted the chat message'
+          required: true
+        name:
+          type: str
+          description: 'Chat name'
+          required: true
+        message:
+          type: str
+          description: 'Chat message (can contains mentions: @user, @group)'
+          required: true
+        time:
+          type: str
+          description: 'ISO 8601 formatted date/time for message send in format YYYY-MM-DDTHH:MM:SS (UTC)'
+          required: true
+
+  'db:backup:init':
+    description: 'This channel gets notified when a database backup is about to take place'
+    groups: db-admin
+    message:
+      type: str
+      description: 'The snapshot name that is being created'
+      required: true
+
+  'db:backup:complete':
+    description: 'This channel gets notified when a database backup has been completed'
+    groups: db-admin
+    message:
+      type: str
+      description: 'The snapshot name that has been successfully created'
+      required: true
+
+  'db:restore:init':
+    description: 'This channel gets notified when a database restore is about to take place'
+    groups: db-admin
+    message:
+      type: dict
+      items:
+        name:
+          type: str
+          description: 'The snapshot name that is the source of the database restore'
+          required: true
+        latest:
+          type: bool
+          description: 'Whether or not we are restoring the latest snapshot'
+          required: true
+
+  'db:restore:complete':
+    description: 'This channel gets notified when a database restore has been completed'
+    groups: db-admin
+    message:
+      type: dict
+      items:
+        name:
+          type: str
+          description: 'The snapshot name that is the source of the database restore'
+          required: true
+        latest:
+          type: bool
+          description: 'Whether or not we are restoring the latest snapshot'
+          required: true
+
+  'db:clean':
+    description: 'This channel gets notified when database snapshots are pruned'
+    groups: db-admin
+    message:
+      type: int
+      description: 'The number of snapshots that are being kept'
+      required: true
+
+  'browser:request':
+    description: 'This channel gets requests to download Javascript rendered webpages'
+    groups: browser-user
+    message:
+      type: str
+      description: 'The URL of the webpage to request'
+      required: true
+
+  'library:index':
+    description: 'This channel receives index events for library files'
+    groups:
+      - ai-user
+      - chat-user
+    message:
+      type: dict
+      items:
+        user:
+          type: str
+          description: 'User that saved the library file'
+          required: true
+        library:
+          type: str
+          description: 'Library name'
+          required: true
+        path:
+          type: str
+          description: 'File path within library directory of file to process'
+          required: true

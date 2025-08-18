@@ -28,6 +28,9 @@ class Manager(
     template.ManagerTemplateMixin,
 ):
     def __init__(self):
+        self.command_args = os.environ.get("ZIMAGI_ARGS", "").split(" ")
+        self.active_command = None
+
         self.runtime = Runtime()
 
         self.initialize_directories()
@@ -37,8 +40,6 @@ class Manager(
         self.index.register_core_module()
         self.index.update_search_path()
         self.index.collect_environment()
-
-        self.active_command = None
 
     def set_command(self, command):
         self.active_command = command
@@ -73,7 +74,7 @@ class Manager(
 
     def cleanup(self, log_key):
         self.cleanup_task(log_key)
-        self.cleanup_communication(log_key)
+        # self.cleanup_communication(log_key)
 
     def get_spec(self, location=None, default=None):
         spec = self.index.spec
@@ -92,8 +93,8 @@ class Manager(
 
         return copy.deepcopy(spec)
 
-    def reset_spec(self):
-        self.index.reset_spec()
+    def reset(self):
+        self.index.reset()
 
     def interpolate_spec(self, location=None, environment=None):
         if environment is None:

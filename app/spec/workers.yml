@@ -1,9 +1,27 @@
+_default_worker: &default_worker
+  image: '@RUNTIME_IMAGE'
+  docker_runtime: '@DOCKER_RUNTIME'
+  kube_cpu_min: 500m
+  kube_cpu_max: 1500m
+  kube_memory_min: 2000Mi
+  kube_memory_max: 2400Mi
+  env: {}
+
 workers:
   default:
-    image: '@RUNTIME_IMAGE'
-    docker_runtime: '@DOCKER_RUNTIME'
-    kube_cpu_min: 500m
-    kube_cpu_max: 1500m
-    kube_memory_min: 2000Mi
-    kube_memory_max: 2400Mi
-    env: {}
+    <<: *default_worker
+
+  qdrant:
+    <<: *default_worker
+
+  encoder:
+    <<: *default_worker
+
+  language_model:
+    <<: *default_worker
+
+  cell:
+    <<: *default_worker
+
+  browser:
+    <<: *default_worker

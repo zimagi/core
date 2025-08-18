@@ -10,11 +10,11 @@ x-zimagi-build: &zimagi-build
 
 x-zimagi-build-args: &zimagi-build-args
   ZIMAGI_ENVIRONMENT: ${ZIMAGI_ENVIRONMENT}
+  ZIMAGI_USER_UID: ${ZIMAGI_USER_UID}
 
 x-zimagi-env: &zimagi-env
   <<: *zimagi-build-args
 
-  ZIMAGI_AUTO_UPDATE: true
   ZIMAGI_DISABLE_MODULE_INIT: true
   ZIMAGI_DISABLE_MODULE_SYNC: true
   ZIMAGI_RESTART_SERVICES: false
@@ -22,10 +22,12 @@ x-zimagi-env: &zimagi-env
   ZIMAGI_RUNTIME_IMAGE: zimagi/server:${ZIMAGI_ENVIRONMENT}
   ZIMAGI_DOCKER_RUNTIME: standard
 
-  ZIMAGI_POSTGRES_HOST: postgresql
+  ZIMAGI_POSTGRES_HOST: postgresql-zimagi
   ZIMAGI_POSTGRES_PORT: 5432
-  ZIMAGI_REDIS_HOST: redis
+  ZIMAGI_REDIS_HOST: redis-zimagi
   ZIMAGI_REDIS_PORT: 6379
+  ZIMAGI_QDRANT_HOST: qdrant-zimagi
+  ZIMAGI_QDRANT_PORT: 6333
 
 x-zimagi-service-shared: &zimagi-service-shared
   env_file:
@@ -34,18 +36,17 @@ x-zimagi-service-shared: &zimagi-service-shared
     - ./.env
   networks:
     - zimagi-net
-  user: ${ZIMAGI_USER_UID}:zimagi
   group_add:
     - ${ZIMAGI_DOCKER_GID}
   volumes:
     - /var/run/docker.sock:/var/run/docker.sock
     - ./app:/usr/local/share/zimagi
-    - ./package:/usr/local/share/zimagi-client
-    - ./data:/var/local/zimagi
+    - ./sdk/python:/usr/local/share/zimagi-client
     - ./lib:/usr/local/lib/zimagi
   depends_on:
-    - postgresql
-    - redis
+    - postgresql-zimagi
+    - redis-zimagi
+    - qdrant-zimagi
 
 x-zimagi-service: &zimagi-service
   <<: *zimagi-service-shared
@@ -63,27 +64,43 @@ services:
     <<: *zimagi-service
     entrypoint: zimagi-command
     ports:
-      - '5123:5000'
+      - '${ZIMAGI_COMMAND_PORT}:5000'
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:5000/status']
-      interval: 30s
-      timeout: 30s
-      retries: 4
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mcp-api:
+    <<: *zimagi-service
+    entrypoint: zimagi-mcp
+    ports:
+      - '${ZIMAGI_MCP_PORT}:5000'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:5000/status']
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   data-api:
     <<: *zimagi-service
     entrypoint: zimagi-data
     ports:
-      - '5323:5000'
+      - '${ZIMAGI_DATA_PORT}:5000'
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:5000/status']
-      interval: 30s
-      timeout: 30s
-      retries: 4
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   controller:
     <<: *zimagi-service
     entrypoint: zimagi-controller
+    healthcheck:
+      test: ['CMD-SHELL', 'test -f /var/local/zimagi/controller || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   scheduler:
     <<: *zimagi-service
@@ -92,14 +109,19 @@ services:
       <<: *zimagi-env
       ZIMAGI_AUTO_UPDATE: false
       ZIMAGI_DISABLE_MODULE_INIT: false
+    healthcheck:
+      test: ['CMD-SHELL', 'test -f /var/local/zimagi/scheduler || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   tasks:
     <<: *zimagi-service
     entrypoint: celery-flower
     ports:
-      - '5124:5000'
+      - '${ZIMAGI_FLOWER_PORT}:5000'
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:5000']
-      interval: 30s
-      timeout: 30s
-      retries: 4
+      interval: 5s
+      timeout: 5s
+      retries: 20

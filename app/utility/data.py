@@ -1,3 +1,4 @@
+import base64
 import codecs
 import copy
 import datetime
@@ -210,6 +211,30 @@ def deep_merge(data, override, merge_lists=False, merge_null=True):
     return default_override
 
 
+def flatten_dict(data, allowed_fields=None, parent_key=""):
+    result = {}
+
+    for key, value in data.items():
+        new_key = f"{parent_key}__{key}" if parent_key else key
+
+        include_field = allowed_fields is None or any(
+            field.startswith(new_key) or field.startswith(key) or new_key.startswith(field) for field in allowed_fields
+        )
+        if not include_field:
+            continue
+
+        if isinstance(value, dict):
+            nested = flatten_dict(value, allowed_fields, new_key)
+            result.update(nested)
+        else:
+            result[new_key] = value
+
+    if allowed_fields:
+        return {field: value for field, value in result.items() if field in allowed_fields}
+
+    return result
+
+
 def flatten(values):
     results = []
     for item in ensure_list(values):
@@ -318,6 +343,28 @@ def normalize_index(index):
         return int(index)
     except ValueError:
         return index
+
+
+def check_base64(text):
+    try:
+        if isinstance(text, str):
+            text_bytes = text.encode("ascii")
+        elif isinstance(text, bytes):
+            text_bytes = text
+        else:
+            raise TypeError("Input must be a string or bytes object.")
+
+        return base64.b64encode(base64.b64decode(text_bytes)) == text_bytes
+    except (TypeError, ValueError, base64.binascii.Error):
+        return False
+
+
+def encode_base64(text):
+    return base64.b64encode(text)
+
+
+def decode_base64(base64_bytes):
+    return base64.b64decode(base64_bytes)
 
 
 def number(data):

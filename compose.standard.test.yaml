@@ -10,6 +10,7 @@ x-zimagi-build: &zimagi-build
 
 x-zimagi-build-args: &zimagi-build-args
   ZIMAGI_ENVIRONMENT: ${ZIMAGI_ENVIRONMENT}
+  ZIMAGI_USER_UID: ${ZIMAGI_USER_UID}
 
 x-zimagi-env: &zimagi-env
   <<: *zimagi-build-args
@@ -22,10 +23,12 @@ x-zimagi-env: &zimagi-env
   ZIMAGI_RUNTIME_IMAGE: zimagi/server:${ZIMAGI_ENVIRONMENT}
   ZIMAGI_DOCKER_RUNTIME: standard
 
-  ZIMAGI_POSTGRES_HOST: postgresql
+  ZIMAGI_POSTGRES_HOST: postgresql-zimagi
   ZIMAGI_POSTGRES_PORT: 5432
-  ZIMAGI_REDIS_HOST: redis
+  ZIMAGI_REDIS_HOST: redis-zimagi
   ZIMAGI_REDIS_PORT: 6379
+  ZIMAGI_QDRANT_HOST: qdrant-zimagi
+  ZIMAGI_QDRANT_PORT: 6333
 
 x-zimagi-service-shared: &zimagi-service-shared
   env_file:
@@ -34,16 +37,15 @@ x-zimagi-service-shared: &zimagi-service-shared
     - ./.env
   networks:
     - zimagi-net
-  user: ${ZIMAGI_USER_UID}:zimagi
   group_add:
     - ${ZIMAGI_DOCKER_GID}
   volumes:
     - /var/run/docker.sock:/var/run/docker.sock
-    - ./data:/var/local/zimagi
     - ./lib:/usr/local/lib/zimagi
   depends_on:
-    - postgresql
-    - redis
+    - postgresql-zimagi
+    - redis-zimagi
+    - qdrant-zimagi
 
 x-zimagi-service: &zimagi-service
   <<: *zimagi-service-shared
@@ -61,28 +63,49 @@ services:
     <<: *zimagi-service
     entrypoint: zimagi-command
     ports:
-      - '5123:5000'
+      - '${ZIMAGI_COMMAND_PORT}:5000'
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:5000/status']
-      interval: 30s
-      timeout: 30s
-      retries: 4
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+  mcp-api:
+    <<: *zimagi-service
+    entrypoint: zimagi-mcp
+    ports:
+      - '${ZIMAGI_MCP_PORT}:5000'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:5000/status']
+      interval: 5s
+      timeout: 5s
+      retries: 60
 
   data-api:
     <<: *zimagi-service
     entrypoint: zimagi-data
     ports:
-      - '5323:5000'
+      - '${ZIMAGI_DATA_PORT}:5000'
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:5000/status']
-      interval: 30s
-      timeout: 30s
-      retries: 4
+      interval: 5s
+      timeout: 5s
+      retries: 60
 
   controller:
     <<: *zimagi-service
     entrypoint: zimagi-controller
+    healthcheck:
+      test: ['CMD-SHELL', 'test -f /var/local/zimagi/controller || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 60
 
   scheduler:
     <<: *zimagi-service
     entrypoint: zimagi-scheduler
+    healthcheck:
+      test: ['CMD-SHELL', 'test -f /var/local/zimagi/scheduler || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 60

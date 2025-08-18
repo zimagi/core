@@ -1,11 +1,14 @@
+from datetime import datetime
+
 from django.conf import settings
 from services.celery import app
 from systems.commands.index import Agent
+from utility.filesystem import save_file
 
 
 class Controller(Agent("controller")):
     def exec(self):
-        self.manager.reset_spec()
+        self.manager.reset()
 
         for agent in self.manager.collect_agents():
             worker = self.get_provider(
@@ -22,3 +25,5 @@ class Controller(Agent("controller")):
                 worker.scale_agents(agent_count)
             else:
                 worker.scale_agents(0)
+
+        save_file(f"{settings.DATA_DIR}/controller", datetime.now().strftime("%Y-%m-%d_%H:%M:%S"))

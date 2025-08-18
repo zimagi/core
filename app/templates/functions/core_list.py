@@ -7,3 +7,8 @@ from utility import data
 
 def ensure_list(value):
     return data.ensure_list(value)
+
+def comma_separated_value(value):
+    if isinstance(value, (list, tuple)):
+        return ", ".join(value)
+    return str(value)

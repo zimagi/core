@@ -25,21 +25,22 @@ class CLI(TerminalMixin):
         self.argv = argv if argv else []
 
     def handle_error(self, error):
-        if not isinstance(error, CommandError) and error.args:
-            self.print("** " + self.error_color(error.args[0]), sys.stderr)
-        else:
-            self.print("** " + self.error_color(error), sys.stderr)
+        if not isinstance(error, CommandError):
+            if error.args:
+                self.print("** " + self.error_color(error.args[0]), sys.stderr)
+            else:
+                self.print("** " + self.error_color(error), sys.stderr)
 
-        try:
-            debug = settings.MANAGER.runtime.debug()
-        except AttributeError:
-            debug = True
+            try:
+                debug = settings.MANAGER.runtime.debug()
+            except AttributeError:
+                debug = True
 
-        if debug:
-            self.print(
-                "> " + self.traceback_color("\n".join([item.strip() for item in format_exception_info()])),
-                stream=sys.stderr,
-            )
+            if debug:
+                self.print(
+                    "> " + self.traceback_color("\n".join([item.strip() for item in format_exception_info()])),
+                    stream=sys.stderr,
+                )
 
     def exclusive_wrapper(self, exec_method, lock_id):
         def wrapper(*args, **kwargs):
@@ -75,26 +76,20 @@ class CLI(TerminalMixin):
         if "--no-color" in extra:
             settings.MANAGER.runtime.color(False)
 
-        if not settings.NO_MIGRATE and args and args[0] not in ("check", "migrate", "makemigrations"):
+        if args[0] == "build":
             verbosity = 3 if settings.MANAGER.runtime.debug() else 0
-            start_time = time.time()
-            current_time = start_time
-
-            while (current_time - start_time) <= settings.AUTO_MIGRATE_TIMEOUT:
-                try:
-                    call_command("migrate", interactive=False, verbosity=verbosity)
-                    break
-                except Exception as error:
-                    self.print(str(error))
-                    pass
-
-                time.sleep(settings.AUTO_MIGRATE_INTERVAL)
-                current_time = time.time()
+            try:
+                call_command("migrate", interactive=False, verbosity=verbosity)
+            except Exception as error:
+                self.handle_error(error)
+                self.exit(1)
 
         return args
 
     def execute(self):
         try:
+            os.environ["ZIMAGI_ARGS"] = " ".join(self.argv[1:])
+
             django.setup()
 
             if settings.INIT_PROFILE or settings.COMMAND_PROFILE:

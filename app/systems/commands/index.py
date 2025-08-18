@@ -342,6 +342,9 @@ def _get_command_methods(command):
     def api_enabled(self):
         return command.spec["api_enabled"]
 
+    def mcp_enabled(self):
+        return command.spec["mcp_enabled"]
+
     def groups_allowed(self):
         if command.spec["groups_allowed"] is False:
             return False
@@ -368,25 +371,37 @@ def _get_command_methods(command):
     def parse_passthrough(self):
         return command.spec["parse_passthrough"]
 
-    def parse(self):
+    def parse(self, add_api_fields=False):
         if isinstance(command.spec["parse"], (str, list, tuple)):
             for name in ensure_list(command.spec["parse"]):
-                getattr(self, f"parse_{name}")()
+                if (
+                    add_api_fields
+                    or "parameters" not in command.spec
+                    or name not in command.spec["parameters"]
+                    or not (settings.CLI_EXEC and command.spec["parameters"][name].get("api_only", False))
+                ):
+                    getattr(self, f"parse_{name}")()
 
         elif isinstance(command.spec["parse"], dict):
             for name, options in command.spec["parse"].items():
-                parse_method = getattr(self, f"parse_{name}")
+                if (
+                    add_api_fields
+                    or "parameters" not in command.spec
+                    or name not in command.spec["parameters"]
+                    or not (settings.CLI_EXEC and command.spec["parameters"][name].get("api_only", False))
+                ):
+                    parse_method = getattr(self, f"parse_{name}")
 
-                if options is None:
-                    parse_method()
-                elif isinstance(options, (bool, int, float, str, list, tuple)):
-                    parse_method(*ensure_list(options))
-                elif isinstance(options, dict):
-                    parse_method(**options)
-                else:
-                    raise ParseError(
-                        "Command parameter parse options {} not recognized: {}".format(options, command.spec["parse"])
-                    )
+                    if options is None:
+                        parse_method()
+                    elif isinstance(options, (bool, int, float, str, list, tuple)):
+                        parse_method(*ensure_list(options))
+                    elif isinstance(options, dict):
+                        parse_method(**options)
+                    else:
+                        raise ParseError(
+                            "Command parameter parse options {} not recognized: {}".format(options, command.spec["parse"])
+                        )
         else:
             raise ParseError("Command parameter parse list not recognized: {}".format(command.spec["parse"]))
 
@@ -415,6 +430,7 @@ def _get_command_methods(command):
 
     command.method(get_priority, "priority")
     command.method(api_enabled, "api_enabled")
+    command.method(mcp_enabled, "mcp_enabled")
     command.method(groups_allowed, "groups_allowed")
     command.method(require_db, "require_db")
     command.method(bootstrap_ensure, "bootstrap_ensure")

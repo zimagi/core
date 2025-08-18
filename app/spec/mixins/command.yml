@@ -84,6 +84,80 @@ command_mixins:
         help: 'JSON encoded database record objects'
         value_label: JSON
         tags: [database]
+  browser:
+    class: BrowserMixin
+  library:
+    class: LibraryMixin
+    mixins: [browser, qdrant]
+    parameters:
+      library_name:
+        parser: variable
+        type: str
+        optional: false
+        help: 'user library name'
+        value_label: NAME
+        tags: [mcp, library]
+      file_path:
+        parser: variable
+        type: str
+        optional: true
+        help: 'relative file path of file document within library'
+        value_label: PATH
+        tags: [mcp, library, file]
+      file_url:
+        parser: variable
+        type: str
+        optional: false
+        help: 'file remote URL'
+        value_label: URL
+        tags: [mcp, library, file]
+      file_content:
+        parser: variable
+        type: str
+        optional: false
+        help: 'Base 64 encoded file content'
+        value_label: CONTENT
+        tags: [mcp, library, file]
+      search_provider:
+        parser: variable
+        type: str
+        optional: '--search-provider'
+        default: google
+        help: 'web search engine'
+        value_label: NAME
+        tags: [library, search]
+      search_text:
+        parser: variable
+        type: str
+        optional: false
+        help: 'search query or text'
+        value_label: TEXT
+        tags: [mcp, library, search]
+      max_results:
+        parser: variable
+        type: int
+        optional: true
+        default: 10
+        help: 'maximum number of results to return'
+        value_label: NUM
+        tags: [library, search]
+  qdrant:
+    class: QdrantMixin
+    parameters:
+      collection_name:
+        parser: variable
+        type: str
+        optional: true
+        help: 'Qdrant Collection name'
+        value_label: NAME
+        tags: [qdrant]
+      snapshot_name:
+        parser: variable
+        type: str
+        optional: true
+        help: 'Qdrant Collection snapshot name'
+        value_label: NAME
+        tags: [qdrant]
   config:
     class: ConfigMixin
     meta:
@@ -128,6 +202,8 @@ command_mixins:
         help: 'state value'
         value_label: VALUE
         tags: [state, value]
+  language_model:
+    class: LanguageModelMixin
   agent:
     class: AgentMixin
     parameters:
@@ -135,7 +211,7 @@ command_mixins:
         parser: variable
         type: int
         default: '@settings.AGENT_MAX_LIFETIME'
-        optional: '--lifetime'
+        optional: true
         help: 'agent lifetime'
         value_label: SEC
         tags: [agent, cycle]
@@ -143,10 +219,122 @@ command_mixins:
         parser: variable
         type: int
         default: 1
-        optional: '--pause'
+        optional: true
         help: 'pause in seconds after execution cycle'
         value_label: SEC
         tags: [agent, cycle]
+  cell:
+    class: CellMixin
+    parameters:
+      agent_goal:
+        parser: variable
+        type: str
+        optional: false
+        help: 'cell goal'
+        value_label: TEXT
+        tags: [agent, instruction]
+      agent_rules:
+        parser: variable
+        type: str
+        optional: false
+        help: 'cell rules'
+        value_label: TEXT
+        tags: [agent, instruction]
+      agent_persona:
+        parser: variable
+        type: str
+        optional: true
+        help: 'cell persona'
+        value_label: TEXT
+        tags: [agent, instruction]
+      agent_user:
+        parser: variable
+        type: str
+        optional: true
+        default: '@settings.ADMIN_USER'
+        help: 'cell run as user (defaults to admin)'
+        value_label: USER_NAME
+        tags: [agent, experience, access]
+      agent_memory_sequence:
+        parser: variable
+        type: str
+        default: global
+        optional: true
+        help: 'cell memory sequence name'
+        value_label: IDENTIFIER
+        tags: [agent, experience]
+      agent_sensor:
+        parser: variable
+        type: str
+        optional: false
+        help: 'cell sensory communication channel'
+        value_label: CHANNEL
+        tags: [agent, communication]
+      agent_sensor_filters:
+        parser: fields
+        optional: true
+        help: 'query and pluggable filters with values'
+        tags: [agent, communication]
+      agent_message_fields:
+        parser: variables
+        type: str
+        optional: false
+        help: 'one or more data fields to pass to the model'
+        value_label: NAME
+        tags: [agent, communication]
+      agent_message_field_labels:
+        parser: fields
+        optional: true
+        help: 'mapping of labels to message field names'
+        tags: [agent, communication]
+      agent_memory_search_field:
+        parser: variable
+        type: str
+        optional: false
+        help: 'cell memory search field for searching memories'
+        value_label: NAME
+        tags: [agent, experience]
+      agent_system_template:
+        parser: variable
+        type: str
+        optional: true
+        default: system
+        help: 'cell instruction system prompt template'
+        value_label: NAME
+        tags: [agent, template]
+      agent_request_template:
+        parser: variable
+        type: str
+        optional: true
+        default: default
+        help: 'cell instruction prompt template'
+        value_label: NAME
+        tags: [agent, template]
+      agent_tools_template:
+        parser: variable
+        type: str
+        optional: true
+        default: tools
+        help: 'cell instruction tools prompt template'
+        value_label: NAME
+        tags: [agent, template]
+      agent_tools:
+        parser: fields
+        optional: true
+        help: 'one or more MCP tool names as keys with optional override parameters'
+        tags: [agent, action]
+      agent_channel:
+        parser: variable
+        type: str
+        optional: true
+        help: 'cell output communication channel'
+        value_label: CHANNEL
+        tags: [agent, communication]
+      agent_channel_field_map:
+        parser: fields
+        optional: true
+        help: 'mapping of response fields to output channel fields (for standardization fo output)'
+        tags: [agent, communication]
   group:
     class: GroupMixin
     meta:
@@ -251,31 +439,65 @@ command_mixins:
         help: 'user group names to notify of command failures'
         value_label: GROUP_NAME
         tags: [notification, groups]
-  message:
-    class: MessageMixin
+  chat:
+    class: ChatMixin
+    meta:
+      memory:
+        data: memory
+        priority: 1
+      memory_dialog:
+        data: memory_dialog
+        priority: 2
+      memory_message:
+        data: memory_message
+        priority: 3
     parameters:
-      communication_channel:
+      chat_channel:
+        parser: variable
+        type: str
+        optional: '--channel'
+        default: message
+        help: 'chat message channel'
+        value_label: NAME
+        tags: [mcp, communication, chat]
+      chat_name:
+        parser: variable
+        type: str
+        optional: '--name'
+        default: default
+        help: 'chat sequence name'
+        value_label: NAME
+        tags: [mcp, chat, key]
+      chat_text:
         parser: variable
         type: str
         optional: false
-        help: 'communication channel on which to send and receive messages'
-        value_label: 'NAME'
-        tags: [message, key]
-      communication_message:
-        parser: variable
-        type: str
-        optional: false
-        help: 'stringified message to send to subscribers (use JSON for complex objects)'
+        help: 'chat message text sent to server'
         value_label: MESSAGE
-        tags: [message]
-      communication_timeout:
+        api_only: true
+        tags: [mcp, message, chat]
+      disable_save:
+        parser: flag
+        flag: '--disable-save'
+        help: 'whether or not to disable the saving of the chat message into memory'
+        tags: [mcp, message, chat]
+      listen_timeout:
         parser: variable
         type: int
-        default: 0
-        optional: '--timeout'
-        help: 'number of seconds after which command times out waiting for messages (set to 0 for no limit)'
+        default: 60
+        optional: true
+        help: 'chat listener timeout in seconds'
         value_label: SEC
-        tags: [message]
+        api_only: true
+        tags: [communication, chat]
+      listen_state_key:
+        parser: variable
+        type: str
+        optional: true
+        help: 'chat message listener state key'
+        value_label: MESSAGE
+        api_only: true
+        tags: [communication, chat]
   schedule:
     class: ScheduleMixin
     meta:

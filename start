@@ -25,13 +25,6 @@ for arg in "$@"; do
   fi
 done
 
-if [ ! "${args[0]:-}" ]; then
-  echo """
- Usage: source start [--env] runtime [environment:local] [profile:default]
-"""
-  return
-fi
-
 export COMPOSE_RUNTIME="${args[0]:-standard}"
 export COMPOSE_ENVIRONMENT="${args[1]:-local}"
 export COMPOSE_PROFILE="${args[2]:-default}"
@@ -53,9 +46,35 @@ export ZIMAGI_APP_NAME="zimagi-${COMPOSE_ENVIRONMENT}"
 if [ ! -f "${__zimagi_env_dir}/generated" ]; then
   echo "Storing generated passwords and keys"
   echo """
+#!/usr/bin/env bash
+
+# System
+
 export ZIMAGI_USER_UID=$(id -u)
 export ZIMAGI_DOCKER_GID=$(stat -c '%g' /var/run/docker.sock)
+
+# User
+
+export ZIMAGI_ADMIN_DEFAULT_TOKEN=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 32; echo)
 export ZIMAGI_ADMIN_API_KEY=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 32; echo)
+
+# Database
+
+export ZIMAGI_POSTGRES_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 15; echo)
+export ZIMAGI_REDIS_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 15; echo)
+export ZIMAGI_QDRANT_ACCESS_KEY=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 15; echo)
+
+export ZIMAGI_HOST_POSTGRES_PORT=15432
+export ZIMAGI_HOST_REDIS_PORT=16379
+export ZIMAGI_HOST_QDRANT_PORT=16333
+
+# API Connectivity
+
+export ZIMAGI_COMMAND_PORT=5123
+export ZIMAGI_DATA_PORT=5323
+export ZIMAGI_MCP_PORT=6123
+export ZIMAGI_FLOWER_PORT=5124
+
 """ >"${__zimagi_env_dir}/generated"
 fi
 source "${__zimagi_env_dir}/generated"
@@ -63,6 +82,11 @@ source "${__zimagi_env_dir}/generated"
 #
 # 2. Generate Docker Compose top level .env file used for Docker builds and client execution
 #
+new_env=0
+if [ ! -f "${__script_dir}/.env" ]; then
+  new_env=1
+fi
+
 echo "Initializing Docker Compose build environment"
 echo """
 # Container environment
@@ -76,22 +100,40 @@ ZIMAGI_PROFILE=${COMPOSE_PROFILE}
 # User environment
 ZIMAGI_USER_UID=${ZIMAGI_USER_UID}
 ZIMAGI_DOCKER_GID=${ZIMAGI_DOCKER_GID}
+ZIMAGI_DEFAULT_ADMIN_TOKEN=${ZIMAGI_ADMIN_DEFAULT_TOKEN}
 ZIMAGI_ADMIN_API_KEY=${ZIMAGI_ADMIN_API_KEY}
 
 # Host directory environment
 ZIMAGI_HOST_APP_DIR=${ZIMAGI_HOST_APP_DIR}
-ZIMAGI_HOST_PACKAGE_DIR=${ZIMAGI_HOST_PACKAGE_DIR}
+ZIMAGI_HOST_SDK_DIR=${ZIMAGI_HOST_SDK_DIR}
 ZIMAGI_HOST_DATA_DIR=${ZIMAGI_HOST_DATA_DIR}
 ZIMAGI_HOST_LIB_DIR=${ZIMAGI_HOST_LIB_DIR}
 
 # Database environment
+ZIMAGI_HOST_POSTGRES_PORT=${ZIMAGI_HOST_POSTGRES_PORT}
+ZIMAGI_HOST_REDIS_PORT=${ZIMAGI_HOST_REDIS_PORT}
+ZIMAGI_HOST_QDRANT_PORT=${ZIMAGI_HOST_QDRANT_PORT}
+
 ZIMAGI_DOCKER_NETWORK=zimagi-net
+ZIMAGI_POSTGRES_HOST=postgresql-zimagi
+ZIMAGI_POSTGRES_PORT=5432
+ZIMAGI_REDIS_HOST=redis-zimagi
+ZIMAGI_REDIS_PORT=6379
+ZIMAGI_QDRANT_HOST=qdrant-zimagi
+ZIMAGI_QDRANT_PORT=6333
+
+ZIMAGI_POSTGRES_PASSWORD=${ZIMAGI_POSTGRES_PASSWORD}
+ZIMAGI_REDIS_PASSWORD=${ZIMAGI_REDIS_PASSWORD}
+ZIMAGI_QDRANT_ACCESS_KEY=${ZIMAGI_QDRANT_ACCESS_KEY}
 
 # API connectivity environment
 ZIMAGI_COMMAND_HOST=localhost
-ZIMAGI_COMMAND_PORT=5123
+ZIMAGI_COMMAND_PORT=${ZIMAGI_COMMAND_PORT}
 ZIMAGI_DATA_HOST=localhost
-ZIMAGI_DATA_PORT=5323
+ZIMAGI_DATA_PORT=${ZIMAGI_DATA_PORT}
+
+ZIMAGI_MCP_PORT=${ZIMAGI_MCP_PORT}
+ZIMAGI_FLOWER_PORT=${ZIMAGI_FLOWER_PORT}
 
 """ >"${__script_dir}/.env"
 
@@ -105,6 +147,13 @@ else
   cp "${__zimagi_env_dir}/secret.example" "${__zimagi_env_dir}/secret"
 fi
 
+if [[ $new_env -eq 1 ]] && [[ "${COMPOSE_ENVIRONMENT}" == "local" ]]; then
+  echo ""
+  echo "[IMPORTANT]: Check to make sure the environment is correct in the env/generated and env/secret files before proceeding!"
+  echo ""
+  echo " -- When correct, execute this command again to run application -- "
+  return
+fi
 if [ $env_only -eq 1 ]; then
   return
 fi
@@ -112,9 +161,9 @@ fi
 #
 # 4. Build Zimagi client Docker image
 #
-"${__zimagi_docker_dir}/build_client_image.sh"
+"${__zimagi_docker_dir}/build_client_image.sh" "${COMPOSE_ENVIRONMENT}"
 
 #
 # 5. Build Docker Compose images and start services
 #
-docker compose up --detach --build --wait --wait-timeout=120
+docker compose up --detach --build --wait --wait-timeout=300

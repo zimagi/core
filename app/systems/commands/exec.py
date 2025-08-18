@@ -7,12 +7,13 @@ import time
 import yaml
 from django.conf import settings
 from django.core.management.base import CommandError
+from systems.api.mcp.client import MCPClient
 from systems.commands import base, messages
 from systems.commands.index import CommandMixin
 from systems.commands.mixins import exec
 from systems.manage.task import CommandAborted
 from utility import display
-from utility.data import create_token
+from utility.data import Collection, create_token, ensure_list
 
 import zimagi
 
@@ -82,7 +83,7 @@ class ExecCommand(
     def display_header(self):
         return True
 
-    def parse_base(self, addons=None):
+    def parse_base(self, addons=None, add_api_fields=False):
         def exec_addons():
             # Operations
             self.parse_local()
@@ -111,7 +112,7 @@ class ExecCommand(
             if callable(addons):
                 addons()
 
-        super().parse_base(exec_addons)
+        super().parse_base(exec_addons, add_api_fields)
 
     def get_worker_type(self):
         return "default"
@@ -259,15 +260,80 @@ class ExecCommand(
     def run_once(self):
         return self.options.get("run_once")
 
-    def listen(self, channel, timeout=None, block_sec=10, state_key=None, terminate_callback=None):
+    def check_channel_access(self, channel, schema=None, raise_errors=True):
+        if self.active_user is None:
+            if raise_errors:
+                self.error("You must be an authenticated user to communicate through channels")
+            return False
+        if self.active_user.name == settings.ADMIN_USER:
+            return True
+
+        if not schema:
+            spec = self.manager.get_channel_spec(channel)
+            if spec:
+                schema = spec.schema
+
+        if schema and "groups" in schema:
+            groups = ensure_list(schema["groups"])
+
+            if "public" not in groups and not self.active_user.groups.filter(name__in=groups).exists():
+                if raise_errors:
+                    self.error(
+                        f"Channel {channel} access requires at least one of the following roles "
+                        f" in environment: {", ".join(groups)}",
+                    )
+                return False
+        return True
+
+    def get_channels(self, reset=False):
+        if not getattr(self, "_channels", None) or reset:
+            self._channels = {}
+            for name, schema in self.manager.get_spec("channels").items():
+                if self.check_channel_access(name, schema=schema, raise_errors=False):
+                    self._channels[name] = schema
+        return self._channels
+
+    def get_channel_tokens(self, channel):
+        spec = self.manager.get_channel_spec(channel)
+
+        channel_parts = channel.split(":")
+        pattern_parts = spec.name.split(":")
+
+        if len(channel_parts) != len(pattern_parts):
+            self.error("Channel name and pattern must have same number of segments")
+
+        tokens = {}
+        token_pattern = re.compile(r"{(.+?)}")
+
+        for index, (channel_part, pattern_part) in enumerate(zip(channel_parts, pattern_parts)):
+            # Check if current pattern part is a token
+            match = token_pattern.fullmatch(pattern_part)
+            if match:
+                token_name = match.group(1)
+                token_components = token_name.split("->")
+                token_name = token_components[0]
+                token_value_field = token_components[1] if len(token_components) > 1 else None
+
+                if not re.match(r"^\w+$", token_name):
+                    self.error(
+                        f"Invalid token name '{token_name}' - must contain only alphanumeric chars and underscores",
+                    )
+                tokens[token_name] = Collection(value=channel_part, field=token_value_field)
+
+        return tokens
+
+    def listen(self, channel, timeout=None, block_sec=1, state_key=None, terminate_callback=None):
+        self.check_channel_access(channel)
+
         if not timeout:
             timeout = settings.AGENT_MAX_LIFETIME
-
         return self.manager.listen(
             channel, timeout=timeout, block_sec=block_sec, state_key=state_key, terminate_callback=terminate_callback
         )
 
     def submit(self, channel, message, timeout=None):
+        self.check_channel_access(channel)
+
         return_channel = f"command:submit:{self.log_entry.name}:{time.time_ns()}-{create_token(5)}"
         self.send(channel, message, return_channel)
         try:
@@ -277,6 +343,8 @@ class ExecCommand(
             self.delete_stream(return_channel)
 
     def collect(self, channel, message, timeout=None, quantity=None):
+        self.check_channel_access(channel)
+
         return_channel = f"command:collect:{self.log_entry.name}:{time.time_ns()}-{create_token(5)}"
         self.send(channel, message, return_channel)
         try:
@@ -290,14 +358,25 @@ class ExecCommand(
         finally:
             self.delete_stream(return_channel)
 
-    def send(self, channel, message, sender=None):
+    def send(self, channel, message, sender=None, user=None):
+        self.check_channel_access(channel)
+
         if sender is None:
             sender = self.service_id
+        if user is None:
+            user = self.active_user.name
 
-        return self.manager.send(channel, message, sender=sender)
+        return self.manager.send(channel, message, sender=sender, user=user)
 
     def delete_stream(self, channel):
+        self.check_channel_access(channel)
         return self.manager.delete_stream(channel)
+
+    @property
+    def mcp(self):
+        if not getattr(self, "_mcp_client", None):
+            self._mcp_client = MCPClient(self)
+        return self._mcp_client
 
     def exec(self):
         # Override in subclass
@@ -320,6 +399,7 @@ class ExecCommand(
 
         options = command.format_fields(copy.deepcopy(options))
         options.setdefault("debug", self.debug)
+        options.setdefault("verbosity", self.verbosity)
         options.setdefault("no_parallel", self.no_parallel)
         options.setdefault("no_color", self.no_color)
         options.setdefault("display_width", self.display_width)
@@ -336,7 +416,7 @@ class ExecCommand(
 
         return command.handle(options, primary=primary, task=task, log_key=log_key, schedule=schedule_name)
 
-    def exec_remote(self, host, name, options=None, display=True):
+    def exec_remote(self, host, name, options=None, display=True, include_system_messages=True):
         if not options:
             options = {}
 
@@ -354,15 +434,17 @@ class ExecCommand(
         remote_options.setdefault("no_parallel", self.no_parallel)
         remote_options.setdefault("display_width", self.display_width)
 
-        command.set_options(options)
+        command.parse_base(add_api_fields=True)
+        command.set_options(options, custom=True)
         command.log_init()
 
         def message_callback(message):
             message = self.create_message(message.render(), decrypt=False)
 
-            if (display and self.verbosity > 0) or isinstance(message, messages.ErrorMessage):
-                message.display(debug=self.debug, disable_color=self.no_color, width=self.display_width)
-            command.queue(message)
+            if include_system_messages or not message.system:
+                if (display and self.verbosity > 0) or isinstance(message, messages.ErrorMessage):
+                    message.display(debug=self.debug, disable_color=self.no_color, width=self.display_width)
+                command.queue(message)
 
         try:
             api = host.command_api(message_callback=message_callback)
@@ -423,7 +505,7 @@ class ExecCommand(
             log_key=log_key,
         )
 
-    def handle_api(self, options):
+    def handle_api(self, options, package=True):
         self._register_signal_handlers()
 
         logger.debug(f"Running API command: {self.get_full_name()}\n\n{yaml.dump(options)}")
@@ -442,8 +524,9 @@ class ExecCommand(
                     logger.debug(f"Receiving data: {data}")
 
                     msg = self.create_message(data, decrypt=False)
-                    package = msg.to_package()
-                    yield package
+                    if package:
+                        msg = msg.to_package()
+                    yield msg
 
                 if not action.is_alive():
                     logger.debug("Command thread is no longer active")
@@ -463,7 +546,6 @@ class ExecCommand(
             if primary:
                 self.check_abort()
                 self.manager.start_sensor(log_key)
-                self.manager.set_command(self)
                 if signals:
                     self._register_signal_handlers()
 
@@ -494,17 +576,13 @@ class ExecCommand(
 
         if primary and not task:
             if not host and settings.CLI_EXEC or settings.SERVICE_INIT:
-                self.info("", log=False, system=True)
                 self.data(f"> {self.key_color(self.get_full_name())}", log_key, "log_key", log=False, system=True)
-                self.info("-" * width, log=False, system=True)
+                self.separator("-", system=True)
 
     def _exec_api_header(self, log_key):
-        width = self.display_width
-
         if self.display_header() and self.verbosity > 1:
             self.data(f"> {self.get_full_name()}", log_key, "log_key", log=False, system=True)
-            self.data("> active user", self.active_user.name, "active_user", log=False, system=True)
-            self.info("-" * width, log=False, system=True)
+            self.separator("-", system=True)
 
     def _exec_local_handler(self, log_key, primary=True):
         raise NotImplementedError(

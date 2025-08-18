@@ -32,6 +32,11 @@ command:
         flag: '--show'
         help: 'display selected calculation specifications'
         tags: [calculation, test]
+      disable_save:
+        parser: flag
+        flag: '--disable-save'
+        help: 'show instead of saving calculation specifications'
+        tags: [calculation, test]
       reset:
         parser: flag
         flag: '--reset'
@@ -43,4 +48,5 @@ command:
       tags:
       ignore_requirements:
       show_spec:
+      disable_save:
       reset:

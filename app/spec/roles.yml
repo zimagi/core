@@ -13,3 +13,6 @@ roles:
   module-auditor: Module auditor (viewing privileges over all environment modules)
   data-admin: Data administrator (full privileges over all environment datasets)
   data-auditor: Data auditor (viewing privileges over all environment datasets)
+  chat-user: Chat server user (create and maintain chats)
+  ai-user: AI system user for agents (channel access and default access to MCP commands)
+  browser-user: Chrome browser user

@@ -9,7 +9,7 @@ class VersionCommand(ActionCommand):
 
     def exec(self):
         TableMessage([["Client version", settings.VERSION]]).display()
-        self.client.execute(self.name, **self.options)
+        self.command_client.execute(self.name, **self.options)
         self.print("")
 
     def handle_message(self, message):

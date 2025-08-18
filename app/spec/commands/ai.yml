@@ -1,0 +1,41 @@
+command:
+  encode:
+    base: ai
+    priority: 750
+    parameters:
+      source_text:
+        parser: variable
+        type: str
+        default: null
+        optional: false
+        help: 'text to generate embeddings'
+        value_label: TEXT
+        tags: [ai, encoding]
+      display_embeddings:
+        parser: flag
+        flag: '--display'
+        help: 'whether or not to display the actual embeddings'
+        tags: [ai, encoding]
+    parse:
+      - source_text
+      - display_embeddings
+  ask:
+    base: ai
+    priority: 750
+    parameters:
+      instruction_text:
+        parser: variable
+        type: str
+        default: null
+        optional: false
+        help: 'text instruction to pass to the language model'
+        value_label: INSTRUCTION
+        tags: [ai, generation]
+      model_options:
+        parser: fields
+        optional: true
+        help: 'language model options'
+        tags: [ai, generation]
+    parse:
+      - instruction_text
+      - model_options

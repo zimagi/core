@@ -2,7 +2,7 @@
 Application settings definition
 
 For the full list of settings and their values, see
-https://docs.djangoproject.com/en/4.1/ref/settings/
+https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import os
@@ -36,7 +36,20 @@ HOST_LIB_DIR = Config.value("ZIMAGI_HOST_LIB_DIR", None)
 
 VERSION = load_file(os.path.join(APP_DIR, "VERSION")).strip()
 
-PROJECT_PATH_MAP = {"dataset_path": "datasets", **Config.dict("ZIMAGI_PROJECT_PATH_MAP", {})}
+PROJECT_PATH_MAP = {
+    "dataset_path": "datasets",
+    "file_storage_path": "storage",
+    "st_model_cache": {
+        "directory": "st_models",
+        "backup": False,
+    },
+    "tr_model_cache": {
+        "directory": "tr_models",
+        "backup": False,
+    },
+    "hf_cache": {"directory": "hf_cache", "backup": False},
+    **Config.dict("ZIMAGI_PROJECT_PATH_MAP", {}),
+}
 
 zimagi.settings.CACHE_DIR = DATA_DIR
 zimagi.settings.CACHE_LIFETIME = Config.integer("ZIMAGI_CLIENT_CACHE_LIFETIME", 60)  # 24 hours (86400)
@@ -64,16 +77,13 @@ APP_ENVIRONMENT = Config.string("ZIMAGI_ENVIRONMENT", "local", default_on_empty=
 SECRET_KEY = Config.string("ZIMAGI_SECRET_KEY", "XXXXXX20181105")
 
 ENCRYPT_COMMAND_API = Config.boolean("ZIMAGI_ENCRYPT_COMMAND_API", False)
+ENCRYPT_MCP_API = Config.boolean("ZIMAGI_ENCRYPT_MCP_API", False)
 ENCRYPT_DATA_API = Config.boolean("ZIMAGI_ENCRYPT_DATA_API", False)
 
 PARALLEL = Config.boolean("ZIMAGI_PARALLEL", True)
 THREAD_COUNT = Config.integer("ZIMAGI_THREAD_COUNT", 10)
 QUEUE_COMMANDS = Config.boolean("ZIMAGI_QUEUE_COMMANDS", True)
 FOLLOW_QUEUE_COMMAND = Config.boolean("ZIMAGI_FOLLOW_QUEUE_COMMAND", True)
-
-NO_MIGRATE = Config.boolean("ZIMAGI_NO_MIGRATE", False)
-AUTO_MIGRATE_TIMEOUT = Config.integer("ZIMAGI_AUTO_MIGRATE_TIMEOUT", 300)
-AUTO_MIGRATE_INTERVAL = Config.integer("ZIMAGI_AUTO_MIGRATE_INTERVAL", 5)
 
 TEST_PROCESS_COUNT = Config.integer("ZIMAGI_TEST_PROCESS_COUNT", 0)
 
@@ -90,8 +100,10 @@ SCHEDULER_INIT = Config.boolean("ZIMAGI_SCHEDULER_INIT", False)
 SCHEDULER_EXEC = Config.boolean("ZIMAGI_SCHEDULER_EXEC", False)
 WORKER_INIT = Config.boolean("ZIMAGI_WORKER_INIT", False)
 WORKER_EXEC = Config.boolean("ZIMAGI_WORKER_EXEC", False)
-API_INIT = Config.boolean("ZIMAGI_API_INIT", False)
-API_EXEC = Config.boolean("ZIMAGI_API_EXEC", False)
+WSGI_INIT = Config.boolean("ZIMAGI_WSGI_INIT", False)
+WSGI_EXEC = Config.boolean("ZIMAGI_WSGI_EXEC", False)
+MCP_INIT = Config.boolean("ZIMAGI_MCP_INIT", False)
+MCP_EXEC = Config.boolean("ZIMAGI_MCP_EXEC", False)
 # <<<
 
 #
@@ -140,6 +152,8 @@ if COLOR_SOLARIZED:
 #
 # Runtime configurations
 #
+os.environ["CURL_CA_BUNDLE"] = ""
+
 BASE_DATA_PATH = os.path.join(DATA_DIR, "cli")
 RUNTIME_PATH = f"{BASE_DATA_PATH}.yml"
 
@@ -229,6 +243,8 @@ MIDDLEWARE = ["django.middleware.security.SecurityMiddleware", "django.middlewar
 #
 AUTH_USER_MODEL = "user.User"
 
+TEMP_TOKEN_EXPIRATION = Config.integer("ZIMAGI_TEMP_TOKEN_EXPIRATION", 21600)  # 6 Hours
+
 #
 # API configuration
 #
@@ -237,6 +253,8 @@ ADMIN_API_KEY = Config.string("ZIMAGI_ADMIN_API_KEY", None)
 DEFAULT_ADMIN_TOKEN = Config.string("ZIMAGI_DEFAULT_ADMIN_TOKEN", "uy5c8xiahf93j2pl8s00e6nb32h87dn3")
 
 ANONYMOUS_USER = Config.string("ZIMAGI_ANONYMOUS_USER", "anonymous")
+
+DATA_API_FILTER_DEPTH = Config.integer("ZIMAGI_DATA_API_FILTER_DEPTH", 3)
 
 #
 # Worker configuration
@@ -255,7 +273,35 @@ AGENT_MAX_LIFETIME = Config.integer("ZIMAGI_AGENT_MAX_LIFETIME", 86400)
 FIELD_TYPE_MAP = Config.dict("ZIMAGI_FIELD_TYPE_MAP", {})
 
 #
+# Qdrant configurations
+#
+QDRANT_DEFAULT_VECTOR_DIMENSION = Config.integer("ZIMAGI_QDRANT_DEFAULT_VECTOR_DIMENSION", 1024)
+
+#
+# OCR Processing
+#
+PDF_OCR_BATCH_SIZE = Config.integer("ZIMAGI_PDF_OCR_BATCH_SIZE", 10)
+PDF_OCR_DPI = Config.integer("ZIMAGI_PDF_OCR_DPI", 200)
+
+#
 # GitHub configuration
 #
+GITHUB_USER = Config.value("ZIMAGI_GITHUB_USER", None)
 GITHUB_TOKEN = Config.value("ZIMAGI_GITHUB_TOKEN", None)
 GITHUB_ORG = Config.value("ZIMAGI_GITHUB_ORG", None)
+
+#
+# HuggingFace Account
+#
+HUGGINGFACE_TOKEN = Config.string("ZIMAGI_HUGGINGFACE_TOKEN")
+
+#
+# Google Account
+#
+GOOGLE_SEARCH_ID = Config.value("ZIMAGI_GOOGLE_SEARCH_ID", None)
+GOOGLE_SEARCH_API_KEY = Config.value("ZIMAGI_GOOGLE_SEARCH_API_KEY", None)
+
+#
+# Browser configuration
+#
+WEBCRAWLER_FILTERED_DOMAINS = Config.list("ZIMAGI_WEBCRAWLER_FILTERED_DOMAINS", [])

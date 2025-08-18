@@ -4,7 +4,7 @@ from systems.commands.index import Command
 
 class Import(Command("import")):
     def exec(self):
-        Importer(self, display_only=self.show_spec).run(
+        Importer(self, display_only=self.show_spec, disable_save=self.disable_save).run(
             required_names=self.import_names,
             required_tags=self.tags,
             ignore_requirements=self.ignore_requirements,

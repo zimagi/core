@@ -14,7 +14,7 @@ _local-volumes: &local-volumes
   '@ZIMAGI_HOST_APP_DIR':
     bind: /usr/local/share/zimagi
     mode: ro
-  '@ZIMAGI_HOST_PACKAGE_DIR':
+  '@ZIMAGI_HOST_SDK_DIR':
     bind: /usr/local/share/zimagi-client
     mode: ro
 

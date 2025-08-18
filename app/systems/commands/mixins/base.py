@@ -1,4 +1,5 @@
 from data.base.id_resource import IdentifierResourceBase
+from django.conf import settings
 from systems.commands import args
 from utility import data, text
 
@@ -21,7 +22,12 @@ class BaseMixin(metaclass=MetaBaseMixin):
 
                 if flag_default:
                     option_label = self.success_color(f"option_{name}")
-                    cli_help_text = "{} <{}>".format(help_text, self.value_color("True"))
+                    default_value_text = self.value_color("True")
+
+                    cli_help_text = f"{help_text} <{default_value_text}>"
+
+                    if settings.MCP_EXEC:
+                        help_text = f"{help_text} <DEFAULT: {default_value_text}>"
                 else:
                     option_label = self.key_color(f"option_{name}")
 
@@ -77,9 +83,17 @@ class BaseMixin(metaclass=MetaBaseMixin):
                     if variable_default is None:
                         default_label = ""
                     else:
-                        default_label = f"<{self.value_color(variable_default)}>"
+                        default_value_text = self.value_color(variable_default)
+
+                        if settings.MCP_EXEC:
+                            default_label = f" <DEFAULT: {default_value_text}>"
+                        else:
+                            default_label = f" <{default_value_text}>"
 
                     cli_help_text = f"[@{option_label}] {help_text} {default_label}".strip()
+
+                    if settings.MCP_EXEC and default_label:
+                        help_text = f"{help_text} {default_label}"
 
                 if optional and isinstance(optional, (str, list, tuple)):
                     if not value_label:
@@ -155,12 +169,20 @@ class BaseMixin(metaclass=MetaBaseMixin):
                         option_label = self.key_color(f"option_{name}")
                         variable_default = default
 
-                    if variable_default is None:
+                    if not variable_default:
                         default_label = ""
                     else:
-                        default_label = "<{}>".format(self.value_color(", ".join(data.ensure_list(variable_default))))
+                        default_value_text = self.value_color(", ".join(data.ensure_list(variable_default)))
+
+                        if settings.MCP_EXEC:
+                            default_label = f" <DEFAULT: {default_value_text}>"
+                        else:
+                            default_label = f" <{default_value_text}>"
 
                     cli_help_text = f"[@{option_label}] {help_text} {default_label}".strip()
+
+                    if settings.MCP_EXEC and default_label:
+                        help_text = f"{help_text} {default_label}"
 
                 if optional and isinstance(optional, (str, list, tuple)):
                     comma_separated_label = "(comma separated)"

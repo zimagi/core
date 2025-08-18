@@ -84,7 +84,7 @@ class ModelFacade(
 
     def keep(self, key=None):
         # Override in subclass
-        return []
+        return False if key else []
 
     def keep_relations(self):
         # Override in subclass

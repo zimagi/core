@@ -99,10 +99,10 @@ class ModelFacadeUpdateMixin:
             values = normalize_dict(values)
 
         scope, fields, relations, reverse = self.split_field_values(values)
-        filters = {self.key(): key}
+        filters = {self.key(): key} if key else {}
 
         self.set_scope(scope)
-        instance = self.retrieve(key, **filters)
+        instance = self.retrieve(key, **filters) if key else None
         created = False
 
         if not instance:
@@ -306,7 +306,7 @@ class ModelFacadeUpdateMixin:
                 setattr(instance, relation, id)
 
     def delete(self, key, **filters):
-        if key not in ensure_list(self.keep(key)):
+        if not self.keep(key):
             filters[self.key()] = key
             return self.clear(**filters)
         else:

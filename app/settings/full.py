@@ -2,7 +2,7 @@
 Application settings definition
 
 For the full list of settings and their values, see
-https://docs.djangoproject.com/en/4.1/ref/settings/
+https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 import importlib
@@ -32,7 +32,7 @@ except Exception:
 #
 # Applications and libraries
 #
-INSTALLED_APPS = MANAGER.index.get_installed_apps() + [
+INSTALLED_APPS_BASE = [
     "django.contrib.contenttypes",
     "django_dbconn_retry",
     "django.contrib.postgres",
@@ -41,17 +41,17 @@ INSTALLED_APPS = MANAGER.index.get_installed_apps() + [
     "corsheaders",
     "settings.app.AppInit",
 ]
+INSTALLED_APPS = MANAGER.index.get_installed_apps() + INSTALLED_APPS_BASE
 
-MIDDLEWARE = (
-    [
-        "django.middleware.security.SecurityMiddleware",
-        "corsheaders.middleware.CorsMiddleware",
-        "django.middleware.common.CommonMiddleware",
-        "systems.cache.middleware.UpdateCacheMiddleware",
-    ]
-    + MANAGER.index.get_installed_middleware()
-    + ["systems.cache.middleware.FetchCacheMiddleware"]
-)
+MIDDLEWARE_START = [
+    "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "systems.cache.middleware.UpdateCacheMiddleware",
+]
+MIDDLEWARE_LAST = ["systems.cache.middleware.FetchCacheMiddleware"]
+
+MIDDLEWARE = MIDDLEWARE_START + MANAGER.index.get_installed_middleware() + MIDDLEWARE_LAST
 
 #
 # Template settings
@@ -176,6 +176,20 @@ else:
     REDIS_COMMUNICATION_URL = None
 
 #
+# Qdrant configurations
+#
+QDRANT_HOST = Config.value("ZIMAGI_QDRANT_HOST", None)
+QDRANT_PORT = Config.value("ZIMAGI_QDRANT_PORT", None)
+QDRANT_ACCESS_KEY = Config.string("ZIMAGI_QDRANT_ACCESS_KEY", None)
+
+if not QDRANT_HOST or not QDRANT_PORT or not QDRANT_ACCESS_KEY:
+    raise ConfigurationError(  # noqa: F405
+        "ZIMAGI_QDRANT_HOST, ZIMAGI_QDRANT_PORT, and ZIMAGI_QDRANT_ACCESS_KEY environment variables required"
+    )
+
+QDRANT_HTTPS = Config.boolean("ZIMAGI_QDRANT_HTTPS", False)
+
+#
 # Caching configuration
 #
 CACHES = {
@@ -240,6 +254,9 @@ SECURE_REFERRER_POLICY = Config.string("ZIMAGI_SECURE_REFERRER_POLICY", "no-refe
 
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+MCP_SERVICE_NAME = Config.string("ZIMAGI_MCP_SERVICE_NAME", "mcp-api")
+MCP_LOCAL_SERVER_NAME = Config.string("ZIMAGI_MCP_LOCAL_SERVER_NAME", "local")
 
 #
 # Celery

@@ -1,0 +1,12 @@
+plugin:
+  search_engine:
+    base: base
+    interface:
+      search:
+        params:
+          query: str
+          max_results: int
+        returns: list
+
+    providers:
+      google:

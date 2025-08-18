@@ -1,0 +1,22 @@
+command:
+  tools:
+    base: platform
+    background: false
+    parameters:
+      tool_user:
+        parser: variable
+        type: str
+        optional: '--user'
+        help: 'MCP tool user'
+        value_label: USER_NAME
+        tags: [mcp, user]
+      servers:
+        parser: variables
+        type: str
+        optional: true
+        help: 'Filter by MCP server names'
+        value_label: NAME
+        tags: [mcp, servers]
+    parse:
+      - tool_user
+      - servers

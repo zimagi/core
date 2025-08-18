@@ -64,8 +64,8 @@ class ModuleFacade(ModelFacade("module")):
                         completed_updates[module.name] = True
 
                 command.info("Running model migrations...")
-                settings.MANAGER.index.generate()
-                call_command("migrate", interactive=False, verbosity=3 if settings.MANAGER.runtime.debug() else 0)
+                self.manager.index.generate()
+                call_command("migrate", interactive=False, verbosity=3 if self.manager.runtime.debug() else 0)
 
             command.info("Ensuring display configurations...")
             for module in command.get_instances(self):
@@ -83,16 +83,17 @@ class ModuleFacade(ModelFacade("module")):
         self.manager.ordered_modules = None
         command.exec_local("module install", {"verbosity": command.verbosity, "local": True})
 
+        command.info("Loading templates...")
+        self.manager.load_templates()
+
         if not reinit:
             command.notice("-" * terminal_width)
 
     def keep(self, key=None):
-        keep_names = []
+        keep_names = [settings.CORE_MODULE] + self.manager.index.get_default_module_names()
         if key and self.manager.index.module_dependencies.get(key, None):
-            keep_names = [key]
-        elif not key:
-            keep_names = [settings.CORE_MODULE] + self.manager.index.get_default_module_names()
-        return keep_names
+            keep_names = keep_names + [key]
+        return key in keep_names if key else keep_names
 
     def delete(self, key, **filters):
         result = super().delete(key, **filters)

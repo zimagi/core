@@ -23,6 +23,9 @@ class Indexer(module.IndexerModuleMixin, django.IndexerDjangoMixin, component.In
         self.manager = manager
 
         self._spec = OrderedDict()
+        self._reset = False
+
+        self._users = {}
         self._roles = {}
         self._locks = {}
 
@@ -41,6 +44,10 @@ class Indexer(module.IndexerModuleMixin, django.IndexerDjangoMixin, component.In
         self._plugin_providers = {}
 
         super().__init__()
+
+    def reset(self):
+        self._spec = OrderedDict()
+        self._reset = True
 
     @property
     def spec(self):
@@ -62,6 +69,9 @@ class Indexer(module.IndexerModuleMixin, django.IndexerDjangoMixin, component.In
                     module = base_path.replace(self.manager.module_path + "/", "").split("/")[0]
                     module_path = os.path.join(self.manager.module_path, module)
 
+                    if not self._reset and self.manager.command_args[0] == "build":
+                        return
+
                 module_info = Collection(module=module, path=self._get_module_lib_dir(module_path))
 
                 for name in os.listdir(base_path):
@@ -82,19 +92,20 @@ class Indexer(module.IndexerModuleMixin, django.IndexerDjangoMixin, component.In
                                             self.module_map[key][name] = module_info
                                     else:
                                         for name, spec in info.items():
-                                            if key == "command":
-                                                set_command_module(module, spec)
-                                            else:
-                                                app_name = spec.get("app", name)
-                                                self.module_map[key][app_name] = module_info
+                                            if isinstance(spec, dict):
+                                                if key == "command":
+                                                    set_command_module(module, spec)
+                                                else:
+                                                    app_name = spec.get("app", name)
+                                                    self.module_map[key][app_name] = module_info
 
-                                                if key in ("data", "data_base", "data_mixins"):
-                                                    module_name = model_index.get_module_name(key, app_name)
-                                                    model_class = model_index.get_model_name(name, spec)
-                                                    dynamic_class = model_index.get_dynamic_class_name(model_class)
+                                                    if key in ("data", "data_base", "data_mixins"):
+                                                        module_name = model_index.get_module_name(key, app_name)
+                                                        model_class = model_index.get_model_name(name, spec)
+                                                        dynamic_class = model_index.get_dynamic_class_name(model_class)
 
-                                                    self.model_class_path[model_class] = module_name
-                                                    self.model_class_path[dynamic_class] = module_name
+                                                        self.model_class_path[model_class] = module_name
+                                                        self.model_class_path[dynamic_class] = module_name
 
                             self._spec = deep_merge(self._spec, spec_data)
 
@@ -104,9 +115,6 @@ class Indexer(module.IndexerModuleMixin, django.IndexerDjangoMixin, component.In
             self._expand_spec_aliases(self._spec)
 
         return self._spec
-
-    def reset_spec(self):
-        self._spec = OrderedDict()
 
     def _expand_spec_aliases(self, spec):
         for key, info in spec.items():
@@ -118,6 +126,36 @@ class Indexer(module.IndexerModuleMixin, django.IndexerDjangoMixin, component.In
                             info[sub_key].pop("aliases")
                             for alias in aliases:
                                 info[alias] = info[sub_key]
+
+    @property
+    def users(self):
+        if not self._users:
+            for name, config in self.spec["users"].items():
+                defaults = config.get("defaults", None)
+                self._users[name] = {}
+
+                if defaults:
+                    for default in ensure_list(defaults):
+                        default_key = default if default.startswith("user_defaults_") else f"user_defaults_{default}"
+                        if default_key in self.spec:
+                            self._users[name] = deep_merge(self._users[name], self.spec[default_key])
+                        else:
+                            logger.error(f"User default key {default_key} dos not exist in application specifications")
+
+                for field, value in config.items():
+                    if field != "defaults":
+                        if (
+                            field in self._users[name]
+                            and isinstance(self._users[name][field], dict)
+                            and isinstance(value, dict)
+                        ):
+                            self._users[name][field] = deep_merge(self._users[name][field], value)
+                        else:
+                            self._users[name][field] = value
+
+            logger.debug(f"Application system users: {self._users}")
+
+        return self._users
 
     @property
     def roles(self):

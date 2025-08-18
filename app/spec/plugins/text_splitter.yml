@@ -1,0 +1,26 @@
+plugin:
+  text_splitter:
+    base: base
+    interface:
+      split:
+        params:
+          text: str
+        returns: list
+
+    option:
+      max_sentence_length:
+        type: int
+        help: 'Maximum length of parsed sentence'
+        default: 2000
+
+    providers:
+      spacy:
+        option:
+          model:
+            type: str
+            help: 'Text splitter model name'
+            default: en_core_web_lg
+          validate:
+            type: bool
+            help: 'Whether or not to check sentences for nouns, verbs, and propositions'
+            default: true

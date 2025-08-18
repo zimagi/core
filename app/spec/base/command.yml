@@ -38,25 +38,18 @@ command_base:
     # notification mixin included with base action command
     groups_allowed: [notification-admin]
     background: false
-  message:
-    mixins: [message]
-    groups_allowed: false
-    background: false
   service:
     mixins: [service]
     groups_allowed: [admin]
     background: false
-  agent:
-    # base command for service agents (run by controller)
-    mixins: [agent]
-    groups_allowed: [admin]
-    background: false
-    parse:
-      - lifetime
-      - pause
   db:
     mixins: [db]
     groups_allowed: [db-admin]
+    background: true
+  qdrant_admin:
+    mixins: [qdrant]
+    groups_allowed: [db-admin]
+    worker_type: qdrant
     background: true
   cache:
     groups_allowed: [admin]
@@ -82,3 +75,53 @@ command_base:
   gpu:
     groups_allowed: [admin]
     background: true
+  ai:
+    mixins: [language_model, qdrant]
+    groups_allowed: [chat-user, ai-user]
+    background: false
+  chat:
+    mixins: [chat, qdrant]
+    groups_allowed: [chat-user]
+    background: false
+  mcp:
+    mixins: [language_model, chat, qdrant]
+    groups_allowed: [ai-user]
+    mcp_enabled: true
+  agent:
+    # base command for service agents (run by controller)
+    mixins: [agent]
+    groups_allowed: [admin]
+    background: false
+    parse:
+      - lifetime
+      - pause
+  cell:
+    base: agent
+    mixins: [cell, chat, qdrant, language_model]
+    worker_type: cell
+    parse:
+      - lifetime
+      - pause
+      - agent_user
+      - agent_goal
+      - agent_rules
+      - agent_persona
+      - agent_sensor
+      - agent_sensor_filters
+      - agent_message_fields
+      - agent_message_field_labels
+      - agent_memory_search_field
+      - agent_memory_sequence
+      - agent_system_template
+      - agent_request_template
+      - agent_tools_template
+      - agent_tools
+      - agent_channel
+      - agent_channel_field_map
+  library:
+    mixins: [library]
+    groups_allowed: [ai-user, chat-user]
+    background: false
+  browser:
+    groups_allowed: [browser-user]
+    background: false

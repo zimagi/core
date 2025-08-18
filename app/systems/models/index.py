@@ -12,8 +12,10 @@ import oyaml
 from django.conf import settings
 from django.contrib.postgres import fields as postgresql
 from django.db import models as django
+from jinja2 import Environment, FileSystemLoader
 from systems.models import fields
 from utility.data import ensure_list
+from utility.filesystem import save_file
 from utility.python import PythonParser
 
 logger = logging.getLogger(__name__)
@@ -335,8 +337,25 @@ class ModelGenerator:
 
         return facade
 
+    @property
+    def template_engine(self):
+        if not getattr(self, "_template_engine", None):
+            self._template_engine = Environment(
+                loader=FileSystemLoader(os.path.join(settings.APP_DIR, "systems/models")),
+                autoescape=False,
+                trim_blocks=False,
+                block_start_string="#%",
+                block_end_string="%#",
+                variable_start_string="<{",
+                variable_end_string="}>",
+            )
+        return self._template_engine
+
     def ensure_model_files(self):
         if self.key == "data":
+            template = self.template_engine.get_template("template.py.tpl")
+            template_fields = {"spec_name": self.name, "class_name": self.class_name, "facade_name": self.facade_name}
+
             data_info = settings.MANAGER.index.module_map["data"][self.app_name]
             model_dir = os.path.join(data_info.path, "data", self.app_name)
             migration_dir = os.path.join(model_dir, "migrations")
@@ -345,7 +364,7 @@ class ModelGenerator:
 
             model_file = os.path.join(model_dir, "models.py")
             if not os.path.isfile(model_file):
-                pathlib.Path(model_file).touch()
+                save_file(model_file, template.render(**template_fields))
 
             migration_init_file = os.path.join(migration_dir, "__init__.py")
             if not os.path.isfile(migration_init_file):

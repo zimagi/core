@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="460" height="150" src="docs/_static/images/zimagi-logo.png">
+  <img width="150" height="150" src="docs/_static/images/zimagi-logo.png">
 </p>
 <hr/>
 

@@ -13,11 +13,15 @@ nvidia-ml-py==12.575.51
 docker==7.1.0
 kubernetes==32.0.1
 watchdog==6.0.0
+chromedriver-autoinstaller==0.6.4
+google-api-python-client==2.177.0
 
 # Web server
 gunicorn==23.0.0
 gevent==25.5.1
 greenlet==3.2.2
+uvicorn==0.34.2
+starlette==0.46.2
 
 # Core application
 django==5.2.1
@@ -31,6 +35,7 @@ djangorestframework==3.16.0
 uritemplate==4.1.1
 django-filter==25.1
 inflection==0.5.1
+mcp==1.10.1
 
 # Text and data handling
 ply==3.11
@@ -39,6 +44,15 @@ oyaml==1.0
 inflect==7.5.0
 numpy==2.2.6
 pandas==2.2.3
+validators==0.35.0
+python-magic==0.4.27
+
+# File parsing
+beautifulsoup4==4.13.4
+selenium==4.34.2
+docx2python==3.5.0
+pdf2image==1.17.0
+pdfplumber==0.11.6
 
 # Repository integrations
 pygit2==1.18.0
@@ -56,3 +70,11 @@ django-celery-beat==2.8.1
 redis==6.1.0
 django-redis==5.4.0
 hiredis==3.1.1
+qdrant-client==1.14.3
+
+# Machine Learning
+transformers==4.51.3
+sentence-transformers==4.1.0
+torch==2.7.0
+spacy==3.8.4
+litellm==1.73.0

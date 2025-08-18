@@ -101,14 +101,21 @@ class ModelFacadeQueryMixin:
     def retrieve(self, key, **filters):
         self._check_scope(filters)
         try:
-            filters[self.key()] = key
+            if key is not None:
+                filters[self.key()] = key
+
             data = self.model.objects.filter(**filters).get()
 
         except self.model.DoesNotExist:
             return None
 
         except self.model.MultipleObjectsReturned:
-            raise ScopeError(f"Scope missing from {self.name} {key} retrieval")
+            if key is not None:
+                message = f"Scope missing from {self.name} {key} retrieval"
+            else:
+                message = f"Scope missing from {self.name} retrieval with: {filters}"
+
+            raise ScopeError(message)
 
         return data
 

@@ -37,7 +37,9 @@ class IndexerDjangoMixin:
         for module_dir in self.get_module_dirs():
             data_dir = os.path.join(module_dir, "data")
 
-            if os.path.isdir(data_dir):
+            if os.path.isdir(data_dir) and (
+                data_dir.startswith(self.manager.app_dir) or self._reset or self.manager.command_args[0] != "build"
+            ):
                 for name in os.listdir(data_dir):
                     if name[0] != "_" and os.path.isdir(os.path.join(data_dir, name)) and name not in ("base", "mixins"):
                         apps.append(f"data.{name}")
@@ -49,9 +51,10 @@ class IndexerDjangoMixin:
     def get_installed_middleware(self):
         middleware = []
         for middleware_dir in self.get_module_dirs("middleware"):
-            for name in os.listdir(middleware_dir):
-                if name[0] != "_":
-                    middleware.append(f"middleware.{name}.Middleware")
+            if middleware_dir.startswith(self.manager.app_dir) or self._reset or self.manager.command_args[0] != "build":
+                for name in os.listdir(middleware_dir):
+                    if name[0] != "_":
+                        middleware.append(f"middleware.{name}.Middleware")
 
         logger.debug(f"Installed Django middleware: {middleware}")
         return middleware

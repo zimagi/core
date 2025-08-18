@@ -1,0 +1,168 @@
+Screen {
+    layout: vertical;
+    overflow: hidden;
+}
+
+#chat-row {
+    layout: horizontal;
+    height: 1fr;
+}
+
+#sidebar {
+    layout: vertical;
+    width: 25%;
+    height: 100%;
+    border-right: solid $primary;
+    padding: 1;
+}
+
+.sidebar-header {
+    layout: horizontal;
+    height: auto;
+    margin-bottom: 1;
+}
+
+.chat-name-input {
+    width: 1fr;
+    margin-right: 1;
+    height: auto;
+    min-height: 3;
+    border: solid $secondary 50%;
+}
+
+.chat-name-input:focus {
+    border: solid $accent-lighten-2 50%;
+}
+
+#add-chat-button {
+    width: auto;
+    min-width: 5;
+    margin-bottom: 1;
+}
+
+#chat-selector {
+    height: 100%;
+    overflow-y: auto;
+    padding-bottom: 4;
+    box-sizing: border-box;
+    scrollbar-color: $accent;
+    scrollbar-color-hover: $accent-lighten-1;
+    scrollbar-color-active: $accent-lighten-2;
+    scrollbar-background: $panel;
+}
+
+#chat-selector>* {
+    width: 100%;
+    min-height: 0;
+    padding: 1;
+}
+
+.chat-selector-container {
+    height: 100%;
+    min-height: 0;
+}
+
+#chat-container {
+    height: 1fr;
+    overflow: hidden;
+    layout: vertical;
+    height: 100%;
+}
+
+#chat-history {
+    height: 100%;
+    overflow-y: auto;
+    padding: 1;
+    box-sizing: border-box;
+    scrollbar-color: $accent;
+    scrollbar-color-hover: $accent-lighten-1;
+    scrollbar-color-active: $accent-lighten-2;
+    scrollbar-background: $panel;
+}
+
+.unread-separator {
+    color: $accent;
+    text-style: bold italic;
+    padding: 1;
+    text-align: center;
+    border-top: solid $accent 50%;
+    border-bottom: solid $accent 50%;
+    margin: 1 0;
+}
+
+.chat-item {
+    padding: 1;
+}
+
+.chat-item.selected {
+    background: $accent;
+    color: $text;
+    padding: 1;
+}
+
+.chat-item.unread {
+    border: round purple;
+}
+
+.chat-item>Static {
+    padding: 1;
+}
+
+.user-message {
+    margin: 1 0;
+    width: 100%;
+    height: auto;
+}
+
+.bot-message {
+    margin: 1 0;
+    width: 100%;
+    height: auto;
+}
+
+.message-header {
+    color: $text-muted;
+    text-style: bold;
+    padding: 1;
+}
+
+.message-content {
+    padding: 1;
+}
+
+.message-spacer {
+    height: 1;
+}
+
+#input-area {
+    layout: horizontal;
+    height: auto;
+    border-top: solid $primary;
+    padding: 1;
+    margin: 0;
+    width: 100%;
+}
+
+#message-input {
+    width: 1fr;
+    height: auto;
+    min-height: 5;
+    max-height: 20;
+    overflow-y: auto;
+    box-sizing: border-box;
+    scrollbar-color: $accent;
+    scrollbar-color-hover: $accent-lighten-1;
+    scrollbar-color-active: $accent-lighten-2;
+    scrollbar-background: $panel;
+    border: none;
+}
+
+#message-input:focus {
+    border: solid $accent-lighten-2 50% !important;
+}
+
+#submit-button {
+    width: 12;
+    min-width: 12;
+    margin: 1;
+}

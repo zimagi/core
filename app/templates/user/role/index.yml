@@ -8,5 +8,5 @@ variables:
 
 map:
     spec.yml:
-        target: spec/roles.yml
+        target: spec/auto/roles.yml
         location: roles.<{ name }>
