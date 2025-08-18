@@ -100,7 +100,9 @@ jobs:
             echo "export COMPOSE_FILE='${COMPOSE_FILE}'" >> $BASH_ENV
       - run:
           name: Install Javascript SDK dependencies
-          command: ./js-sdk install
+          command: |
+            cd ./sdk/javascript
+            npm install
       - run:
           name: Run API Javascript SDK tests
           command: ./js-sdk run test
@@ -130,7 +132,9 @@ jobs:
             echo "export COMPOSE_FILE='${COMPOSE_FILE}'" >> $BASH_ENV
       - run:
           name: Install Javascript SDK dependencies
-          command: ./js-sdk install
+          command: |
+            cd ./sdk/javascript
+            npm install
       - run:
           name: Run API Javascript encrypted SDK tests
           command: ./js-sdk run test
