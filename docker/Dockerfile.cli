@@ -103,7 +103,7 @@ VOLUME ${DATA_DIR}
 RUN ln -s ${APP_DIR}/scripts/client.sh /usr/local/bin/zimagi-cli
 
 COPY ./docker/cli_entrypoint.sh /entrypoint
-RUN chmod +x /entrypoint
+RUN chmod 755 /entrypoint
 #
 # Execution gateway
 #
