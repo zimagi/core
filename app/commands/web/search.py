@@ -8,6 +8,6 @@ class Search(Command("web.search")):
         if results:
             self.success(f"Found {len(results)} web search results:")
             for result in results:
-                self.data(result.url, result.export(), "result")
+                self.data(result.url, result.export(), "web_search_results")
         else:
             self.notice("No webpages found matching search criteria")
