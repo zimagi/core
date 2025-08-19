@@ -1,81 +1,81 @@
 # Terminal utilities
 terminaltables==3.1.10
-colorful==0.5.6
+colorful==0.5.7
 
 # Security / System access
-cryptography==45.0.2
+cryptography==45.0.6
 pycryptodome==3.23.0
-paramiko==3.5.1
+paramiko==4.0.0
 django-cors-headers==4.7.0
-nvidia-ml-py==12.575.51
+nvidia-ml-py==13.580.65
 
 # Service management
 docker==7.1.0
-kubernetes==32.0.1
+kubernetes==33.1.0
 watchdog==6.0.0
-google-api-python-client==2.177.0
+google-api-python-client==2.179.0
 
 # Web server
 gunicorn==23.0.0
 gevent==25.5.1
-greenlet==3.2.2
-uvicorn==0.34.2
-starlette==0.46.2
+greenlet==3.2.4
+uvicorn==0.35.0
+starlette==0.47.2
 
 # Core application
-django==5.2.1
+django==5.2.5
 psycopg2==2.9.10
-django-dbconn-retry==0.1.8
+django-dbconn-retry==0.1.9
 semantic-version==2.10.0
-requests==2.32.3
+requests==2.32.5
 
 # API capabilities
-djangorestframework==3.16.0
-uritemplate==4.1.1
+djangorestframework==3.16.1
+uritemplate==4.2.0
 django-filter==25.1
 inflection==0.5.1
-mcp==1.10.1
+mcp==1.13.0
 
 # Text and data handling
 ply==3.11
 pyyaml==6.0.2
 oyaml==1.0
 inflect==7.5.0
-numpy==2.2.6
-pandas==2.2.3
+numpy==2.3.2
+pandas==2.3.1
 validators==0.35.0
 python-magic==0.4.27
 html-to-markdown[lxml]==1.9.0
 
 # File parsing
 beautifulsoup4==4.13.4
-selenium==4.34.2
+selenium==4.35.0
 docx2python==3.5.0
 pdf2image==1.17.0
-pdfplumber==0.11.6
+pdfplumber==0.11.7
 
 # Repository integrations
-pygit2==1.18.0
-PyGithub==2.6.1
+pygit2==1.18.2
+PyGithub==2.7.0
 
 # Templating
 Jinja2==3.1.6
 
 # Task management
-celery==5.5.2
+celery==5.5.3
 flower==2.0.1
 django-celery-beat==2.8.1
 
 # Caching / Queueing / Object store
-redis==6.1.0
-django-redis==5.4.0
-hiredis==3.1.1
-qdrant-client==1.14.3
+redis==6.4.0
+django-redis==6.0.0
+hiredis==3.2.1
+qdrant-client==1.15.1
 
 # Machine Learning
-transformers==4.51.3
-sentence-transformers==4.1.0
-torch==2.7.0
+transformers==4.55.2
+sentence-transformers==5.1.0
+torch==2.8.0
 spacy==3.8.7
 openai==1.99.9
 litellm==1.75.8

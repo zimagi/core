@@ -1,8 +1,8 @@
 requests==2.32.*
 pycryptodome==3.23.*
 terminaltables==3.1.*
-numpy==2.2.*
-pandas==2.2.*
+numpy==2.3.*
+pandas==2.3.*
 tblib==3.1.*
 validators==0.35.*
 python-magic==0.4.*
