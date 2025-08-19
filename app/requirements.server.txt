@@ -76,6 +76,6 @@ qdrant-client==1.14.3
 transformers==4.51.3
 sentence-transformers==4.1.0
 torch==2.7.0
-spacy==3.8.4
+spacy==3.8.7
 openai==1.99.9
 litellm==1.75.8
