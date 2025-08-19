@@ -44,6 +44,20 @@ export ZIMAGI_APP_NAME="zimagi-${COMPOSE_ENVIRONMENT}"
 # 1. Generate Docker Compose passwords and keys to be reused across restarts
 #
 if [ ! -f "${__zimagi_env_dir}/generated" ]; then
+  case "$OSTYPE" in
+    darwin*)
+    gid="$(awk -F: -v group=docker '$1==group{print $3}' /etc/group)"
+      if [ ! "$gid" ]; then
+        gid="$(awk -F: -v group=daemon '$1==group{print $3}' /etc/group)"
+      fi
+      export ZIMAGI_DOCKER_GID="$gid"
+      ;;
+    linux*)
+      export ZIMAGI_DOCKER_GID="$(cut -d: -f3 < <(getent group docker))"
+      ;;
+    *) render "Unsupported OS: $OSTYPE"; exit 1 ;;
+  esac
+
   echo "Storing generated passwords and keys"
   echo """
 #!/usr/bin/env bash
@@ -51,18 +65,18 @@ if [ ! -f "${__zimagi_env_dir}/generated" ]; then
 # System
 
 export ZIMAGI_USER_UID=$(id -u)
-export ZIMAGI_DOCKER_GID=$(stat -c '%g' /var/run/docker.sock)
+export ZIMAGI_DOCKER_GID="$ZIMAGI_DOCKER_GID"
 
 # User
 
-export ZIMAGI_ADMIN_DEFAULT_TOKEN=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 32; echo)
-export ZIMAGI_ADMIN_API_KEY=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 32; echo)
+export ZIMAGI_ADMIN_DEFAULT_TOKEN=$(hexdump -v -e '/1 "%02x"' -n 16 /dev/urandom)
+export ZIMAGI_ADMIN_API_KEY=$(hexdump -v -e '/1 "%02x"' -n 16 /dev/urandom)
 
 # Database
 
-export ZIMAGI_POSTGRES_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 15; echo)
-export ZIMAGI_REDIS_PASSWORD=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 15; echo)
-export ZIMAGI_QDRANT_ACCESS_KEY=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 15; echo)
+export ZIMAGI_POSTGRES_PASSWORD=$(hexdump -v -e '/1 "%02x"' -n 7 /dev/urandom)
+export ZIMAGI_REDIS_PASSWORD=$(hexdump -v -e '/1 "%02x"' -n 7 /dev/urandom)
+export ZIMAGI_QDRANT_ACCESS_KEY=$(hexdump -v -e '/1 "%02x"' -n 7 /dev/urandom)
 
 export ZIMAGI_HOST_POSTGRES_PORT=15432
 export ZIMAGI_HOST_REDIS_PORT=16379
