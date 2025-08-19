@@ -73,7 +73,7 @@ hiredis==3.1.1
 qdrant-client==1.14.3
 
 # Machine Learning
-transformers==4.51.3
+transformers==4.53.0
 sentence-transformers==4.1.0
 torch==2.7.0
 spacy==3.8.4
