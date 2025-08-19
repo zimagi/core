@@ -15,17 +15,21 @@ gnupg2
 sudo
 
 # Dependency building
+build-essential
 gcc
 g++
 make
 cmake
 libssl-dev
+pkg-config
 unzip
+cargo
 
 # Language
 python3-venv
 python3-dev
 python3-pip
+rustc
 
 # Image handling
 libmagic1
