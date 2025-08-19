@@ -1,9 +1,9 @@
 import time
 
-import chromedriver_autoinstaller
 from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver import Chrome, ChromeOptions
+from selenium.webdriver import Firefox
 from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.options import Options
 
 
 class SelectorMixin:
@@ -89,23 +89,18 @@ class Element(SelectorMixin):
 class Browser(SelectorMixin):
 
     def __init__(self, url=None):
-        chromedriver_autoinstaller.install()
+        options = Options()
 
-        options = ChromeOptions()
         options.add_argument("--headless")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--ignore-certificate-errors")
         options.add_argument("--window-size=1920,1200")
         options.add_argument(
-            "--user-agent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'"  # noqa: E501
-        )
-        options.add_experimental_option(
-            "prefs",
-            {"download.default_directory": "/dev/null", "download.prompt_for_download": False, "download_restrictions": 3},
+            "--user-agent='Mozilla/5.0 (X11; Linux x86_64; rv:141.0) Gecko/20100101 Firefox/141.0'"  # noqa: E501
         )
 
-        self.driver = Chrome(options=options)
+        self.driver = Firefox(options=options)
         if url:
             self.request(url)
 

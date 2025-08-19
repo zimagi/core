@@ -13,7 +13,6 @@ nvidia-ml-py==12.575.51
 docker==7.1.0
 kubernetes==32.0.1
 watchdog==6.0.0
-chromedriver-autoinstaller==0.6.4
 google-api-python-client==2.177.0
 
 # Web server
