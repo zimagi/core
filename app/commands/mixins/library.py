@@ -16,7 +16,7 @@ class LibraryMixin(CommandMixin("library")):
         library_base_path = self.get_library_path(library_name)
         info = Collection(
             library_base_path=library_base_path,
-            file_path=file_path.remove_prefix("/"),
+            file_path=file_path.removeprefix("/"),
             full_file_path=os.path.join(library_base_path, file_path),
             file_type=self._get_file_type(file_path),
         )
