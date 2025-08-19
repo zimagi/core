@@ -65,7 +65,7 @@ if [ ! -f "${__zimagi_env_dir}/generated" ]; then
 # System
 
 export ZIMAGI_USER_UID=$(id -u)
-export ZIMAGI_DOCKER_GID="$ZIMAGI_DOCKER_GID"
+export ZIMAGI_DOCKER_GID=$ZIMAGI_DOCKER_GID
 
 # User
 
