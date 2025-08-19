@@ -20,7 +20,7 @@ gunicorn==23.0.0
 gevent==25.5.1
 greenlet==3.2.2
 uvicorn==0.34.2
-starlette==0.46.2
+starlette==0.47.2
 
 # Core application
 django==5.2.1
