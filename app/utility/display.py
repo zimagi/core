@@ -2,8 +2,9 @@ import logging
 import os
 import sys
 import traceback
-from contextlib import contextmanager
 
+from contextlib import contextmanager
+from io import StringIO
 from django.conf import settings
 from terminaltables import AsciiTable
 
@@ -133,6 +134,21 @@ def silence():
         finally:
             sys.stdout = old_stdout
             sys.stderr = old_stderr
+
+
+@contextmanager
+def capture_output():
+    try:
+        output = StringIO()
+        sys.stdout = output
+        yield output
+
+    except Exception as error:
+        sys.stdout = sys.__stdout__
+        print(output.getvalue())
+        raise error
+    finally:
+        sys.stdout = sys.__stdout__
 
 
 def display_class_info(klass, prefix="", display_function=logger.info):
