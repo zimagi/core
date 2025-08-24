@@ -133,7 +133,10 @@ class CommunicationProcessor:
 
         if field_map:
             for field, flattened_field in field_map.items():
-                translation[field] = flattened_message[flattened_field]
+                if flattened_field in flattened_message:
+                    translation[field] = flattened_message[flattened_field]
+                else:
+                    translation[field] = flattened_field
         else:
             translation = message
 
