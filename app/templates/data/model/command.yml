@@ -50,6 +50,9 @@ command_base:
     <{ name }>:
         mixins: ["<{ name }>"]
         groups_allowed: <{ admin_roles }>
+#%- if mcp_api %#
+        mcp_enabled: true
+#%- endif %#
 
 #
 # Define data resource commands (list, get, save, remove, clear)
