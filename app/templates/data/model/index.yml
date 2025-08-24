@@ -72,6 +72,10 @@ variables:
     data_api:
         help: Whether or not to generate data API endpoints for this model
         default: true
+    mcp_api:
+        help: Whether or not to generate MCP API endpoints for this model
+        default: false
+
     disable_ops:
         help: List of disabled operations for model (options- list, retrieve, update, destroy, clear)
         default: null

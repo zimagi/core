@@ -68,7 +68,7 @@ class MetaBaseMixin(type):
 
         def __parse_provider_name(self, optional="--provider", help_text=_help_text, tags=None):
             if not tags:
-                tags = ["provider"]
+                tags = ["mcp", "provider"]
 
             self.parse_variable(_provider_name, optional, str, help_text, value_label="NAME", default=_default, tags=tags)
 
@@ -109,7 +109,7 @@ class MetaBaseMixin(type):
             default = None
 
             if not tags:
-                tags = ["key"]
+                tags = ["mcp", "key"]
 
             if _default:
                 value = getattr(self, _default, None)
@@ -136,7 +136,7 @@ class MetaBaseMixin(type):
             default = None
 
             if not tags:
-                tags = ["key"]
+                tags = ["mcp", "key"]
 
             if "model" in _info and getattr(settings, "DB_LOCK", None):
                 facade = getattr(self, f"_{_facade_name}")
@@ -165,7 +165,7 @@ class MetaBaseMixin(type):
 
         def __parse_keys(self, optional=f"--{_plural}", help_text=_multi_help_text, tags=None):
             if not tags:
-                tags = ["key", "keys"]
+                tags = ["mcp", "key", "keys"]
 
             if "model" in _info and getattr(settings, "DB_LOCK", None):
                 facade = getattr(self, f"_{_facade_name}")
@@ -214,7 +214,7 @@ class MetaBaseMixin(type):
 
         def __parse_fields(self, optional=True, help_callback=None, exclude_fields=None, tags=None):
             if not tags:
-                tags = ["fields"]
+                tags = ["mcp", "fields"]
 
             facade = getattr(self, f"_{_facade_name}") if "model" in _info else None
             self.parse_fields(
@@ -261,7 +261,7 @@ class MetaBaseMixin(type):
 
         def __parse_search(self, optional=True, help_text=_search_help_text, tags=None):
             if not tags:
-                tags = ["list", "search"]
+                tags = ["mcp", "list", "search"]
 
             if "model" in _info and getattr(settings, "DB_LOCK", None):
                 facade = getattr(self, f"_{_facade_name}")
@@ -278,7 +278,7 @@ class MetaBaseMixin(type):
 
         def __parse_order(self, optional="--order", help_text=_order_help_text, tags=None):
             if not tags:
-                tags = ["list", "ordering"]
+                tags = ["mcp", "list", "ordering"]
 
             self.parse_variables(_instance_order, optional, str, help_text, value_label="[~]FIELD", default=[], tags=tags)
 
@@ -287,7 +287,7 @@ class MetaBaseMixin(type):
 
         def __parse_limit(self, optional="--limit", help_text=_limit_help_text, tags=None):
             if not tags:
-                tags = ["list", "limit"]
+                tags = ["mcp", "list", "limit"]
 
             self.parse_variable(_instance_limit, optional, int, help_text, value_label="NUM", default=100, tags=tags)
 
@@ -296,7 +296,7 @@ class MetaBaseMixin(type):
 
         def __parse_count(self, help_text=_count_help_text, tags=None):
             if not tags:
-                tags = ["list", "count"]
+                tags = ["mcp", "list", "count"]
 
             self.parse_flag(_instance_count, "--count", help_text, tags=tags)
 

@@ -5,7 +5,12 @@ from django.conf import settings
 from django.core.management.base import CommandError
 
 
-def get_type(type):
+def get_type(method, type):
+    if method == "fields":
+        type = "dict"
+    elif method == "variables":
+        type = "list"
+
     if type == "str":
         return "string"
     elif type == "int":
@@ -45,7 +50,7 @@ def index_tools(user, server):
 
                         for field_name, field in subcommand.schema.items():
                             if "mcp" in field.tags:
-                                field_type = get_type(field.type)
+                                field_type = get_type(field.method, field.type)
                                 command_fields[field_name] = {
                                     "type": field_type,
                                     "description": f"{field.description[0].upper()}{field.description[1:]}",
