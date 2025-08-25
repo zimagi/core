@@ -10,3 +10,4 @@ plugin:
 
     providers:
       mentions_me:
+      field_exists:
