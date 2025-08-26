@@ -1,0 +1,17 @@
+config:
+  all: null
+
+  archiver: 1
+  qdrant: 1
+
+  encoder: 1
+  language_model: 1
+  browser: 1
+
+scale:
+  archiver: "#default(@all, @archiver)"
+  qdrant: "#default(@all, @qdrant)"
+
+  encoder: "#default(@all, @encoder)"
+  language_model: "#default(@all, @language_model)"
+  browser: "#default(@all, @browser)"

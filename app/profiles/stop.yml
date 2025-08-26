@@ -1,0 +1,7 @@
+scale:
+  archiver: 0
+  qdrant: 0
+
+  encoder: 0
+  language_model: 0
+  browser: 0
