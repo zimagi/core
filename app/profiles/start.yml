@@ -1,0 +1,15 @@
+config:
+  archiver: 1
+  qdrant: 1
+
+  encoder: 1
+  language_model: 1
+  browser: 1
+
+scale:
+  archiver: "@archiver"
+  qdrant: "@qdrant"
+
+  encoder: "@encoder"
+  language_model: "@language_model"
+  browser: "@browser"
