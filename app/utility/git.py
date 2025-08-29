@@ -189,3 +189,14 @@ class Git:
 
     def check_dirty(self):
         return self.repository.status()
+
+    def update_submodule(self, path, remote_url, reference=DEFAULT_BRANCH, **auth_options):
+        submodule = self.repository.submodules.get(path)
+        if not submodule:
+            with temp_dir() as temp:
+                submodule = self.repository.submodules.add(
+                    remote_url, path, callbacks=self._get_credentials(temp, **auth_options)
+                )
+        submodule_repo = Git(submodule.open(), reference=reference, **auth_options)
+        submodule_repo.pull()
+        return submodule_repo
