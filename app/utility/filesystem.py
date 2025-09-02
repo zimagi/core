@@ -3,12 +3,12 @@ import os
 import pathlib
 import shutil
 import threading
-from contextlib import contextmanager
-
 import oyaml
 import pandas
 
-from .data import ensure_list
+from contextlib import contextmanager
+
+from .data import ensure_list, dump_json, load_json
 
 file_lock = threading.Lock()
 
@@ -66,6 +66,13 @@ def load_yaml(file_path):
     return content if content else {}
 
 
+def load_json(file_path):
+    content = load_file(file_path)
+    if content:
+        content = load_json(content)
+    return content if content else {}
+
+
 def load_csv(file_path, header=0, index_column=0, extension="csv", **kwargs):
     file_path = "{}.{}".format(file_path.removesuffix(f".{extension}"), extension)
     if os.path.exists(file_path):
@@ -96,6 +103,10 @@ def save_file(file_path, content, binary=False, append=False, permissions=None):
 
 def save_yaml(file_path, data, permissions=None):
     return save_file(file_path, oyaml.dump(data), permissions=permissions)
+
+
+def save_json(file_path, data, permissions=None):
+    return save_file(file_path, dump_json(data, indent=2), permissions=permissions)
 
 
 def save_csv(file_path, data, columns=None, index_column=None, permissions=None, extension="csv", **kwargs):
@@ -203,6 +214,12 @@ class FileSystem:
             content = oyaml.safe_load(content)
         return content
 
+    def load_json(self, file_name, directory=None, extension="json"):
+        content = self.load(f"{file_name}.{extension}", directory)
+        if content:
+            content = load_json(content)
+        return content
+
     def load_csv(self, file_name, directory=None, header=0, index_column=0, **kwargs):
         path = self.path(file_name, directory=directory)
         return load_csv(path, header=header, index_column=index_column, **kwargs)
@@ -218,6 +235,9 @@ class FileSystem:
 
     def save_yaml(self, data, file_name, directory=None, permissions=None):
         return self.save(oyaml.dump(data), file_name, directory, extension="yml", permissions=permissions)
+
+    def save_json(self, data, file_name, directory=None, permissions=None):
+        return self.save(dump_json(data, indent=2), file_name, directory, extension="json", permissions=permissions)
 
     def save_csv(self, data, file_name, directory=None, permissions=None, columns=None, index_column=None, **kwargs):
         path = self.path(file_name, directory=directory)
