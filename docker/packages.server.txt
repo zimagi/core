@@ -3,7 +3,6 @@ git
 openssh-client
 sshpass
 tesseract-ocr
-poppler-utils
 zlib1g-dev
 
 # Database support
@@ -13,3 +12,8 @@ postgresql-client
 # Service clients
 docker-ce
 firefox-esr
+
+# File processing
+ffmpeg
+libsm6
+libxext6
