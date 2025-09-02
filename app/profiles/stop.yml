@@ -5,3 +5,4 @@ scale:
   encoder: 0
   language_model: 0
   browser: 0
+  file_parser: 0

@@ -7,6 +7,7 @@ config:
   encoder: 1
   language_model: 1
   browser: 1
+  file_parser: 1
 
 scale:
   archiver: "#default(@all, @archiver)"
@@ -15,3 +16,4 @@ scale:
   encoder: "#default(@all, @encoder)"
   language_model: "#default(@all, @language_model)"
   browser: "#default(@all, @browser)"
+  file_parser: "#default(@all, @browser)"

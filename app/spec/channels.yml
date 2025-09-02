@@ -266,3 +266,13 @@ channels:
           type: str
           description: 'File path within library directory of file to process'
           required: true
+
+  'file:parse':
+    description: 'This channel gets notified with requests to parse text representations of a file'
+    groups:
+      - ai-user
+      - chat-user
+    message:
+      type: str
+      description: 'Absolute file path for file to parse text'
+      required: true

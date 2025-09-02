@@ -1,0 +1,11 @@
+plugin:
+  document_source:
+    base: base
+    interface:
+      download:
+        params:
+          folders: list
+          root_directory: str
+
+    providers:
+      google_drive:

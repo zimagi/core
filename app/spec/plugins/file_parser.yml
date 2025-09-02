@@ -9,8 +9,14 @@ plugin:
 
     providers:
       txt:
+      md:
       binary:
       docx:
         base: binary
+      pptx:
+        base: binary
+      xlsx:
+        base: binary
+      csv:
       pdf:
         base: binary
