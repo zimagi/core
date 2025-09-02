@@ -13,6 +13,9 @@ nvidia-ml-py==13.580.65
 docker==7.1.0
 kubernetes==33.1.0
 watchdog==6.0.0
+google-auth==2.40.3
+google-auth-oauthlib==1.2.2
+google-auth-httplib2==0.2.0
 google-api-python-client==2.179.0
 
 # Web server
@@ -41,18 +44,19 @@ ply==3.11
 pyyaml==6.0.2
 oyaml==1.0
 inflect==7.5.0
-numpy==2.3.2
+numpy==2.2.6
 pandas==2.3.1
 validators==0.35.0
 python-magic==0.4.27
-html-to-markdown[lxml]==1.9.0
+python-dateutil==2.9.0.post0
+opencv-python==4.12.0.88
+rapidocr==3.3.1
 
 # File parsing
 beautifulsoup4==4.13.4
 selenium==4.35.0
-docx2python==3.5.0
-pdf2image==1.17.0
-pdfplumber==0.11.7
+html-to-markdown[lxml]==1.8.0
+docling==2.48.0
 
 # Repository integrations
 pygit2==1.18.2
@@ -79,3 +83,5 @@ torch==2.8.0
 spacy==3.8.7
 openai==1.99.9
 litellm==1.75.8
+huggingface-hub==0.34.4
+onnxruntime==1.22.1
