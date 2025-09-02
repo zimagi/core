@@ -2,7 +2,7 @@ from docling.document_converter import DocumentConverter
 from systems.plugins.index import BaseProvider
 
 
-class Provider(BaseProvider("file_parser", "docx")):
+class Provider(BaseProvider("file_parser", "csv")):
 
     def parse_file(self, file_path):
         converter = DocumentConverter()

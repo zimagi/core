@@ -1,61 +1,46 @@
-import re
+import os
 
-import pdfplumber
-import pytesseract
 from django.conf import settings
-from pdf2image import convert_from_path, pdfinfo_from_path
+from docling.datamodel.pipeline_options import PdfPipelineOptions, RapidOcrOptions
+from docling.document_converter import (
+    ConversionResult,
+    DocumentConverter,
+    InputFormat,
+    PdfFormatOption,
+)
+
 from systems.plugins.index import BaseProvider
 
 
 class Provider(BaseProvider("file_parser", "pdf")):
 
     def parse_file(self, file_path):
-        text = self._parse_extract_file(file_path)
-        if text:
-            return text
-        return self._parse_ocr_file(file_path)
+        os.environ["HF_HOME"] = settings.MANAGER.hf_cache
 
-    def _parse_extract_file(self, file_path):
-        with pdfplumber.open(file_path) as pdf:
-            text = []
-            for page in pdf.pages:
-                page_lines = page.extract_text_lines(x_tolerance=0.5, y_tolerance=0.5)
-                if page_lines:
-                    for line in page_lines:
-                        line = re.sub(r"\s+", " ", line.get("text", "") if isinstance(line, dict) else line)
-                        add_line = True
-                        # Number check
-                        try:
-                            int(re.sub(r"\s+", "", line))
-                            add_line = False
-                        except ValueError:
-                            pass
+        from huggingface_hub import snapshot_download
 
-                        # Page footer check
-                        if re.search(r"^[Pp]age\s*\d+", line):
-                            add_line = False
+        download_path = snapshot_download(repo_id="SWHL/RapidOCR")
+        det_model_path = os.path.join(download_path, "PP-OCRv4", "en_PP-OCRv3_det_infer.onnx")
+        rec_model_path = os.path.join(download_path, "PP-OCRv4", "ch_PP-OCRv4_rec_server_infer.onnx")
+        cls_model_path = os.path.join(download_path, "PP-OCRv3", "ch_ppocr_mobile_v2.0_cls_train.onnx")
+        ocr_options = RapidOcrOptions(
+            det_model_path=det_model_path,
+            rec_model_path=rec_model_path,
+            cls_model_path=cls_model_path,
+        )
 
-                        if add_line:
-                            text.append(line)
-
-                text.append("\n")
-
-        return "\n".join(text).strip()
-
-    def _parse_ocr_file(self, file_path):
-        max_pages = pdfinfo_from_path(file_path)["Pages"]
-        batch_size = settings.PDF_OCR_BATCH_SIZE
-        text = []
-
-        for page in range(1, max_pages + 1, batch_size):
-            doc = convert_from_path(
-                file_path, dpi=settings.PDF_OCR_DPI, first_page=page, last_page=min(page + (batch_size - 1), max_pages)
-            )
-            for page_number, page_data in enumerate(doc):
-                page_text = pytesseract.image_to_string(page_data).encode("utf-8").decode().strip()
-                if page_text:
-                    text.append(re.sub(r"\n+\s+\n+", "\n\n", page_text))
-
-            text.append("\n")
-
-        return "\n".join(text).strip()
+        pipeline_options = PdfPipelineOptions(
+            do_ocr=True,
+            do_table_structure=True,
+            table_structure_options={"do_cell_matching": True},
+            ocr_options=ocr_options,
+        )
+        converter = DocumentConverter(
+            format_options={
+                InputFormat.PDF: PdfFormatOption(
+                    pipeline_options=pipeline_options,
+                ),
+            },
+        )
+        result = converter.convert(file_path)
+        return result.document.export_to_markdown()
