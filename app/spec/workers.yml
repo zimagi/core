@@ -25,3 +25,6 @@ workers:
 
   browser:
     <<: *default_worker
+
+  file_parser:
+    <<: *default_worker
