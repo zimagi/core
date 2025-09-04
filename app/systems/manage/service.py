@@ -20,6 +20,9 @@ import docker
 logger = logging.getLogger(__name__)
 
 
+SYS_ENV_VARS = ("HOME", "PATH", "PWD", "VIRTUAL_ENV_DIR", "HOSTNAME", "TERM", "REQUESTS_CA_BUNDLE", "LANG", "LS_COLORS", "_")
+
+
 class ServiceError(Exception):
     pass
 
@@ -167,7 +170,7 @@ class ManagerServiceMixin:
             service["ports"] = port_map
 
         for env_name, value in dict(os.environ).items():
-            if (env_name.startswith("KUBERNETES_") or env_name.startswith("ZIMAGI_")) and not env_name.endswith("_EXEC"):
+            if not env_name.endswith("_EXEC") and env_name not in SYS_ENV_VARS:
                 environment[env_name] = value
 
         service = normalize_value(interpolate(service, environment))
