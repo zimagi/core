@@ -42,7 +42,7 @@ class Git:
         return False
 
     @classmethod
-    def clone(cls, remote_url, path, reference=DEFAULT_BRANCH, **auth_options):
+    def clone(cls, remote_url, path, reference=DEFAULT_BRANCH, user=None, **auth_options):
         user_match = re.match(r"^(?:https?://|ssh://)?([^\@]+)\@.+", remote_url)
         if user_match:
             auth_options["username"] = user_match.group(1)
@@ -52,19 +52,20 @@ class Git:
                 pygit2.clone_repository(
                     remote_url, path, checkout_branch=reference, callbacks=cls._get_credentials(temp, **auth_options)
                 ),
+                user=user,
                 **auth_options,
             )
         return repository
 
     @classmethod
-    def init(cls, path, reference=DEFAULT_BRANCH, remote=DEFAULT_REMOTE, remote_url=None):
+    def init(cls, path, reference=DEFAULT_BRANCH, remote=DEFAULT_REMOTE, remote_url=None, user=None, **auth_options):
         repository = pygit2.init_repository(path, bare=False, initial_head=reference)
         if remote and remote_url:
             repository.remotes.set_url(remote, remote_url)
             repository.config.set_multivar(
                 f"remote.{remote}.fetch", "", f"+refs/heads/{reference}:refs/remotes/{remote}/{reference}"
             )
-        return cls(repository, reference=reference)
+        return cls(repository, reference=reference, user=user, **auth_options)
 
     @classmethod
     def _get_credentials(cls, temp, username=DEFAULT_USER, password=None, public_key=None, private_key=None):
