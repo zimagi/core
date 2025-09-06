@@ -50,13 +50,13 @@ validators==0.35.0
 python-magic==0.4.27
 python-dateutil==2.9.0.post0
 opencv-python==4.12.0.88
-rapidocr==3.3.1
 
 # File parsing
 beautifulsoup4==4.13.4
 selenium==4.35.0
 html-to-markdown[lxml]==1.8.0
-docling==2.48.0
+docling==2.51.0
+docling-ocr-onnxtr[cpu-headless]==0.2.0
 
 # Repository integrations
 pygit2==1.18.2
