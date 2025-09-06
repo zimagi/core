@@ -198,6 +198,6 @@ class Git:
                 submodule = self.repository.submodules.add(
                     remote_url, path, callbacks=self._get_credentials(temp, **auth_options)
                 )
-        submodule_repo = Git(submodule.open(), reference=reference, **auth_options)
-        submodule_repo.pull()
+        submodule_repo = Git(submodule.open(), **auth_options)
+        submodule_repo.pull(branch=reference)
         return submodule_repo
