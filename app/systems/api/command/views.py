@@ -32,7 +32,7 @@ class Command(APIView):
         def processor():
             options = self._format_options(request.data)
             command = type(self.command)(self.command.name, self.command.parent_instance).bootstrap(options)
-            command.set_headers(request.headers)
+            command.set_request(request)
 
             if isinstance(command, WebhookCommand):
                 response = HttpResponse(

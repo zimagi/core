@@ -43,10 +43,10 @@ class ExecCommand(
         self.disconnected = False
         self.exec_result = self.get_exec_result()
 
-        self.headers = None
+        self.request = None
 
-    def set_headers(self, headers):
-        self.headers = headers
+    def set_request(self, request):
+        self.request = request
 
     def signal_shutdown(self):
         try:
