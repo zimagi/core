@@ -5,6 +5,7 @@ import time
 from django.core.management.base import CommandError
 from systems.manage.task import CommandAborted
 from systems.commands import exec
+from utility import display
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ class WebhookCommand(exec.ExecCommand):
     def get_response_type(self):
         return "text/plain"
 
-    def handle_api(self, options, headers):
+    def handle_api(self, options):
         self._register_signal_handlers()
 
         logger.debug(f"Running API webhook: {self.get_full_name()}\n\n{yaml.dump(options)}")
