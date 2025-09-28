@@ -102,6 +102,7 @@ def generate_command_tree(spec, name="root", parent_command=None, lookup_path=""
 
 def find_command(full_name, parent=None):
     from systems.commands.router import RouterCommand
+    from systems.commands.webhook import WebhookCommand
 
     def find(components, command, parents=None):
         if not parents:
@@ -115,7 +116,7 @@ def find_command(full_name, parent=None):
             if command.name != "root":
                 parents.append(command)
 
-            if subcommand:
+            if subcommand and not isinstance(subcommand, WebhookCommand):
                 if len(components):
                     command = find(components, subcommand, parents)
                 else:
@@ -176,6 +177,10 @@ class CommandGenerator:
                 from systems.commands import agent
 
                 self.base_command = agent.AgentCommand
+            elif self.key == "command_base" and self.name == "webhook":
+                from systems.commands import webhook
+
+                self.base_command = webhook.WebhookCommand
             else:
                 from systems.commands import action
 

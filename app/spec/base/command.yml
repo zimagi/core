@@ -46,6 +46,9 @@ command_base:
     mixins: [db]
     groups_allowed: [db-admin]
     background: true
+  webhook:
+    groups_allowed: false
+    background: false
   qdrant_admin:
     mixins: [qdrant]
     groups_allowed: [db-admin]

@@ -1,6 +1,6 @@
 import logging
 
-from django.http import StreamingHttpResponse
+from django.http import StreamingHttpResponse, HttpResponse
 from rest_framework.views import APIView
 from systems.api.views import wrap_api_call
 from systems.encryption.cipher import Cipher
@@ -27,13 +27,24 @@ class Command(APIView):
         return self.command.check_execute(user)
 
     def post(self, request, format=None):
-        def processor():
-            options = self._format_options(request.POST)
-            command = type(self.command)(self.command.name, self.command.parent_instance).bootstrap(options)
+        # Parse body so we can access it later if needed
+        request.body
 
-            response = StreamingHttpResponse(
-                streaming_content=command.handle_api(options, package=True), content_type="application/json"
-            )
+        def processor():
+            from systems.commands.webhook import WebhookCommand
+
+            options = self._format_options(request.data)
+            command = type(self.command)(self.command.name, self.command.parent_instance).bootstrap(options)
+            command.set_request(request)
+
+            if isinstance(command, WebhookCommand):
+                response = HttpResponse(
+                    content=command.handle_api(options), status=200, content_type=command.get_response_type()
+                )
+            else:
+                response = StreamingHttpResponse(
+                    streaming_content=command.handle_api(options, package=True), content_type="application/json"
+                )
             response["Cache-Control"] = "no-cache"
             return response
 
@@ -43,9 +54,11 @@ class Command(APIView):
         return wrap_api_call("command", request, processor, message=error_handler, api_type="command_api")
 
     def _format_options(self, options):
-        cipher = Cipher.get("command_api", user=self.command.active_user.name)
+        if self.command.active_user:
+            cipher = Cipher.get("command_api", user=self.command.active_user.name)
 
-        def process_item(key, value):
-            return (key, normalize_value(cipher.decrypt(value)))
+            def process_item(key, value):
+                return (key, normalize_value(cipher.decrypt(value)))
 
-        return self.command.format_fields(options, process_item)
+            return self.command.format_fields(options, process_item)
+        return self.command.format_fields(options)

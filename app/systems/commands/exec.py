@@ -43,6 +43,11 @@ class ExecCommand(
         self.disconnected = False
         self.exec_result = self.get_exec_result()
 
+        self.request = None
+
+    def set_request(self, request):
+        self.request = request
+
     def signal_shutdown(self):
         try:
             if not self.background_process:
