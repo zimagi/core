@@ -12,4 +12,8 @@ class CommandAPITokenAuthentication(APITokenAuthentication):
 
 class CommandPermission(permissions.BasePermission):
     def has_permission(self, request, view):
+        from systems.commands.webhook import WebhookCommand
+
+        if isinstance(view.command, WebhookCommand):
+            return True
         return view.check_execute(request.user)
