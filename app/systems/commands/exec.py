@@ -43,6 +43,11 @@ class ExecCommand(
         self.disconnected = False
         self.exec_result = self.get_exec_result()
 
+        self.headers = None
+
+    def set_headers(self, headers):
+        self.headers = headers
+
     def signal_shutdown(self):
         try:
             if not self.background_process:
