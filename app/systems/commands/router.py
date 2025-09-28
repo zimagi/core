@@ -2,7 +2,7 @@ import inspect
 from collections import OrderedDict
 
 from django.conf import settings
-from systems.commands import base
+from systems.commands import base, webhook
 from utility.text import wrap
 
 
@@ -55,17 +55,23 @@ class RouterCommand(base.BaseCommand):
             "{} {}:".format(self.command_color(self.get_full_name()), self.notice_color("command to execute")),
             "",
         ]
+        has_commands = False
+
         for subcommand in self.get_subcommands():
-            subcommand_help.extend(
-                wrap(
-                    subcommand.get_description(True),
-                    settings.DISPLAY_WIDTH - 25,
-                    init_indent="{:2}{}  -  ".format(" ", self.command_color(subcommand.name)),
-                    init_style=self.header_color,
-                    indent="".ljust(2),
+            if not isinstance(subcommand, webhook.WebhookCommand):
+                subcommand_help.extend(
+                    wrap(
+                        subcommand.get_description(True),
+                        settings.DISPLAY_WIDTH - 25,
+                        init_indent="{:2}{}  -  ".format(" ", self.command_color(subcommand.name)),
+                        init_style=self.header_color,
+                        indent="".ljust(2),
+                    )
                 )
-            )
-        parser.add_argument("subcommand", nargs=1, type=str, help="\n".join(subcommand_help))
+                has_commands = True
+
+        if has_commands:
+            parser.add_argument("subcommand", nargs=1, type=str, help="\n".join(subcommand_help))
 
     def handle(self, options):
         self.print_help()
