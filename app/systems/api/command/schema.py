@@ -25,6 +25,8 @@ class CommandSchemaGenerator(BaseSchemaGenerator):
         return schema.Root(commands, url=url, title=self.title, description=self.description)
 
     def get_commands(self, request=None):
+        from systems.commands.webhook import WebhookCommand
+
         commands = schema.Router()
         command_index = {}
         descriptions = help.CommandDescriptions()
@@ -74,13 +76,15 @@ class CommandSchemaGenerator(BaseSchemaGenerator):
 
                 resource = view.get_resource() if isinstance(view, Command) else None
                 keys = [component for component in path[len(prefix) :].strip("/").split("/")]
+                command = getattr(view, "command", None)
 
-                insert_action(
-                    commands,
-                    keys,
-                    view.schema.get_action(path, base_url=self.url, resource=resource),
-                    getattr(view, "command", None),
-                )
+                if command and not isinstance(command, WebhookCommand):
+                    insert_action(
+                        commands,
+                        keys,
+                        view.schema.get_action(path, base_url=self.url, resource=resource),
+                        command,
+                    )
 
         return commands
 
