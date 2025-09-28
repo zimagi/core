@@ -27,9 +27,12 @@ class Command(APIView):
         return self.command.check_execute(user)
 
     def post(self, request, format=None):
-        from systems.commands.webhook import WebhookCommand
+        # Parse body so we can access it later if needed
+        request.body
 
         def processor():
+            from systems.commands.webhook import WebhookCommand
+
             options = self._format_options(request.data)
             command = type(self.command)(self.command.name, self.command.parent_instance).bootstrap(options)
             command.set_request(request)
