@@ -363,8 +363,9 @@ class ExecCommand(
         finally:
             self.delete_stream(return_channel)
 
-    def send(self, channel, message, sender=None, user=None):
-        self.check_channel_access(channel)
+    def send(self, channel, message, sender=None, user=None, check_access=True):
+        if check_access:
+            self.check_channel_access(channel)
 
         if sender is None:
             sender = self.service_id
