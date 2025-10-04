@@ -1,13 +1,10 @@
-import logging
-
 from systems.cell.actor import Actor
 from systems.cell.communication import CommunicationProcessor
 from systems.cell.error import ErrorHandler
 from systems.cell.memory import MemoryManager
 from systems.cell.state import StateManager
 from systems.commands.index import BaseCommand
-
-logger = logging.getLogger(__name__)
+from utility.runtime import debug
 
 
 class Cell(BaseCommand("cell")):
@@ -53,6 +50,8 @@ class Cell(BaseCommand("cell")):
         return Actor(self, **kwargs)
 
     def exec(self):
+        debug("Agent cycle execution")
+
         # Initialize cycle
         try:
             self._initialize_cycle(
@@ -70,6 +69,12 @@ class Cell(BaseCommand("cell")):
 
         # Execute cycle
         try:
+            debug("Beginning agent cycle listener")
+            debug(self.agent_sensor_filters, "Sensory filters")
+            debug(self.agent_message_fields, "Agent sensory fields")
+            debug(self.agent_channel, "Agent channel")
+            debug(self.agent_channel_field_map, "Agent channel field map")
+
             for event in self.communication.listen(self.agent_sensor_filters, self.agent_message_fields):
                 response = self.profile(self.process_sensory_event, event)
                 self.communication.send(self.agent_channel, event, response, self.agent_channel_field_map)
@@ -93,7 +98,12 @@ class Cell(BaseCommand("cell")):
         self.error_handler = self.get_error_handler()
         self.manager.load_templates()
 
+        debug("Initializing agent cycle")
+        debug(sensor_name, "Sensor name")
+        debug(prompts, "Agent prompts")
+
         if self.agent_user:
+            debug(self.agent_user, "Agent user")
             self._user.set_active_user(self.get_instance(self._user, self.agent_user, required=True))
 
         self.actor = self.get_actor(prompts=prompts, **kwargs)
@@ -107,14 +117,21 @@ class Cell(BaseCommand("cell")):
         pass
 
     def process_sensory_event(self, event):
+        debug("Processing sensory event")
+        debug(self.agent_memory_sequence, "Agent memory sequence")
+        debug(self.agent_memory_search_field, "Agent memory search field")
+        debug(self.agent_message_field_labels, "Agent message field labels")
+
         return self.actor.respond(
             event, self.agent_memory_sequence, self.agent_memory_search_field, self.agent_message_field_labels
         )
 
     def finalize_event_response(self, event, response):
+        debug("Memorizing agent messages")
         self.actor.memorize()
 
     def _finalize_cycle(self):
+        debug("Finalizing agent cycle")
         self.actor.refine_state()
         self.finalize_cycle()
 

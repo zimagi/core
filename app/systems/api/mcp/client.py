@@ -8,6 +8,7 @@ from django.utils.timezone import now
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 from utility.data import Collection, create_token, flatten
+from utility.runtime import debug
 
 
 @asynccontextmanager
@@ -34,6 +35,8 @@ class MCPClient:
         self.user = command.active_user
         self.servers = {}
 
+        debug("Initializing MCP servers")
+
         if settings.KUBERNETES_NAMESPACE:
             self.servers[settings.MCP_LOCAL_SERVER_NAME] = MCPLocalServer(
                 self, f"http://{settings.MCP_SERVICE_NAME}.{settings.KUBERNETES_NAMESPACE}"
@@ -55,20 +58,32 @@ class MCPClient:
             self.add_server(name, url, token)
 
     def add_server(self, name, url, token):
+        debug("Adding MCP server")
+        debug(name, "MCP server name")
+        debug(url, "MCP server URL")
+        debug(token, "MCP server token")
         self.servers[name] = MCPServer(self, name, url, token)
 
     def list_tools(self, allowed_tools=None):
-        return flatten([server.list_tools(allowed_tools) for server in self.servers.values()])
+        tool_list = flatten([server.list_tools(allowed_tools) for server in self.servers.values()])
+        debug("Listing MCP server tools")
+        debug(tool_list, "Tool list")
+        return tool_list
 
     def get_tool_fields(self, name):
         (tool_name, server_name) = self._get_name(name)
         tool = self.servers[server_name].index["tools"][tool_name]
-        return Collection(
+        tool_fields = Collection(
             index=(
                 tool.inputSchema["properties"] if "properties" in tool.inputSchema and tool.inputSchema["properties"] else {}
             ),
             required=tool.inputSchema.get("required", []),
         )
+        debug("Getting tool fields")
+        debug(server_name, "Server name")
+        debug(tool_name, "Tool name")
+        debug(tool_fields, "Tool fields")
+        return tool_fields
 
     def exec_tool(self, name, arguments=None):
         (tool_name, server_name) = self._get_name(name)
@@ -85,6 +100,12 @@ class MCPClient:
         except ValueError:
             resource_name = name
             server_name = settings.MCP_LOCAL_SERVER_NAME
+
+        debug("Getting MCP server name")
+        debug(name, "MCP tool identifier")
+        debug(resource_name, "MCP resource name")
+        debug(server_name, "MCP server name")
+
         return (resource_name, server_name)
 
 
@@ -99,6 +120,9 @@ class MCPServer:
 
     def initialize(self, reload_index=False):
         if reload_index or not self.index:
+            debug("Initializing MCP server")
+            debug(self.url, "MCP server URL")
+            debug(self.token, "MCP server token")
 
             async def _run_operation():
                 async with connect(self.url, self.token) as session:
@@ -107,6 +131,8 @@ class MCPServer:
                     tools = await session.list_tools()
                     for tool in tools.tools:
                         self.index["tools"][tool.name] = tool
+
+                    debug(self.index["tools"], "MCP server tools")
 
             self._preconnect()
             asyncio.run(_run_operation())
@@ -121,14 +147,21 @@ class MCPServer:
 
     def list_tools(self, allowed_tools=None):
         self.initialize()
-        return [
+        tool_list = [
             Collection(server=self.name, schema=tool)
             for tool in self.index["tools"].values()
             if allowed_tools is None or f"{tool.name}@{self.name}" in allowed_tools
         ]
+        debug("Listing MCP server tools")
+        debug(tool_list, "Tool list")
+        return tool_list
 
     def exec_tool(self, name, arguments=None):
         tool_name = name.split("@")[0]
+
+        debug("Executing MCP tool")
+        debug(name, "MCP tool identifier")
+        debug(tool_name, "MCP tool name")
 
         if arguments is None:
             arguments = {}
@@ -142,11 +175,21 @@ class MCPServer:
             async with connect(self.url, self.token) as session:
                 messages = []
 
+                debug(self.url, "MCP server URL")
+                debug(self.token, "MCP server token")
+                debug(tool_name, "MCP tool name")
+                debug(arguments, "MCP tool arguments")
+
                 tool = await session.call_tool(tool_name, arguments=arguments)
+                debug(tool, "MCP tool response")
+
                 for message in tool.content:
+                    debug(message, "MCP tool response message")
                     messages.append(format_tool_message(message))
 
-                return "\n\n".join(messages)
+                tool_response = "\n\n".join(messages)
+                debug(tool_response, "Final tool response")
+                return tool_response
 
         self._preconnect()
         return asyncio.run(_run_operation())
@@ -159,6 +202,9 @@ class MCPLocalServer(MCPServer):
 
     def _preconnect(self):
         self.token = f"{self.client.user.name} {self._get_temp_token()}"
+
+        debug("Running local MCP server preconnect")
+        debug(self.token, "Temporary MCP token authentication")
 
     def _get_temp_token(self):
         def _get_token():
