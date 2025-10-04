@@ -42,3 +42,4 @@ __pycache__
 *.log
 .aider*
 .docs-index
+.docs-log
