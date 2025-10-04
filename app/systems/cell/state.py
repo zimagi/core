@@ -1,10 +1,8 @@
 import copy
-import logging
 import threading
 
 from utility.data import dump_json
-
-logger = logging.getLogger(__name__)
+from utility.runtime import debug
 
 
 class StateManager:
@@ -22,15 +20,14 @@ class StateManager:
             self.state_key,
             self.default_state,
         )
-        if self.command.manager.runtime.debug():
-            logger.debug(f"Loaded agent state: {dump_json(self._state, indent=2)}")
+        debug(self._state, "Loaded agent state")
         return self._state
 
     def save(self, state):
         self._state = state
         self.command.set_state(self.state_key, self._state)
-        if self.command.manager.runtime.debug():
-            logger.debug(f"Agent state saved: {dump_json(self._state, indent=2)}")
+
+        debug(self._state, "Saved agent state")
         return self._state
 
     def __iter__(self):

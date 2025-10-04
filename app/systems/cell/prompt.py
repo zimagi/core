@@ -1,6 +1,4 @@
-import logging
-
-logger = logging.getLogger(__name__)
+from utility.runtime import debug
 
 
 class PromptEngine:
@@ -14,8 +12,12 @@ class PromptEngine:
 
     def render(self, variables):
         rendered = {}
+
+        debug(variables, "Prompt variables")
+
         for name, template_path in self.prompt_templates.items():
             template = self.command.manager.template_engine.get_template(template_path)
             rendered[name] = template.render(**variables)
-            logger.debug(f"Rendered {name} prompt")
+
+        debug(rendered, "Rendered prompts")
         return rendered
