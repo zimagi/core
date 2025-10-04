@@ -3,30 +3,30 @@ terminaltables==3.1.10
 colorful==0.5.7
 
 # Security / System access
-cryptography==45.0.6
+cryptography==46.0.2
 pycryptodome==3.23.0
 paramiko==4.0.0
-django-cors-headers==4.7.0
-nvidia-ml-py==13.580.65
+django-cors-headers==4.9.0
+nvidia-ml-py==13.580.82
 
 # Service management
 docker==7.1.0
-kubernetes==33.1.0
+kubernetes==34.1.0
 watchdog==6.0.0
-google-auth==2.40.3
+google-auth==2.41.1
 google-auth-oauthlib==1.2.2
 google-auth-httplib2==0.2.0
-google-api-python-client==2.179.0
+google-api-python-client==2.184.0
 
 # Web server
 gunicorn==23.0.0
-gevent==25.5.1
+gevent==25.9.1
 greenlet==3.2.4
-uvicorn==0.35.0
-starlette==0.47.2
+uvicorn==0.37.0
+starlette==0.48.0
 
 # Core application
-django==5.2.5
+django==5.2.7
 psycopg2==2.9.10
 django-dbconn-retry==0.1.9
 semantic-version==2.10.0
@@ -37,30 +37,29 @@ djangorestframework==3.16.1
 uritemplate==4.2.0
 django-filter==25.1
 inflection==0.5.1
-mcp==1.13.0
+mcp==1.16.0
 
 # Text and data handling
 ply==3.11
-pyyaml==6.0.2
+pyyaml==6.0.3
 oyaml==1.0
 inflect==7.5.0
-numpy==2.2.6
-pandas==2.3.1
+numpy==2.3.3
+pandas==2.3.3
 validators==0.35.0
 python-magic==0.4.27
 python-dateutil==2.9.0.post0
-opencv-python==4.12.0.88
 
 # File parsing
-beautifulsoup4==4.13.4
-selenium==4.35.0
-html-to-markdown[lxml]==1.8.0
-docling==2.51.0
+beautifulsoup4==4.14.2
+selenium==4.32.0
+html-to-markdown[lxml]==1.16.0
+docling==2.55.1
 docling-ocr-onnxtr[cpu-headless]==0.2.0
 
 # Repository integrations
 pygit2==1.18.2
-PyGithub==2.7.0
+PyGithub==2.8.1
 
 # Templating
 Jinja2==3.1.6
@@ -69,6 +68,7 @@ Jinja2==3.1.6
 celery==5.5.3
 flower==2.0.1
 django-celery-beat==2.8.1
+tenacity==9.1.2
 
 # Caching / Queueing / Object store
 redis==6.4.0
@@ -77,11 +77,11 @@ hiredis==3.2.1
 qdrant-client==1.15.1
 
 # Machine Learning
-transformers==4.55.2
-sentence-transformers==5.1.0
+transformers==4.57.0
+sentence-transformers==5.1.1
 torch==2.8.0
 spacy==3.8.7
-openai==1.99.9
-litellm==1.75.8
-huggingface-hub==0.34.4
-onnxruntime==1.22.1
+openai==2.1.0
+litellm==1.77.5
+huggingface-hub==0.35.3
+onnxruntime==1.23.0
