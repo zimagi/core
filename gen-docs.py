@@ -21,7 +21,6 @@ doc_sequence = [
     "app/scripts",
     "app/services",
     "app/settings",
-    "app/spec",
     "app/spec/mixins",
     "app/spec/base",
     "app/spec/data",
@@ -29,37 +28,31 @@ doc_sequence = [
     "app/spec/commands",
     "app/spec",
     "app/utility",
-    "app/systems",
     "app/systems/manage",
     "app/systems/index",
     "app/systems/db",
     "app/systems/kubernetes",
     "app/systems/encryption",
-    "app/systems",
-    "app/systems/models",
     "app/systems/models/mixins",
     "app/systems/models/parsers",
     "app/systems/models",
     "app/systems/plugins",
-    "app/systems/commands",
     "app/systems/commands/mixins",
     "app/systems/commands/factory",
     "app/systems/commands",
     "app/systems/cell",
     "app/systems/celery",
     "app/systems/cache",
-    "app/systems/api",
     "app/systems/api/data",
     "app/systems/api/command",
     "app/systems/api/mcp",
     "app/systems/api",
     "app/systems/client",
     "app/systems",
-    "app/data",
     "app/data/mixins",
     "app/data/base",
     "app/data/cache",
-    "app/data/chat",
+    "app/data/memory",
     "app/data/config",
     "app/data/dataset",
     "app/data/group",
@@ -72,12 +65,12 @@ doc_sequence = [
     "app/data/state",
     "app/data/user",
     "app/data",
-    "app/plugins",
     "app/plugins/mixins",
     "app/plugins/calculation",
     "app/plugins/channel_token",
     "app/plugins/data_processor",
     "app/plugins/dataset",
+    "app/plugins/document_source",
     "app/plugins/encoder",
     "app/plugins/encryption",
     "app/plugins/field_processor",
@@ -89,19 +82,20 @@ doc_sequence = [
     "app/plugins/module",
     "app/plugins/parser",
     "app/plugins/qdrant_collection",
+    "app/plugins/search_engine",
     "app/plugins/source",
     "app/plugins/task",
     "app/plugins/text_splitter",
     "app/plugins/validator",
     "app/plugins/worker",
     "app/plugins",
-    "app/commands",
     "app/commands/mixins",
     "app/commands/base",
     "app/commands/agent",
     "app/commands/cache",
     "app/commands/chat",
     "app/commands/db",
+    "app/commands/file",
     "app/commands/group",
     "app/commands/log",
     "app/commands/module",
@@ -110,9 +104,9 @@ doc_sequence = [
     "app/commands/service",
     "app/commands/template",
     "app/commands/user",
+    "app/commands/web",
     "app/commands",
     "app/components",
-    "app/templates",
     "app/templates/functions",
     "app/templates/module",
     "app/templates/field",
@@ -121,29 +115,29 @@ doc_sequence = [
     "app/templates/cell",
     "app/templates",
     "app/tasks",
-    "app/profiles",
     "app/profiles/test",
     "app/profiles",
-    "app",
-    "app/tests",
     "app/tests/mixins",
     "app/tests/data",
     "app/tests/command",
     "app/tests/sdk_python",
     "app/tests",
-    "app",
     "app/help",
     "app",
-    "sdk",
-    "sdk/python",
     "sdk/python/bin",
-    "sdk/python/zimagi",
     "sdk/python/zimagi/data",
     "sdk/python/zimagi/command",
     "sdk/python/zimagi",
     "sdk/python",
+    "sdk/javascript/src/schema",
+    "sdk/javascript/src/transports",
+    "sdk/javascript/src/client",
+    "sdk/javascript/src/command",
+    "sdk/javascript/src/messages",
+    "sdk/javascript/src",
+    "sdk/javascript/tests",
+    "sdk/javascript",
     "sdk",
-    "reactor",
     "reactor/utilities",
     "reactor/build",
     "reactor/commands",
@@ -152,125 +146,155 @@ doc_sequence = [
 ]
 
 
-def directory_docs_prompt(dir_path: Path) -> str:
+def directory_docs_prompt(dir_path, allowed_files):
+    file_list = []
+
+    for file_path in allowed_files:
+        file_list.append(
+            f"**{os.path.join(dir_path, file_path)}**\n     [**Role:** Short description of the purpose of the file.]\n     [**Detailed Description:** Longer description providing context and detailed information about the file.]"
+        )
+
     """Generate the documentation prompt for a directory."""
     return f"""
-# AI Instruction Prompt: Create or update the README for `{dir_path}`
+**Prompt for AI Model: Generate Detailed reStructuredText README for Codebase Directory**
 
-## Task
-Generate a comprehensive and accurate `README.md` file for the `{dir_path}` directory. This file should provide both **humans** and **AI models** with a clear and structured understanding of the contents of this directory **without requiring them to inspect each individual file**.
-
-## Goals
-- Summarize the **purpose and structure** of `{dir_path}`
-- List and describe all **files** and **subdirectories**
-- Use context from **parent and child README files** when available
-- Support **human onboarding** and **AI-driven development**
-- Ensure **accuracy**, **clarity**, and **completeness**
-
-## Background
-
-For a general reference, this project contains the following top level directories:
-
-- .circleci: The .circleci directory contains all CI/CD related build, test, and deploy jobs for the CircleCI service
-- app: The app directory contains all of the server application files as well as gateway entrypoint scripts
-    - app/scripts: The scripts directory contains Docker entrypoint scripts and command / server configurations as well as a few helpers
-    - app/services: The services directory contains various Django service gateways and url definitions, and a Celery service gateway
-    - app/settings: The settings directory contains Django settings files, various utilities for working with configurations, and Celery task collection
-    - app/utility: The utility directory contains a collection of specialized utilities used across the application and modules
-    - app/systems: The systems directory contains integrated systems that implement components of the overarching application
-    - app/spec: The spec directory contains YAML specifications that power meta-programming code genration for various component systems of the application
-    - app/data: The data directory contains Django data model apps that are available through CLI or APIs, each with model and model facade classes and model migrations
-    - app/commands: The commands directory contains executable commands and agents that are available through CLI or APIs
-    - app/components: The components directory contains various YAML command profile component processors
-    - app/help: The help directory contains language based help information for Zimagi commands
-    - app/plugins: The plugins directory contains various plugin types and provider implementations
-    - app/profiles: The profiles directory contains various YAML command profiles
-    - app/tasks: The tasks directory contains various YAML command execution task definitions
-    - app/templates: The templates directory contains various Jinja2 templates for various component systems
-    - app/tests: The tests directory contains the test frameworks and various test libraries
-- docker: The docker directory contains the server and client Dockerfiles, as well as build and deploy scripts
-- env: The env directory contains the environment variables loaded into Docker Compose manifests in the top level directory
-- sdk:  The sdk directory contains various language sdks for the Zimagi platform
-    - python: The python sdk directory contains a Python SDK client library for interacting with the Zimagi server API endpoints and a CLI executable
-- reactor: The reactor directory contains file that integrate with the Reactor Kubernetes development and management platform, which includes Docker build argument files, utility libraries, and a zimagi executable that integrates with the reactor CLI.
+Generate a comprehensive **README.rst** file in the **reStructuredText** format for the directory located at: `{dir_path}`.  Include only the following files and dirctories: {", ".join([f"**{os.path.join(dir_path, file_path)}**" for file_path in allowed_files])}.
 
 ---
 
-## Instructions
+## **Requirements and Context**
 
-### 1. Overview
-Begin with a high-level explanation of `{dir_path}`:
-- What is this directory for?
-- How does it relate to the overall project (use parent READMEs for context)?
-- Who uses it (humans, build systems, AI models)?
-- What architectural or functional role does it play?
-
----
-
-### 2. Directory Contents Table
-List all **files and subdirectories** except README files within `{dir_path}`.
-For each:
-
-#### Files:
-- **Name**
-- **Purpose** and what it does
-- Language or format (e.g., `.ts`, `.json`, `.md`)
-
-#### Subdirectories:
-- **Name**
-- **Purpose** and what kinds of files it contains
-- Link to its own README if present (e.g., `See subdir/README.md`)
+1.  **Format:** The entire output *must* be valid **reStructuredText (.rst)** format.
+2.  **Target Audience and Purpose:** The generated README is specifically designed to maximize understanding for both **human developers and other AI models** reviewing this codebase. Its primary goal is to clearly and quickly explain the directory's purpose, its contents, and how the source files within it fit into the broader project architecture.
+3.  **Detail Level:** Be as **detailed and verbose as possible** to provide rich context. The only exception to this is the exclusion of actual source code.
+4.  **Exclusions:** **DO NOT** include any actual lines or blocks of source code from the files. References to files or functions are fine, but the code itself is prohibited.
+5.  **Output Use:** This README will be used as a source for developing a documentation site and for generating a high-level, project-wide README.
 
 ---
 
-### 3. Cross-Referencing
-- Use **README files in parent directories** to establish context
-- Use **README files in child directories** to summarize their content
-- Clearly show how `{dir_path}` fits into the broader structure
+## **Content Sections to Include**
+
+The README.rst must contain the following major sections, using appropriate reStructuredText section headers (e.g., `=====`, `-----`):
+
+### **1. Directory Overview**
+* **Purpose:** A concise, high-level explanation of this directory's role within the entire software project.
+* **Key Functionality:** What core software features or services are implemented within the files of this directory?
+
+### **2. Platform and Dependencies**
+* **Target Platform/Environment:** Specify the operating systems, frameworks, or execution environments this code is designed for (e.g., Python 3.10+, Node.js v18, Kubernetes, specific cloud provider features like AWS Lambda).
+* **Local Dependencies:** List and briefly describe any major libraries, packages, or services that the code in this directory heavily relies on. (e.g., 'Requires the `requests` library for HTTP communication.')
+
+### **3. File Structure and Descriptions**
+* **File List:** Provide a table or a clear, hierarchical list of all files and sub-directories within `{dir_path}`.
+* **Detailed File Descriptions:** For *every* significant source file (e.g., `.py`, `.js`, `.java`, configuration files, etc.), include:
+    * The **filename** itself.
+    * A **one-sentence summary** of its role.
+    * A **detailed paragraph** describing the major functions, classes, or modules it contains and *what* they achieve (not *how* they are coded).
+    * Mention its **relationship** to other files in this or other directories.
+
+### **4. Execution Flow and Interconnection**
+* **Control Flow:** Describe the typical execution flow or request lifecycle as it relates to the files in this directory. Which file is the entry point? Which files act as helpers, and which handle primary logic?
+* **External Interfaces:** Describe how the code in this directory interacts with components **outside** of this directory (e.g., databases, external APIs, message queues, other project services).
 
 ---
 
-### 4. Key Concepts, Conventions, and Patterns
-Document:
-- **Naming conventions** (e.g., `*.test.ts`)
-- **File organization** (e.g., by domain, by feature)
-- **Standards** used (e.g., TypeScript strict mode, JSON schema)
-- Any **domain-specific logic** or rules relevant to this directory
+**Start the Output now, ensuring it begins with a reStructuredText-formatted title for the directory.**
+
+Update the document prompt ro ensure that the AI model generating the documentation does not duplicate files it has already referenced and only contains files it has in its previous context window. It should only generate descriptions for the top level files and directories from the {dir_path} template variable. Also add an exact example README at the bottom so that the AI models knows exactly how to structure each README file with help information for each information instead of the actual information. Also add help information that ensures that the AI model does not hallucinate extra files that do not exist, which it does with the current prompt. The AI model gnerating the documentation id Gemini 2.5 Flash (the same as this one) so write the prompt for yourself to accomplish the task in the most accurate way possible.
+
+Here is the updated and refined prompt, specifically tailored for Gemini 2.5 Flash, incorporating all your requirements, including file non-duplication, focusing only on top-level files, and providing a structural template to prevent hallucination.
+
+**Prompt for Gemini 2.5 Flash: Generate Detailed, Top-Level reStructuredText README for Codebase Directory**
+
+Generate a comprehensive **README.rst** file in the **reStructuredText** format for the directory located at: `{dir_path}`.
 
 ---
 
-### 5. Developer Notes and Usage Tips
-Include any important developer information:
-- Build requirements
-- External dependencies or environment variables
-- Tips for editing or generating files in this directory
-- AI-specific guidance if models are expected to generate content here
+## **AI Model Directives and Constraints**
+
+1.  **Format:** The entire output *must* be strictly valid **reStructuredText (.rst)** format.
+2.  **Scope Limitation:** **CRITICAL:** Only describe the **top-level files and directories** immediately within `{dir_path}`. **DO NOT** recursively describe files in subdirectories.
+3.  **Non-Hallucination Mandate:** **CRITICAL:** **DO NOT** invent, assume, or hallucinate the existence of files or directories that are not explicitly present in the provided context window for `{dir_path}`. Use only the actual files and directories you have been supplied.
+4.  **Non-Duplication Mandate:** **CRITICAL:** Ensure that every file or directory is mentioned and described **only once** within the document, primarily in the "File Structure and Descriptions" section.
+5.  **Exclusions:** **DO NOT** include any actual lines or blocks of source code. References to files, functions, or concepts are fine, but the code itself is prohibited.
+6.  **Target Audience:** Maximize understanding for both **human developers and other AI models** reviewing this codebase. The goal is context-rich, architecture-focused documentation.
+7.  **Detail Level:** Be as **detailed and verbose as possible** for the files that *are* included in the scope.
 
 ---
 
-## Final Checklist
+## **Content Sections to Include**
 
-- [ ] All files and subdirectories are listed and described
-- [ ] Purpose and usage of each file are clearly explained
-- [ ] Cross-references to related README files are accurate
-- [ ] Descriptions are verbose, meaningful, and non-generic
-- [ ] No assumptions made without filename or content support
-- [ ] English is clear, professional, and helpful for AI + humans
-- [ ] The README gives a **standalone** understanding of `{dir_path}`
+The README.rst must strictly adhere to the following structure and section headers, using appropriate reStructuredText formatting (e.g., `=====`, `-----`).
+
+### **1. Directory Overview**
+* **Purpose:** A concise, high-level explanation of this directory's role within the entire software project.
+* **Key Functionality:** What core software features or services are implemented within the top-level contents of this directory?
+
+### **2. Platform and Dependencies**
+* **Target Platform/Environment:** Specify the operating systems, frameworks, or execution environments this code is designed for.
+* **Local Dependencies:** List and briefly describe any major libraries, packages, or services that the code in this directory heavily relies on.
+
+### **3. File Structure and Descriptions**
+* **File List and Descriptions:** Use a definition list or a descriptive list structure (as shown in the template below) to list **every** top-level file and subdirectory, followed by a detailed description.
+
+### **4. Execution Flow and Interconnection**
+* **Control Flow:** Describe the typical execution flow or request lifecycle as it relates to the files in this directory. Which file is the entry point? Which files act as primary logic?
+* **External Interfaces:** Describe how the code in this directory interacts with components **outside** of this directory (e.g., databases, external APIs, message queues).
 
 ---
 
-## Output Format
+## **REQUIRED Output Structure Template**
 
-Produce a `README.md` file using **standard Markdown**, including:
-- `#`-style headers
-- Bullet lists or tables
-- Do not include code snippets or code blocks in the output file
+The final output **must** follow this exact format, replacing the bracketed help text with the actual generated content for `{dir_path}`.
+
+```rst
+=====================================================
+README for Directory: {dir_path}
+=====================================================
+
+.. The title uses a double underline for the top-level heading.
+
+Directory Overview
+------------------
+.. This section uses a single underline for the secondary heading.
+
+**Purpose**
+   [Provide a high-level, one-paragraph explanation of the directory's primary role and context within the larger project architecture. For example: "This directory contains the core business logic implementation for the user authentication and authorization services."]
+
+**Key Functionality**
+   [List 3-5 major software features or services implemented here. For example: User registration, token generation/validation, password reset logic.]
+
+
+Platform and Dependencies
+-------------------------
+
+**Target Platform/Environment**
+   [Specify the necessary environment, e.g., Python 3.11+, PostgreSQL 14+, runs on Linux/Docker.]
+
+**Local Dependencies**
+   [List and briefly describe major third-party libraries or internal components required. E.g., `sqlalchemy` for ORM, `pydantic` for data validation.]
+
+
+File Structure and Descriptions
+-------------------------------
+.. Only describe the top-level files and directories you have in context. DO NOT recurse into subdirectories. DO NOT hallucinate files.  CRITICAL: Only include the following directories and files.
+
+{"\n\n".join(file_list)}
+
+
+Execution Flow and Interconnection
+----------------------------------
+
+**Control Flow Summary**
+   [Provide a clear, step-by-step description of the primary execution flow (e.g., "1. An HTTP request hits a route defined in `app.py`. 2. The handler calls a method in `service.py`. 3. `service.py` interacts with `models.py` to fetch data."). **CRITICAL: Ensure all files mentioned are top-level files within this directory.**]
+
+**External Interfaces**
+   [Describe all connections to systems outside of this directory's immediate scope. For example: "Communicates with the external `NotificationService` via a REST API," or "Reads/Writes data to the primary PostgreSQL database."]
 """
 
 
 @contextmanager
-def run_quiet(output: StringIO = None):
+def run_quiet(output=None):
     try:
         if not output:
             output = StringIO()
@@ -427,9 +451,9 @@ class Aider:
 
     def __init__(
         self,
+        model,
         write_files=None,
         read_files=None,
-        model="openrouter/qwen/qwen3-coder",
         io=None,
         commit=False,
         **kwargs,
@@ -507,15 +531,28 @@ class Aider:
 class DocGenerator:
     """Generates documentation for directories while skipping specified patterns."""
 
-    def __init__(self, doc_sequence, output_token_context=3000, max_tokens=200000):
+    def __init__(self, doc_sequence):
         self.doc_sequence = doc_sequence
-        self.output_token_context = output_token_context
-        self.max_tokens = max_tokens
 
     def generate_docs(self):
         """Main documentation generation workflow."""
-        readme_context = {}
+        core_files = [
+            "start",
+            "clean",
+            "zimagi",
+            "compose.network.yaml",
+            "compose.db.yaml",
+            "compose.standard.local.yaml",
+            "compose.standard.test.yaml",
+            "compose.nvidia.local.yaml",
+            "compose.nvidia.test.yaml",
+        ]
         docs_state_file = os.path.join(".", ".docs-index")
+        docs_log_file = os.path.join(".", ".docs-log")
+
+        model = "openrouter/google/gemini-2.5-flash"
+        max_input_tokens = 800000
+        output_token_context = 10000
 
         try:
             with open(docs_state_file) as file:
@@ -525,57 +562,69 @@ class DocGenerator:
 
         for dir_index, dir_path in enumerate(self.doc_sequence):
             if os.path.isdir(dir_path):
-                readme_file = os.path.join(dir_path, "README.md")
-                readme_files = list(readme_context.values())
-                readme_generated = False
+                readme_file = os.path.join(dir_path, "README.rst")
+                dir_files = self._get_top_level_items(dir_path)
+                doc_prompt = directory_docs_prompt(dir_path, dir_files)
 
                 if docs_index is None or dir_index >= docs_index:
-                    while not readme_generated or os.stat(readme_file).st_size == 0:
-                        session = Aider(write_files=readme_file, read_files=[dir_path, *readme_files])
-                        if (
-                            session.info.total_tokens > self.max_tokens
-                            or session.info.remaining_tokens < self.output_token_context
-                        ):
-                            session = Aider(write_files=readme_file, read_files=readme_files)
-                        if (
-                            session.info.total_tokens > self.max_tokens
-                            or session.info.remaining_tokens < self.output_token_context
-                        ):
-                            session = Aider(
-                                write_files=readme_file, read_files=self._get_readme_files(dir_path, readme_context)
-                            )
-                        if (
-                            session.info.total_tokens <= self.max_tokens
-                            and session.info.remaining_tokens >= self.output_token_context
-                        ):
-                            print(f"Documenting directory: {dir_path}")
-                            print("----------------------------------------------------------------------")
-                            print(session.code(directory_docs_prompt(dir_path)))
-                            with open(docs_state_file, "w") as file:
-                                file.write(str(dir_index))
+                    session = Aider(
+                        model,
+                        write_files=readme_file,
+                        read_files=[dir_path, *core_files],
+                    )
+                    if (
+                        session.info.total_tokens <= max_input_tokens
+                        and session.info.remaining_tokens >= output_token_context
+                    ):
+                        write_files = []
+                        read_files = []
 
-                            readme_generated = True
+                        for file_path, file_info in sorted(
+                            session.info.export()["files"].items(), key=lambda item: item[1]["tokens"], reverse=True
+                        ):
+                            file_string = f"{file_path}: {file_info["tokens"]} tokens"
+                            if file_info["readonly"]:
+                                read_files.append(f"R> {file_string}")
+                            else:
+                                write_files.append(f"W> {file_string}")
 
-                readme_context[dir_path] = readme_file
+                        dir_info = f"Documenting directory: {dir_path} ( {session.info.total_tokens} tokens )"
+                        context_info = (
+                            f" '-> Context files:\n{"\n".join([f"    {file}" for file in [*write_files, *read_files]])}"
+                        )
+
+                        print(dir_info)
+                        response = session.code(doc_prompt)
+
+                        with open(docs_log_file, "a") as file:
+                            file.write(f"{dir_info}\n{context_info}\n{response}\n\n")
+
+                        if os.stat(readme_file).st_size == 0:
+                            print(f"Failed to generate README file for {dir_path}")
+                            exit(1)
+
+                    with open(docs_state_file, "w") as file:
+                        file.write(str(dir_index))
             else:
                 print(f"Directory does not exist: {dir_path}")
+                exit(1)
 
         os.remove(docs_state_file)
+        os.remove(docs_log_file)
 
-    def _get_readme_files(self, search_path, readme_context):
+    def _get_top_level_items(self, search_path):
         parent_path = str(search_path)
-        readme_files = set()
+        directories = []
+        files = []
 
-        while "/" in parent_path:
-            parent_path = "/".join(parent_path.split("/")[:-1])
-            if parent_path in readme_context:
-                readme_files.add(readme_context[parent_path])
+        for file_name in os.listdir(parent_path):
+            path = os.path.join(search_path, file_name)
+            if os.path.isdir(path):
+                directories.append(file_name)
+            else:
+                files.append(file_name)
 
-        for dir_path, readme_path in readme_context.items():
-            if str(dir_path).startswith(str(search_path)):
-                readme_files.add(readme_path)
-
-        return sorted(readme_files)
+        return [*directories, *files]
 
 
 if __name__ == "__main__":
