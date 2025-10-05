@@ -11,7 +11,7 @@ BASE_DIR = os.path.dirname(DOCS_DIR)
 extensions = ["sphinx.ext.autodoc", "sphinx.ext.mathjax", "sphinx.ext.viewcode"]
 
 source_suffix = ".rst"
-master_doc = "readme"
+master_doc = "index"
 
 project = "Zimagi"
 copyright = "2020, Zimagi"
