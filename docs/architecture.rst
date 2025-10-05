@@ -33,16 +33,16 @@ The Zimagi platform exposes several core APIs and services:
 *   **`app/services`**: Defines the configurations and entry points for these API services, along with background task processing via Celery.
 
 Documentation (`docs/`)
-----------------------
+-----------------------
 The `app/help/` directory serves as the central repository for all help documentation within the application. It organizes help content by language and command, providing descriptive overviews and detailed explanations for various functionalities. This structure ensures that both human users and AI models can easily access and understand the purpose and usage of different application commands and features.
 
 SDKs (`sdk/`)
---------------
+-------------
 The `sdk/` directory serves as the central repository for all Software Development Kits (SDKs) related to the Zimagi platform.
 
 *   **`sdk/python`**: Provides the foundational Python SDK for interacting with the Zimagi platform.
 *   **`sdk/javascript`**: Provides the foundational JavaScript SDK for interacting with the Zimagi platform.
 
 Reactor (`reactor/`)
--------------------
+--------------------
 The `reactor/` directory serves as the core operational hub for the Zimagi application's reactor environment. It centralizes scripts and configurations essential for building, initializing, managing, and executing various components of the Zimagi system, including Docker images, services, and command-line operations.
