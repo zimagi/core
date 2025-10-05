@@ -156,9 +156,11 @@ def directory_docs_prompt(dir_path, allowed_files):
 
     """Generate the documentation prompt for a directory."""
     return f"""
-**Prompt for AI Model: Generate Detailed reStructuredText README for Codebase Directory**
+Generate a comprehensive **README.rst** file in the **reStructuredText** format for the directory located at: `{dir_path}`.  Include information on only the following files and dirctories: {", ".join([f"**{os.path.join(dir_path, file_path)}**" for file_path in allowed_files])}.
 
-Generate a comprehensive **README.rst** file in the **reStructuredText** format for the directory located at: `{dir_path}`.  Include only the following files and dirctories: {", ".join([f"**{os.path.join(dir_path, file_path)}**" for file_path in allowed_files])}.
+CRITICAL: **NEVER** ask questions or ask for more information!
+
+IMPORTANT: **ONLY** render the readme file with the information you currently have without comments and put the entire README file contents between a ``` fence directly under the README file path.
 
 ---
 
@@ -265,19 +267,15 @@ Directory Overview
    [List 3-5 major software features or services implemented here. For example: User registration, token generation/validation, password reset logic.]
 
 
-Platform and Dependencies
+Dependencies
 -------------------------
 
-**Target Platform/Environment**
-   [Specify the necessary environment, e.g., Python 3.11+, PostgreSQL 14+, runs on Linux/Docker.]
-
-**Local Dependencies**
-   [List and briefly describe major third-party libraries or internal components required. E.g., `sqlalchemy` for ORM, `pydantic` for data validation.]
+[List and briefly describe major third-party libraries or internal components required. E.g., `sqlalchemy` for ORM, `pydantic` for data validation.]
 
 
 File Structure and Descriptions
 -------------------------------
-.. Only describe the top-level files and directories you have in context. DO NOT recurse into subdirectories. DO NOT hallucinate files.  CRITICAL: Only include the following directories and files.
+.. DO NOT recurse into subdirectories. DO NOT hallucinate files.  CRITICAL: Only include the following directories and files.
 
 {"\n\n".join(file_list)}
 
@@ -308,6 +306,12 @@ def run_quiet(output=None):
         raise error
     finally:
         sys.stdout = sys.__stdout__
+
+
+class DocumentCoder(Coder):
+
+    def check_for_file_mentions(self, content):
+        return
 
 
 class AiderFileInfo:
@@ -478,8 +482,9 @@ class Aider:
     def _start(self, write_files=None, read_files=None, io=None, commit=False, **kwargs):
         """Start a new Aider chat session."""
         self._io = InputOutput(pretty=False, fancy_input=False, yes=True) if io is None else io
-        self._coder = Coder.create(
+        self._coder = DocumentCoder.create(
             main_model=self._model,
+            edit_format=self._model.edit_format,
             io=self._io,
             auto_commits=commit,
             **kwargs,
@@ -505,27 +510,12 @@ class Aider:
                 self._session.cmd_read_only(str(file))
             self._info.load()
 
-    def run(self, command, message=""):
+    def run(self, message):
         """Run an Aider command."""
         output = StringIO()
         with run_quiet(output):
-            try:
-                getattr(self._session, f"cmd_{command}")(message)
-            except SwitchCoder:
-                pass
+            self._coder.run(message)
         return output.getvalue()
-
-    def ask(self, message):
-        """Run an Aider ask command."""
-        return self.run("ask", message)
-
-    def architect(self, message):
-        """Run an Aider architect command."""
-        return self.run("architect", message)
-
-    def code(self, message):
-        """Run an Aider code command."""
-        return self.run("code", message)
 
 
 class DocGenerator:
@@ -594,7 +584,7 @@ class DocGenerator:
                         )
 
                         print(dir_info)
-                        response = session.code(doc_prompt)
+                        response = session.run(doc_prompt)
 
                         with open(docs_log_file, "a") as file:
                             file.write(f"{dir_info}\n{context_info}\n{response}\n\n")
