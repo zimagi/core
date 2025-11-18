@@ -1,13 +1,13 @@
 # Terminal utilities
 terminaltables==3.1.10
-colorful==0.5.7
-rich==14.1.0
-textual[syntax]==6.2.1
-textual-dev==1.7.0
+colorful==0.5.8
+rich==14.2.0
+textual[syntax]==6.6.0
+textual-dev==1.8.0
 pyperclip==1.11.0
 
 # Core application
-django==5.2.7
+django==5.2.8
 
 # Text and data handling
 pyyaml==6.0.3

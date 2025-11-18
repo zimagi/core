@@ -1,9 +1,9 @@
 # Terminal utilities
 terminaltables==3.1.10
-colorful==0.5.7
+colorful==0.5.8
 
 # Security / System access
-cryptography==46.0.2
+cryptography==46.0.3
 pycryptodome==3.23.0
 paramiko==4.0.0
 django-cors-headers==4.9.0
@@ -14,37 +14,38 @@ docker==7.1.0
 kubernetes==34.1.0
 watchdog==6.0.0
 google-auth==2.41.1
-google-auth-oauthlib==1.2.2
-google-auth-httplib2==0.2.0
-google-api-python-client==2.184.0
+google-auth-oauthlib==1.2.3
+google-auth-httplib2==0.2.1
+google-api-python-client==2.187.0
 
 # Web server
 gunicorn==23.0.0
 gevent==25.9.1
 greenlet==3.2.4
-uvicorn==0.37.0
-starlette==0.49.1
+uvicorn==0.38.0
+starlette==0.50.0
 
 # Core application
-django==5.2.7
-psycopg2==2.9.10
+django==5.2.8
+psycopg2==2.9.11
 django-dbconn-retry==0.1.9
 semantic-version==2.10.0
 requests==2.32.5
 
 # API capabilities
+urllib3==2.2.3
 djangorestframework==3.16.1
 uritemplate==4.2.0
-django-filter==25.1
+django-filter==25.2
 inflection==0.5.1
-mcp==1.16.0
+mcp==1.21.2
 
 # Text and data handling
 ply==3.11
 pyyaml==6.0.3
 oyaml==1.0
 inflect==7.5.0
-numpy==2.3.3
+numpy==2.3.5
 pandas==2.3.3
 validators==0.35.0
 python-magic==0.4.27
@@ -53,12 +54,12 @@ python-dateutil==2.9.0.post0
 # File parsing
 beautifulsoup4==4.14.2
 selenium==4.32.0
-html-to-markdown[lxml]==1.16.0
-docling==2.55.1
+html-to-markdown[lxml]==2.8.3
+docling==2.62.0
 docling-ocr-onnxtr[cpu-headless]==0.2.0
 
 # Repository integrations
-pygit2==1.18.2
+pygit2==1.19.0
 PyGithub==2.8.1
 
 # Templating
@@ -71,17 +72,18 @@ django-celery-beat==2.8.1
 tenacity==9.1.2
 
 # Caching / Queueing / Object store
-redis==6.4.0
+redis==7.0.1
 django-redis==6.0.0
-hiredis==3.2.1
-qdrant-client==1.15.1
+hiredis==3.3.0
+qdrant-client==1.16.0
 
 # Machine Learning
-transformers==4.57.0
-sentence-transformers==5.1.1
-torch==2.8.0
-spacy==3.8.7
-openai==2.1.0
-litellm==1.77.5
-huggingface-hub==0.35.3
-onnxruntime==1.23.0
+tokenizers==0.22.1
+transformers==4.57.1
+sentence-transformers==5.1.2
+torch==2.9.1
+spacy==3.8.10
+openai==2.8.0
+litellm==1.80.0
+huggingface-hub==0.36.0
+onnxruntime==1.23.2
