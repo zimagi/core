@@ -23,6 +23,9 @@ ENV LANG=C.UTF-8
 ENV PYTHONUNBUFFERED=1
 ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
+ENV RUSTUP_HOME=/usr/local/share/rust
+ENV CARGO_HOME=/usr/local/share/rust
+
 ENV LIBGIT_VERSION=1.9.1
 ENV GECKO_VERSION=v0.36.0
 #
@@ -53,6 +56,8 @@ COPY ./docker/packages.server.txt /root/packages.server.txt
 RUN apt-get update -y \
   && sed '/^\s*\#.*$/d' /root/packages.server.txt | xargs -r apt-get install -y --no-install-recommends \
   && rm -rf /var/lib/apt/lists/*
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
 
 RUN wget --quiet https://github.com/libgit2/libgit2/archive/v${LIBGIT_VERSION}.tar.gz \
   && tar xzf v${LIBGIT_VERSION}.tar.gz \
@@ -98,7 +103,7 @@ ENV FILE_DIR=${LIB_DIR}/files
 ENV APP_DIR=/usr/local/share/zimagi
 ENV SDK_DIR=/usr/local/share/zimagi-client
 
-ENV PATH="${VIRTUAL_ENV_DIR}/bin:${PATH}"
+ENV PATH="${RUSTUP_HOME}/bin:${VIRTUAL_ENV_DIR}/bin:${PATH}"
 #
 # Python environment and packages
 #
