@@ -207,7 +207,7 @@ jobs:
 
   test-api-schema:
       machine:
-          image: ubuntu-2204:current
+          image: ubuntu-2404:current
       steps:
           - checkout
           - run: *volumes
@@ -235,7 +235,7 @@ jobs:
 
   test-schedule:
     machine:
-      image: ubuntu-2204:current
+      image: ubuntu-2404:current
     steps:
       - checkout
       - run: *volumes
@@ -274,7 +274,7 @@ jobs:
   deploy-cli-docker-amd64-latest:
     resource_class: medium
     machine:
-      image: ubuntu-2204:current
+      image: ubuntu-2404:current
     steps:
       - checkout
       - run: *volumes
@@ -285,7 +285,7 @@ jobs:
   deploy-cli-docker-arm64-latest:
     resource_class: arm.medium
     machine:
-      image: ubuntu-2204:current
+      image: ubuntu-2404:current
     steps:
       - checkout
       - run: *volumes
@@ -296,7 +296,7 @@ jobs:
   deploy-cli-docker-latest:
     resource_class: medium
     machine:
-      image: ubuntu-2204:current
+      image: ubuntu-2404:current
     steps:
       - checkout
       - run: *volumes
@@ -307,7 +307,7 @@ jobs:
   deploy-cli-docker-amd64-version:
     resource_class: medium
     machine:
-      image: ubuntu-2204:current
+      image: ubuntu-2404:current
     steps:
       - checkout
       - run: *volumes
@@ -318,7 +318,7 @@ jobs:
   deploy-cli-docker-arm64-version:
     resource_class: arm.medium
     machine:
-      image: ubuntu-2204:current
+      image: ubuntu-2404:current
     steps:
       - checkout
       - run: *volumes
@@ -329,7 +329,7 @@ jobs:
   deploy-cli-docker-version:
     resource_class: medium
     machine:
-      image: ubuntu-2204:current
+      image: ubuntu-2404:current
     steps:
       - checkout
       - run: *volumes
@@ -340,7 +340,7 @@ jobs:
   deploy-server-docker-amd64-latest:
     resource_class: medium
     machine:
-      image: ubuntu-2204:current
+      image: ubuntu-2404:current
     steps:
       - checkout
       - run: *volumes
@@ -351,7 +351,7 @@ jobs:
   deploy-server-docker-arm64-latest:
     resource_class: arm.medium
     machine:
-      image: ubuntu-2204:current
+      image: ubuntu-2404:current
     steps:
       - checkout
       - run: *volumes
@@ -362,7 +362,7 @@ jobs:
   deploy-server-docker-latest:
     resource_class: medium
     machine:
-      image: ubuntu-2204:current
+      image: ubuntu-2404:current
     steps:
       - checkout
       - run: *volumes
@@ -373,7 +373,7 @@ jobs:
   deploy-server-docker-nvidia-amd64-latest:
     resource_class: medium
     machine:
-      image: ubuntu-2204:current
+      image: ubuntu-2404:current
     steps:
       - checkout
       - run: *volumes
@@ -384,7 +384,7 @@ jobs:
   deploy-server-docker-nvidia-latest:
     resource_class: medium
     machine:
-      image: ubuntu-2204:current
+      image: ubuntu-2404:current
     steps:
       - checkout
       - run: *volumes
@@ -395,7 +395,7 @@ jobs:
   deploy-server-docker-amd64-version:
     resource_class: medium
     machine:
-      image: ubuntu-2204:current
+      image: ubuntu-2404:current
     steps:
       - checkout
       - run: *volumes
@@ -406,7 +406,7 @@ jobs:
   deploy-server-docker-arm64-version:
     resource_class: arm.medium
     machine:
-      image: ubuntu-2204:current
+      image: ubuntu-2404:current
     steps:
       - checkout
       - run: *volumes
@@ -417,7 +417,7 @@ jobs:
   deploy-server-docker-version:
     resource_class: medium
     machine:
-      image: ubuntu-2204:current
+      image: ubuntu-2404:current
     steps:
       - checkout
       - run: *volumes
@@ -428,7 +428,7 @@ jobs:
   deploy-server-docker-nvidia-amd64-version:
     resource_class: medium
     machine:
-      image: ubuntu-2204:current
+      image: ubuntu-2404:current
     steps:
       - checkout
       - run: *volumes
@@ -439,7 +439,7 @@ jobs:
   deploy-server-docker-nvidia-version:
     resource_class: medium
     machine:
-      image: ubuntu-2204:current
+      image: ubuntu-2404:current
     steps:
       - checkout
       - run: *volumes
@@ -449,7 +449,7 @@ jobs:
 
   deploy-npm:
     docker:
-      - image: cimg/node:24.6.0
+      - image: cimg/node:25.2
     steps:
       - checkout
       - run:
@@ -458,7 +458,7 @@ jobs:
 
   deploy-pip:
     docker:
-      - image: python:3.12
+      - image: python:3.14
     steps:
       - checkout
       - run:
@@ -471,7 +471,7 @@ jobs:
 
   deploy-docs:
     docker:
-      - image: python:3.12
+      - image: python:3.14
     steps:
       - run:
           name: Install core dependencies
@@ -493,7 +493,7 @@ jobs:
 
   update-helm-chart:
     docker:
-      - image: python:3.12
+      - image: python:3.14
     steps:
       - run:
           name: Install core dependencies
