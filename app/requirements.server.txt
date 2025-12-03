@@ -26,7 +26,7 @@ uvicorn==0.38.0
 starlette==0.50.0
 
 # Core application
-django==5.2.8
+django==5.2.9
 psycopg2==2.9.11
 django-dbconn-retry==0.1.9
 semantic-version==2.10.0
